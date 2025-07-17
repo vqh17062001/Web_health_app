@@ -14,13 +14,14 @@ namespace Web_health_app.ApiService.Controllers
     public class AuthController (IConfiguration configuration) : ControllerBase
     {
         [HttpPost("login")]
+      
         public ActionResult<LoginResponseModel> Login([FromBody] LoginModel request)
         {
             // Simulate a login process
-            if (request._username == "admin" && request._password == "password")
+            if (request.Username == "admin" && request.Password == "password")
 
             {
-                var token = GenerateJwtToken(request._username);
+                var token = GenerateJwtToken(request.Username);
                 return Ok(new LoginResponseModel{ Token = token });
             }
             return null;

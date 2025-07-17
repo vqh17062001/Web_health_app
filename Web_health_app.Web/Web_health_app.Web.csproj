@@ -16,8 +16,6 @@
 
   <ItemGroup>
     <Folder Include="Auth\" />
-    <Folder Include="Models\" />
-    <Folder Include="Apiclients\" />
     <Folder Include="Viewmodels\" />
   </ItemGroup>
 
