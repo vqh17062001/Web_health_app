@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 837 628" fill="none">
+    <!-- Background illustration for student portal -->
+
+    <!-- Person with laptop -->
+    <g opacity="0.1">
+        <!-- Laptop -->
+        <rect x="350" y="400" width="120" height="80" rx="8" fill="#EEEEEE"/>
+        <rect x="355" y="405" width="110" height="60" rx="4" fill="#1C1D21"/>
+        <circle cx="410" cy="468" r="2" fill="#EEEEEE"/>
+
+        <!-- Person -->
+        <circle cx="300" cy="350" r="25" fill="#EEEEEE"/>
+        <rect x="285" y="375" width="30" height="50" rx="15" fill="#EEEEEE"/>
+        <rect x="295" y="400" width="10" height="30" fill="#1C1D21"/>
+        <rect x="275" y="420" width="15" height="25" fill="#EEEEEE"/>
+        <rect x="310" y="420" width="15" height="25" fill="#EEEEEE"/>
+
+        <!-- Books -->
+        <rect x="500" y="450" width="8" height="30" fill="#9C6FE4"/>
+        <rect x="510" y="445" width="8" height="35" fill="#925FE2"/>
+        <rect x="520" y="455" width="8" height="25" fill="#8B5FD3"/>
+
+        <!-- Decorative elements -->
+        <circle cx="200" cy="200" r="40" fill="#EEEEEE" opacity="0.3"/>
+        <circle cx="600" cy="150" r="30" fill="#9C6FE4" opacity="0.4"/>
+        <circle cx="700" cy="300" r="25" fill="#925FE2" opacity="0.5"/>
+
+        <!-- Academic symbols -->
+        <!-- Graduation cap -->
+        <path d="M250 250 L300 230 L350 250 L350 265 L325 275 L325 290 L275 290 L275 275 L250 265 Z" fill="#EEEEEE"/>
+        <rect x="320" y="265" width="5" height="20" fill="#EEEEEE"/>
+        <circle cx="327" cy="265" r="3" fill="#9C6FE4"/>
+
+        <!-- Mathematical symbols -->
+        <text x="150" y="400" font-family="Arial" font-size="20" fill="#EEEEEE" opacity="0.4">∑</text>
+        <text x="650" y="450" font-family="Arial" font-size="18" fill="#925FE2" opacity="0.5">π</text>
+        <text x="180" y="300" font-family="Arial" font-size="16" fill="#9C6FE4" opacity="0.4">∆</text>
+
+        <!-- Cloud/network dots -->
+        <circle cx="450" cy="180" r="3" fill="#EEEEEE" opacity="0.6"/>
+        <circle cx="480" cy="200" r="3" fill="#EEEEEE" opacity="0.6"/>
+        <circle cx="520" cy="180" r="3" fill="#EEEEEE" opacity="0.6"/>
+        <line x1="450" y1="180" x2="480" y2="200" stroke="#EEEEEE" stroke-width="1" opacity="0.4"/>
+        <line x1="480" y1="200" x2="520" y2="180" stroke="#EEEEEE" stroke-width="1" opacity="0.4"/>
+    </g>
+</svg>

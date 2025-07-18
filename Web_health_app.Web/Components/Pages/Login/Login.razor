@@ -10,55 +10,91 @@
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
-<div class="container">  
-    <div class="row justify-content-center mt-5">  
-        <div class="col-md-6 col-lg-4">  
-            <div class="card shadow">  
-                <div class="card-header bg-primary text-white text-center py-3">  
-                    <h3 class="mb-0">Đăng nhập</h3>  
-                </div>  
-                <div class="card-body p-4">  
-                    <EditForm Model="loginModel" OnValidSubmit="HandleLogin" FormName="LoginForm">  
-                    
-                        <ValidationSummary class="text-danger mb-3" />  
+<link href="/css/login/login.css" rel="stylesheet" />
+<script src="/js/login/login.js"></script>
 
-                        <div class="form-group mb-3">  
-                            <label for="username" class="form-label">Tên đăng nhập</label>  
-                            <InputText @bind-Value="loginModel.Username" class="form-control"  
-                                placeholder="Nhập tên đăng nhập hoặc email" />  
-                            <ValidationMessage For="@(() => loginModel.Username)" class="text-danger" />  
-                        </div>  
+<div class="login-container">
+    <div class="login-card">
+        <!-- Left Panel - Login Form -->
+        <div class="login-left-panel">
+            <div class="login-form-container">
+                <div class="form-header">
+                    <h1 class="login-title">Login</h1>
+                    <p class="login-subtitle">Enter your account details</p>
+                </div>
+                
+                <EditForm Model="loginModel" OnValidSubmit="HandleLogin" FormName="LoginForm">
+                    <div class="form-fields">
+                        <div class="form-group">
+                            <label class="form-label">Username</label>
+                            <InputText @bind-Value="loginModel.Username" 
+                                      class="form-input" 
+                                      id="username"
+                                      placeholder="Enter your username or email" />
+                            <ValidationMessage For="@(() => loginModel.Username)" class="validation-message" />
+                        </div>
 
-                        <div class="form-group mb-3">  
-                            <label for="password" class="form-label">Mật khẩu</label>  
-                            <InputText @bind-Value="loginModel.Password" type="password"  
-                                class="form-control" placeholder="Nhập mật khẩu" />  
-                            <ValidationMessage For="@(() => loginModel.Password)" class="text-danger" />  
-                        </div>  
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <div class="password-field">
+                                <InputText @bind-Value="loginModel.Password" 
+                                          type="@(showPassword ? "text" : "password")"
+                                          class="form-input" 
+                                          id="password"
+                                          placeholder="Enter your password" />
+                                <button type="button" 
+                                        class="password-toggle" 
+                                        @onclick="TogglePasswordVisibility"
+                                        id="passwordToggle">
+                                    @if (showPassword)
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                            <path d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 1-4.243-4.243m4.242 4.242L9.88 9.88" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    }
+                                    else
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                            <path d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    }
+                                </button>
+                            </div>
+                            <ValidationMessage For="@(() => loginModel.Password)" class="validation-message" />
+                        </div>
+                        
+                        <a  class="forgot-password">Forgot Password?</a>
+                    </div>
 
-                        @if (!string.IsNullOrEmpty(errorMessage))  
-                        {  
-                            <div class="alert alert-danger mb-3">@errorMessage</div>  
-                        }  
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="error-message">@errorMessage</div>
+                    }
 
-                        <div class="d-grid">  
-                            <button type="submit" class="btn btn-primary btn-lg" disabled="@isLoading">  
-                                @if (isLoading)  
-                                {  
-                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>  
-                                    <span class="ms-1">Đang đăng nhập...</span>  
-                                }  
-                                else  
-                                {  
-                                    <span>Đăng nhập</span>  
-                                }  
-                            </button>  
-                        </div>  
-                    </EditForm>  
-                </div>  
-            </div>  
-        </div>  
-    </div>  
+                    <button type="submit" class="login-button" disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <div class="spinner"></div>
+                            <span>Đang đăng nhập...</span>
+                        }
+                        else
+                        {
+                            <span>Login</span>
+                        }
+                    </button>
+                </EditForm>
+            </div>
+        </div>
+
+        <!-- Right Panel - Welcome Message -->
+        <div class="login-right-panel">
+            <div>
+                <h1 class="welcome-text">Welcome to<br>student portal</h1>
+                <p class="welcome-subtitle">Login to access your account</p>
+            </div>
+        </div>
+    </div>
 </div>  
 
 @code {
@@ -67,9 +103,15 @@
 
     private bool isLoading = false;
     private string? errorMessage;
+    private bool showPassword = false;
 
     private bool shouldNavigate = false;
     private bool hasRendered = false;
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+    }
 
     private async Task HandleLogin()
     {
@@ -81,7 +123,7 @@
             // Debug check to ensure values are not null before proceeding
             if (string.IsNullOrEmpty(loginModel.Username) || string.IsNullOrEmpty(loginModel.Password))
             {
-                errorMessage = "Tên đăng nhập và mật khẩu không được để trống.";
+                errorMessage = "Username and password cannot be empty.";
                 return;
             }
 
@@ -91,7 +133,7 @@
 
             if (response.IsSuccess && response.Data != null)
             {
-                // Đợi một chút để đảm bảo token đã được store
+                // Wait a bit to ensure token has been stored
                 await Task.Delay(200);
 
                 try
@@ -100,7 +142,7 @@
                 }
                 catch (NavigationException)
                 {
-                    // Nếu vẫn lỗi, set flag để navigate trong OnAfterRenderAsync
+                    // If still fails, set flag to navigate in OnAfterRenderAsync
                     shouldNavigate = true;
                     StateHasChanged();
                 }
@@ -108,18 +150,18 @@
             else
             {
                 // Login failed - display error message
-                errorMessage = response.Message ?? "Đăng nhập thất bại. Vui lòng kiểm tra tên đăng nhập và mật khẩu.";
+                errorMessage = response.Message ?? "Login failed. Please check your username and password.";
             }
         }
         catch (Exception ex)
         {
-            errorMessage = "Đăng nhập thất bại: " + ex.Message;
+            errorMessage = "Login failed: " + ex.Message;
             Console.WriteLine($"Exception during login: {ex}");
         }
         finally
         {
             isLoading = false;
-            StateHasChanged(); // Đảm bảo UI được cập nhật
+            StateHasChanged(); // Ensure UI is updated
         }
     }
 
@@ -140,7 +182,7 @@
             catch (Exception ex)
             {
                 Console.WriteLine($"JavaScript navigation failed: {ex}");
-                // Fallback: thử navigation trực tiếp lần nữa
+                // Fallback: try navigation directly again
                 try
                 {
                     NavigationManager.NavigateTo("/weather", forceLoad: true);
@@ -148,7 +190,7 @@
                 catch (Exception navEx)
                 {
                     Console.WriteLine($"Final navigation attempt failed: {navEx}");
-                    errorMessage = "Không thể chuyển trang. Vui lòng thử lại.";
+                    errorMessage = "Unable to navigate. Please try again.";
                     isLoading = false;
                     StateHasChanged();
                 }
