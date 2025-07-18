@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
-using Web_health_app.ApiService.Models;
+using Web_health_app.Models.Models;
 using Web_health_app.Web.Services;
 
 namespace Web_health_app.Web.ApiClients

@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Web_health_app.ApiService.Models;
+using Web_health_app.Models.Models;
 
 namespace Web_health_app.ApiService.Controllers
 {
@@ -33,7 +33,10 @@ namespace Web_health_app.ApiService.Controllers
             {
                 new Claim(ClaimTypes.Name, username),
                 new Claim(ClaimTypes.Role, "Admin"),
-               
+
+            
+
+                
                 // Add other claims as needed
             };
             string secretKey  = configuration.GetValue< string>("Jwt:Secret");
@@ -45,6 +48,7 @@ namespace Web_health_app.ApiService.Controllers
                 claims: claims,
                 expires: DateTime.Now.AddMinutes(30),
                 signingCredentials: creds
+                
             );
             return new JwtSecurityTokenHandler().WriteToken(token) ;
         }

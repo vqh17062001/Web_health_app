@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Models\Models.csproj" />
     <ProjectReference Include="..\Web_health_app.ServiceDefaults\Web_health_app.ServiceDefaults.csproj" />
   </ItemGroup>
 

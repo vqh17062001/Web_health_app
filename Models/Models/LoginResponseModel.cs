@@ -1,4 +1,4 @@
-﻿namespace Web_health_app.ApiService.Models
+﻿namespace Web_health_app.Models.Models
 {
     public class LoginResponseModel
     {
