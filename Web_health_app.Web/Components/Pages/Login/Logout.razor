@@ -1,0 +1,13 @@
+﻿@page "/logout"
+@using Microsoft.AspNetCore.Components.Authorization
+@using Web_health_app.Web.Authentication
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+@code {
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ((CustonAuthStatePrivider)AuthStateProvider).MarkUserAsLoggedOut();
+        NavigationManager.NavigateTo("/login");
+    }
+}

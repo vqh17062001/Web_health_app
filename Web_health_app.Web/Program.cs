@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Components.Authorization;
 using Web_health_app.Web;
 using Web_health_app.Web.ApiClients;
+using Web_health_app.Web.Authentication;
 using Web_health_app.Web.Components;
 using Web_health_app.Web.Services;
-using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,30 +25,34 @@ builder.Services.AddHttpClient<LoginApiClient>(c => c.BaseAddress = new Uri(apiB
 
 // Add HttpContextAccessor (required for JwtTokenService)
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddAuthentication();
+builder.Services.AddCascadingAuthenticationState();
 
 // Configure authentication with cookies
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
-    {
-        options.Cookie.Name = "JWTCookie";
-        options.Cookie.HttpOnly = true; // Prevents JavaScript access
-        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // Use 'Always' in production
-        options.Cookie.SameSite = SameSiteMode.Strict;
-        options.ExpireTimeSpan = TimeSpan.FromHours(1);
-        options.SlidingExpiration = true;
-    });
+
+//builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+//    .AddCookie(options =>
+//    {
+//        options.Cookie.Name = "JWTCookie";
+//        options.Cookie.HttpOnly = true; // Prevents JavaScript access
+//        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // Use 'Always' in production
+//        options.Cookie.SameSite = SameSiteMode.Strict;
+//        options.ExpireTimeSpan = TimeSpan.FromHours(1);
+//        options.SlidingExpiration = true;
+//    });
+
 
 // local storage, DI service
-//builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
+builder.Services.AddScoped<AuthenticationStateProvider, CustonAuthStatePrivider>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
-builder.Services.AddAntiforgery(options =>
-{
-    options.HeaderName = "X-CSRF-TOKEN";
-    options.Cookie.Name = "__Host-X-CSRF-TOKEN";
-    options.Cookie.SameSite = SameSiteMode.Strict;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-});
+//builder.Services.AddAntiforgery(options =>
+//{
+//    options.HeaderName = "X-CSRF-TOKEN";
+//    options.Cookie.Name = "__Host-X-CSRF-TOKEN";
+//    options.Cookie.SameSite = SameSiteMode.Strict;
+//    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+//});
 
 
 
@@ -70,8 +76,8 @@ app.UseAuthorization();
 //app.UseAntiforgery();
 
 // Middleware
-app.UseRouting();
-app.UseAntiforgery();
+//app.UseRouting();
+//app.UseAntiforgery();
 
 app.UseOutputCache();
 
