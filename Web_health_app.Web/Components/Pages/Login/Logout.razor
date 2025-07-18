@@ -7,7 +7,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await ((CustonAuthStatePrivider)AuthStateProvider).MarkUserAsLoggedOut();
+        await ((CustonAuthStateProvider)AuthStateProvider).MarkUserAsLoggedOut();
         NavigationManager.NavigateTo("/login");
     }
 }

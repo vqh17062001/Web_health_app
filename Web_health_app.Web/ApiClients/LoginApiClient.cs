@@ -7,7 +7,7 @@ using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Web_health_app.Models.Models;
 using Web_health_app.Web.Authentication;
-using Web_health_app.Web.Services;
+
 
 
 namespace Web_health_app.Web.ApiClients
@@ -15,20 +15,20 @@ namespace Web_health_app.Web.ApiClients
     public class LoginApiClient
     {
         private readonly HttpClient _httpClient;
-        private readonly IJwtTokenService _tokenService;
+       
         private readonly AuthenticationStateProvider _AuthStateProvider;
         private readonly ProtectedLocalStorage _localStoraga;
 
         public LoginApiClient(HttpClient httpClient,
-                              IJwtTokenService tokenService, 
+                             
                               AuthenticationStateProvider authenticationStateProvider,
                               ProtectedLocalStorage localStoraga)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-            _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
+           
             _AuthStateProvider = authenticationStateProvider as AuthenticationStateProvider
-                ?? throw new ArgumentException(nameof(tokenService));
-           _localStoraga = localStoraga ?? throw new ArgumentNullException(nameof(_localStoraga));
+                ?? throw new ArgumentException(nameof(authenticationStateProvider));
+           _localStoraga = localStoraga ?? throw new ArgumentNullException(nameof(localStoraga));
 
         }
 
@@ -61,7 +61,7 @@ namespace Web_health_app.Web.ApiClients
                         try
                         {
 
-                            await ((CustonAuthStatePrivider)_AuthStateProvider).MarkUserAsAuthenticated(result.Token);
+                            await ((CustonAuthStateProvider)_AuthStateProvider).MarkUserAsAuthenticated(result.Token);
 
                             // await _tokenService.StoreTokenAsync(result.Token);
                         }

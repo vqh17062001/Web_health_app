@@ -5,7 +5,7 @@ using System.Security.Claims;
 
 namespace Web_health_app.Web.Authentication
 {
-    public class CustonAuthStatePrivider(ProtectedLocalStorage localStorage) : AuthenticationStateProvider
+    public class CustonAuthStateProvider(ProtectedLocalStorage localStorage) : AuthenticationStateProvider
 
     {
         
