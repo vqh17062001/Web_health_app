@@ -21,6 +21,18 @@
 /* Scope styles to avoid affecting main layout */
 .account-auth-page {
     background-color: #fafbfc;
+    position: relative;
+    overflow: visible;
+}
+
+.account-auth-page .container-fluid {
+    position: relative;
+    overflow: visible;
+}
+
+.account-auth-page .row {
+    position: relative;
+    overflow: visible;
 }
 
 .account-auth-page h3 {
@@ -36,11 +48,24 @@
     background: white;
     box-shadow: var(--shadow-sm);
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: visible;
 }
 
 .card:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-md);
+    z-index: 10;
+}
+
+.card:hover .dropdown-menu {
+    z-index: 1055;
+}
+
+.card-header {
+    position: relative;
+    overflow: visible;
+    z-index: 10;
 }
 
 /* Filter Card Modern Style */
@@ -196,7 +221,8 @@
     font-weight: 500;
 }
 
-/* Modern Dropdown */
+
+
 .dropdown-toggle {
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
     border-radius: var(--border-radius-sm) !important;
@@ -218,6 +244,10 @@
     border-radius: var(--border-radius-sm);
     box-shadow: var(--shadow-md);
     padding: 0.5rem 0;
+    z-index: 5055 !important;
+    position: absolute;
+    min-width: 200px;
+    transform: translateY(5px);
 }
 
 .dropdown-item {

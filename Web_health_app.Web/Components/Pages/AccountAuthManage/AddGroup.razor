@@ -1,0 +1,179 @@
+﻿@page "/AccountAuthManage/AddGroup"
+@using Web_health_app.Web.Components.Layout
+
+@layout EmptyLayout
+
+<link href="/css/AccountAuthManage/add-group.css" rel="stylesheet" />
+
+<div class="add-group-container">
+    <div class="add-group-card">
+        <!-- Header -->
+        <div class="card-header">
+            <div class="header-content">
+                <div class="header-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="header-text">
+                    <h2>Thêm Nhóm Người Dùng</h2>
+                    <p>Tạo nhóm mới để quản lý quyền truy cập hệ thống</p>
+                </div>
+            </div>
+            <button type="button" class="btn-close" onclick="window.history.back()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Form Body -->
+        <div class="card-body">
+            <form class="add-group-form">
+                <!-- Group Information Section -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-info-circle"></i>
+                        Thông Tin Nhóm
+                    </h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-hashtag"></i>
+                                Mã Nhóm <span class="required">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="groupId" name="groupId" 
+                                   placeholder="Nhập mã nhóm (tự động sinh)" readonly />
+                            <small class="form-text">Mã nhóm sẽ được tự động sinh khi lưu</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-tag"></i>
+                                Tên Nhóm <span class="required">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="groupName" name="groupName" 
+                                   placeholder="Nhập tên nhóm (tối đa 50 ký tự)" maxlength="50" required />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-clock"></i>
+                                Thời Gian Hoạt Động
+                            </label>
+                            <input type="text" class="form-control" id="timeActive" name="timeActive" 
+                                   placeholder="VD: 08:00-18:00, 24/7, Theo ca..." maxlength="20" />
+                            <small class="form-text">Mô tả thời gian nhóm có thể hoạt động</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-toggle-on"></i>
+                                Trạng Thái
+                            </label>
+                            <div class="status-toggle">
+                                <input type="checkbox" id="isActive" name="isActive" class="toggle-input" checked />
+                                <label for="isActive" class="toggle-label">
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-text">Hoạt động</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Group Description Section -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-align-left"></i>
+                        Mô Tả Nhóm
+                    </h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                <i class="fas fa-edit"></i>
+                                Mô Tả Chi Tiết
+                            </label>
+                            <textarea class="form-control" id="description" name="description" rows="4" 
+                                      placeholder="Mô tả mục đích, chức năng và phạm vi hoạt động của nhóm..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Group Settings Section -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-cogs"></i>
+                        Cài Đặt Nhóm
+                    </h3>
+                    
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <div class="setting-icon">
+                                <i class="fas fa-users-cog"></i>
+                            </div>
+                            <div class="setting-content">
+                                <h4>Quản Lý Thành Viên</h4>
+                                <p>Cho phép thêm/xóa thành viên tự động</p>
+                                <div class="setting-toggle">
+                                    <input type="checkbox" id="autoManage" class="mini-toggle" />
+                                    <label for="autoManage" class="mini-toggle-label"></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-icon">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                            <div class="setting-content">
+                                <h4>Thông Báo</h4>
+                                <p>Gửi thông báo khi có thay đổi nhóm</p>
+                                <div class="setting-toggle">
+                                    <input type="checkbox" id="notifications" class="mini-toggle" checked />
+                                    <label for="notifications" class="mini-toggle-label"></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-icon">
+                                <i class="fas fa-history"></i>
+                            </div>
+                            <div class="setting-content">
+                                <h4>Lưu Lịch Sử</h4>
+                                <p>Theo dõi hoạt động của nhóm</p>
+                                <div class="setting-toggle">
+                                    <input type="checkbox" id="trackHistory" class="mini-toggle" checked />
+                                    <label for="trackHistory" class="mini-toggle-label"></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="card-footer">
+            <div class="action-buttons">
+                <button type="button" class="btn btn-reset">
+                    <i class="fas fa-redo"></i>
+                    Làm Mới
+                </button>
+                <button type="button" class="btn btn-cancel" onclick="window.history.back()">
+                    <i class="fas fa-times"></i>
+                    Hủy Bỏ
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    Lưu Nhóm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    
+}
