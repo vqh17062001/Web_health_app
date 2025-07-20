@@ -293,11 +293,11 @@ textarea.form-control {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.toggle-input:checked + .toggle-label .toggle-slider {
+.toggle-input:checked+.toggle-label .toggle-slider {
     background: var(--primary-purple);
 }
 
-.toggle-input:checked + .toggle-label .toggle-slider::before {
+.toggle-input:checked+.toggle-label .toggle-slider::before {
     transform: translateX(24px);
 }
 
@@ -389,11 +389,11 @@ textarea.form-control {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.mini-toggle:checked + .mini-toggle-label {
+.mini-toggle:checked+.mini-toggle-label {
     background: var(--primary-purple);
 }
 
-.mini-toggle:checked + .mini-toggle-label::before {
+.mini-toggle:checked+.mini-toggle-label::before {
     transform: translateX(16px);
 }
 
@@ -696,6 +696,7 @@ textarea.form-control {
         opacity: 0;
         transform: translateY(30px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
