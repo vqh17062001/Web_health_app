@@ -1,0 +1,388 @@
+﻿@page "/accountAuthManage/addrole"
+@using Web_health_app.Web.Components.Layout
+
+@layout EmptyLayout
+
+<link href="/css/AccountAuthManage/add-role.css" rel="stylesheet" />
+
+<div class="add-role-container">
+    <div class="add-role-card">
+        <!-- Header -->
+        <div class="card-header">
+            <div class="header-content">
+                <div class="header-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="header-text">
+                    <h2>Thêm Vai Trò Mới</h2>
+                    <p>Tạo vai trò và phân quyền trong hệ thống</p>
+                </div>
+            </div>
+            <button type="button" class="btn-close" aria-label="Đóng">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Form Content -->
+        <div class="card-body">
+            <form class="add-role-form">
+                <!-- Basic Role Information -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-info-circle"></i>
+                        Thông tin cơ bản
+                    </h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-tag"></i>
+                                Mã vai trò <span class="required">*</span>
+                            </label>
+                            <input type="text" class="form-control" placeholder="Nhập mã vai trò (role_ID)"
+                                maxlength="50">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-signature"></i>
+                                Tên vai trò <span class="required">*</span>
+                            </label>
+                            <input type="text" class="form-control" placeholder="Nhập tên vai trò (role_name)"
+                                maxlength="100">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                <i class="fas fa-align-left"></i>
+                                Mô tả vai trò
+                            </label>
+                            <textarea class="form-control" rows="3"
+                                placeholder="Nhập mô tả chi tiết về vai trò này..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-toggle-on"></i>
+                                Trạng thái
+                            </label>
+                            <select class="form-select">
+                                <option value="true">Hoạt động</option>
+                                <option value="false">Tạm khóa</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-layer-group"></i>
+                                Mức độ ưu tiên
+                            </label>
+                            <select class="form-select">
+                                <option value="1">Cao nhất</option>
+                                <option value="2">Cao</option>
+                                <option value="3">Trung bình</option>
+                                <option value="4">Thấp</option>
+                                <option value="5">Thấp nhất</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Permissions Section -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-key"></i>
+                        Phân quyền truy cập
+                    </h3>
+
+                    <div class="permissions-container">
+                        <!-- Permission Categories -->
+                        <div class="permission-tabs">
+                            <button type="button" class="tab-button active" data-category="user-management">
+                                <i class="fas fa-users"></i>
+                                Quản lý người dùng
+                            </button>
+                            <button type="button" class="tab-button" data-category="role-management">
+                                <i class="fas fa-shield-alt"></i>
+                                Quản lý vai trò
+                            </button>
+                            <button type="button" class="tab-button" data-category="system-settings">
+                                <i class="fas fa-cog"></i>
+                                Cài đặt hệ thống
+                            </button>
+                            <button type="button" class="tab-button" data-category="reports">
+                                <i class="fas fa-chart-bar"></i>
+                                Báo cáo
+                            </button>
+                        </div>
+
+                        <!-- Permission Content -->
+                        <div class="permission-content">
+                            <!-- User Management Permissions -->
+                            <div class="permission-category active" data-category="user-management">
+                                <div class="permission-table">
+                                    <div class="table-header">
+                                        <div class="module-col">Module</div>
+                                        <div class="action-col">Xem</div>
+                                        <div class="action-col">Thêm</div>
+                                        <div class="action-col">Sửa</div>
+                                        <div class="action-col">Xóa</div>
+                                        <div class="action-col">Xuất</div>
+                                    </div>
+
+                                    <div class="table-row">
+                                        <div class="module-name">
+                                            <i class="fas fa-user"></i>
+                                            Người dùng
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="user-read" class="permission-checkbox">
+                                            <label for="user-read" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="user-create" class="permission-checkbox">
+                                            <label for="user-create" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="user-update" class="permission-checkbox">
+                                            <label for="user-update" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="user-delete" class="permission-checkbox">
+                                            <label for="user-delete" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="user-export" class="permission-checkbox">
+                                            <label for="user-export" class="checkbox-label"></label>
+                                        </div>
+                                    </div>
+
+                                    <div class="table-row">
+                                        <div class="module-name">
+                                            <i class="fas fa-users-cog"></i>
+                                            Nhóm người dùng
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="group-read" class="permission-checkbox">
+                                            <label for="group-read" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="group-create" class="permission-checkbox">
+                                            <label for="group-create" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="group-update" class="permission-checkbox">
+                                            <label for="group-update" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="group-delete" class="permission-checkbox">
+                                            <label for="group-delete" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="group-export" class="permission-checkbox">
+                                            <label for="group-export" class="checkbox-label"></label>
+                                        </div>
+                                    </div>
+
+                                    <div class="table-row">
+                                        <div class="module-name">
+                                            <i class="fas fa-user-lock"></i>
+                                            Phân quyền
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="permission-read" class="permission-checkbox">
+                                            <label for="permission-read" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="permission-create" class="permission-checkbox">
+                                            <label for="permission-create" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="permission-update" class="permission-checkbox">
+                                            <label for="permission-update" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="permission-delete" class="permission-checkbox">
+                                            <label for="permission-delete" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="permission-export" class="permission-checkbox">
+                                            <label for="permission-export" class="checkbox-label"></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Role Management Permissions -->
+                            <div class="permission-category" data-category="role-management">
+                                <div class="permission-table">
+                                    <div class="table-header">
+                                        <div class="module-col">Module</div>
+                                        <div class="action-col">Xem</div>
+                                        <div class="action-col">Thêm</div>
+                                        <div class="action-col">Sửa</div>
+                                        <div class="action-col">Xóa</div>
+                                        <div class="action-col">Xuất</div>
+                                    </div>
+
+                                    <div class="table-row">
+                                        <div class="module-name">
+                                            <i class="fas fa-shield-alt"></i>
+                                            Vai trò hệ thống
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="role-read" class="permission-checkbox">
+                                            <label for="role-read" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="role-create" class="permission-checkbox">
+                                            <label for="role-create" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="role-update" class="permission-checkbox">
+                                            <label for="role-update" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="role-delete" class="permission-checkbox">
+                                            <label for="role-delete" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="role-export" class="permission-checkbox">
+                                            <label for="role-export" class="checkbox-label"></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- System Settings Permissions -->
+                            <div class="permission-category" data-category="system-settings">
+                                <div class="permission-table">
+                                    <div class="table-header">
+                                        <div class="module-col">Module</div>
+                                        <div class="action-col">Xem</div>
+                                        <div class="action-col">Thêm</div>
+                                        <div class="action-col">Sửa</div>
+                                        <div class="action-col">Xóa</div>
+                                        <div class="action-col">Xuất</div>
+                                    </div>
+
+                                    <div class="table-row">
+                                        <div class="module-name">
+                                            <i class="fas fa-cogs"></i>
+                                            Cấu hình hệ thống
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="config-read" class="permission-checkbox">
+                                            <label for="config-read" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="config-create" class="permission-checkbox">
+                                            <label for="config-create" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="config-update" class="permission-checkbox">
+                                            <label for="config-update" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="config-delete" class="permission-checkbox">
+                                            <label for="config-delete" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="config-export" class="permission-checkbox">
+                                            <label for="config-export" class="checkbox-label"></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Reports Permissions -->
+                            <div class="permission-category" data-category="reports">
+                                <div class="permission-table">
+                                    <div class="table-header">
+                                        <div class="module-col">Module</div>
+                                        <div class="action-col">Xem</div>
+                                        <div class="action-col">Thêm</div>
+                                        <div class="action-col">Sửa</div>
+                                        <div class="action-col">Xóa</div>
+                                        <div class="action-col">Xuất</div>
+                                    </div>
+
+                                    <div class="table-row">
+                                        <div class="module-name">
+                                            <i class="fas fa-chart-line"></i>
+                                            Báo cáo thống kê
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="report-read" class="permission-checkbox">
+                                            <label for="report-read" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="report-create" class="permission-checkbox">
+                                            <label for="report-create" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="report-update" class="permission-checkbox">
+                                            <label for="report-update" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="report-delete" class="permission-checkbox">
+                                            <label for="report-delete" class="checkbox-label"></label>
+                                        </div>
+                                        <div class="action-checkbox">
+                                            <input type="checkbox" id="report-export" class="permission-checkbox">
+                                            <label for="report-export" class="checkbox-label"></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="permission-actions">
+                            <button type="button" class="btn-action btn-select-all">
+                                <i class="fas fa-check-square"></i>
+                                Chọn tất cả
+                            </button>
+                            <button type="button" class="btn-action btn-deselect-all">
+                                <i class="fas fa-square"></i>
+                                Bỏ chọn tất cả
+                            </button>
+                            <button type="button" class="btn-action btn-select-read">
+                                <i class="fas fa-eye"></i>
+                                Chỉ chọn xem
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="card-footer">
+            <div class="action-buttons">
+                <button type="button" class="btn btn-cancel">
+                    <i class="fas fa-times"></i>
+                    Hủy
+                </button>
+                <button type="button" class="btn btn-reset">
+                    <i class="fas fa-undo"></i>
+                    Đặt lại
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    Lưu vai trò
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+}
+
+                               
+                               
+                               
