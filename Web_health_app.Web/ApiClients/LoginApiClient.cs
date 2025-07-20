@@ -127,22 +127,9 @@ namespace Web_health_app.Web.ApiClients
         public T? Data { get; set; }
     }
 
-    public class AuthResponse
-    {
-        public string Token { get; set; } = string.Empty;
-        public string RefreshToken { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
-        public DateTime Expiration { get; set; }
-        public string Username { get; set; } = string.Empty;
-    }
+  
 
-    public class RefreshTokenRequest
-    {
-        public string RefreshToken { get; set; } = string.Empty;
-    }
+    
 }
-public class RefreshTokenRequest
-{
-    public string RefreshToken { get; set; } = string.Empty;
-}
+
 
