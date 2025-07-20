@@ -5,242 +5,246 @@
 <link href="/css/AccountAuthManage/MainViewAccount.css" rel="stylesheet" />
 
 <div class="account-auth-page">
-<div class="container-fluid mt-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h3 class="mb-4">Quản lý Phân quyền và Truy cập</h3>
+    <div class="container-fluid mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h3 class="mb-4">Quản lý Phân quyền và Truy cập</h3>
 
-            <!-- Filter and Search Bar -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-3">
-                            <label for="filterSelect" class="form-label">Lọc theo:</label>
-                            <select id="filterSelect" class="form-select">
-                                <option value="users">Người dùng</option>
-                                <option value="roles">Vai trò</option>
-                                <option value="usergroups">Nhóm người dùng</option>
-                            </select>
-                        </div>
-                        <div class="col-md-7">
-                            <label for="searchInput" class="form-label">Tìm kiếm:</label>
-                            <input type="text" id="searchInput" class="form-control"
-                                placeholder="Nhập từ khóa tìm kiếm...">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">&nbsp;</label>
-                            <a href="#" class="btn btn-primary w-100 d-block">
-                                <i class="fas fa-plus me-2"></i>Thêm mới
-                            </a>
+                <!-- Filter and Search Bar -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <label for="filterSelect" class="form-label">Lọc theo:</label>
+                                <select id="filterSelect" class="form-select">
+                                    <option value="users">Người dùng</option>
+                                    <option value="roles">Vai trò</option>
+                                    <option value="usergroups">Nhóm người dùng</option>
+                                </select>
+                            </div>
+                            <div class="col-md-7">
+                                <label for="searchInput" class="form-label">Tìm kiếm:</label>
+                                <input type="text" id="searchInput" class="form-control"
+                                    placeholder="Nhập từ khóa tìm kiếm...">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <a href="#" class="btn btn-primary w-100 d-block">
+                                    <i class="fas fa-plus me-2"></i>Thêm mới
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Content Cards -->
-    <div class="row">
-        <div class="col-12">
-            <div class="row g-4" id="contentCards">
-                <!-- Sample Card 1 -->
-                <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                    <div class="card h-100 shadow-sm">
-                        <div
-                            class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0">Người dùng</h6>
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
-                                    id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-ellipsis-v"></i>
-                                </button>
-                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                                    <li><a class="dropdown-item" href="#">Xem chi tiết</a></li>
-                                    <li><a class="dropdown-item" href="#">Chỉnh sửa</a></li>
-                                    <li>
-                                        <hr class="dropdown-divider">
-                                    </li>
-                                    <li><a class="dropdown-item text-danger" href="#">Xóa</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="avatar-circle bg-info text-white me-3">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-1">Nguyễn Văn A</h6>
-                                    <small class="text-muted">admin@example.com</small>
+        <!-- Content Cards -->
+        <div class="row">
+            <div class="col-12">
+                <div class="row g-4" id="contentCards">
+                    <!-- Sample Card 1 -->
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                        <div class="card h-100 shadow-sm">
+                            <div
+                                class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Người dùng</h6>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
+                                        id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                                        <li><a class="dropdown-item" href="#">Xem chi tiết</a></li>
+                                        <li><a class="dropdown-item" href="#">Chỉnh sửa</a></li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li><a class="dropdown-item text-danger" href="#">Xóa</a></li>
+                                    </ul>
                                 </div>
                             </div>
-                            <div class="mb-2">
-                                <span class="badge bg-success me-1">Admin</span>
-                                <span class="badge bg-secondary">Manager</span>
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="avatar-circle bg-info text-white me-3">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">Nguyễn Văn A</h6>
+                                        <small class="text-muted">admin@example.com</small>
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="badge bg-success me-1">Admin</span>
+                                    <span class="badge bg-secondary">Manager</span>
+                                </div>
+                                <p class="card-text text-muted small mb-2">Nhóm: IT Department</p>
+                                <p class="card-text text-muted small">Trạng thái: <span class="text-success">Hoạt
+                                        động</span></p>
                             </div>
-                            <p class="card-text text-muted small mb-2">Nhóm: IT Department</p>
-                            <p class="card-text text-muted small">Trạng thái: <span class="text-success">Hoạt
-                                    động</span></p>
-                        </div>
-                        <div class="card-footer bg-light">
-                            <small class="text-muted">Cập nhật: 20/07/2025</small>
+                            <div class="card-footer bg-light">
+                                <small class="text-muted">Cập nhật: 20/07/2025</small>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Sample Card 2 -->
-                <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                    <div class="card h-100 shadow-sm">
-                        <div
-                            class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0">Vai trò</h6>
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
-                                    id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-ellipsis-v"></i>
-                                </button>
-                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
-                                    <li><a class="dropdown-item" href="#">Xem chi tiết</a></li>
-                                    <li><a class="dropdown-item" href="#">Chỉnh sửa</a></li>
-                                    <li>
-                                        <hr class="dropdown-divider">
-                                    </li>
-                                    <li><a class="dropdown-item text-danger" href="#">Xóa</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="avatar-circle bg-success text-white me-3">
-                                    <i class="fas fa-shield-alt"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-1">Administrator</h6>
-                                    <small class="text-muted">Quản trị viên hệ thống</small>
+                    <!-- Sample Card 2 -->
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                        <div class="card h-100 shadow-sm">
+                            <div
+                                class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Vai trò</h6>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
+                                        id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
+                                        <li><a class="dropdown-item" href="#">Xem chi tiết</a></li>
+                                        <li><a class="dropdown-item" href="#">Chỉnh sửa</a></li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li><a class="dropdown-item text-danger" href="#">Xóa</a></li>
+                                    </ul>
                                 </div>
                             </div>
-                            <div class="mb-2">
-                                <span class="badge bg-primary me-1">Toàn quyền</span>
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="avatar-circle bg-success text-white me-3">
+                                        <i class="fas fa-shield-alt"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">Administrator</h6>
+                                        <small class="text-muted">Quản trị viên hệ thống</small>
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="badge bg-primary me-1">Toàn quyền</span>
+                                </div>
+                                <p class="card-text text-muted small mb-2">Quyền: Create, Read, Update, Delete</p>
+                                <p class="card-text text-muted small">Người dùng: <span class="text-info">5 người</span>
+                                </p>
                             </div>
-                            <p class="card-text text-muted small mb-2">Quyền: Create, Read, Update, Delete</p>
-                            <p class="card-text text-muted small">Người dùng: <span class="text-info">5 người</span></p>
-                        </div>
-                        <div class="card-footer bg-light">
-                            <small class="text-muted">Tạo: 15/07/2025</small>
+                            <div class="card-footer bg-light">
+                                <small class="text-muted">Tạo: 15/07/2025</small>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Sample Card 3 -->
-                <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0">Nhóm người dùng</h6>
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-outline-dark dropdown-toggle" type="button"
-                                    id="dropdownMenuButton3" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-ellipsis-v"></i>
-                                </button>
-                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton3">
-                                    <li><a class="dropdown-item" href="#">Xem chi tiết</a></li>
-                                    <li><a class="dropdown-item" href="#">Chỉnh sửa</a></li>
-                                    <li>
-                                        <hr class="dropdown-divider">
-                                    </li>
-                                    <li><a class="dropdown-item text-danger" href="#">Xóa</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="avatar-circle bg-warning text-dark me-3">
-                                    <i class="fas fa-users"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-1">IT Department</h6>
-                                    <small class="text-muted">Phòng Công nghệ thông tin</small>
+                    <!-- Sample Card 3 -->
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                        <div class="card h-100 shadow-sm">
+                            <div
+                                class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Nhóm người dùng</h6>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-dark dropdown-toggle" type="button"
+                                        id="dropdownMenuButton3" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton3">
+                                        <li><a class="dropdown-item" href="#">Xem chi tiết</a></li>
+                                        <li><a class="dropdown-item" href="#">Chỉnh sửa</a></li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li><a class="dropdown-item text-danger" href="#">Xóa</a></li>
+                                    </ul>
                                 </div>
                             </div>
-                            <div class="mb-2">
-                                <span class="badge bg-info me-1">Technical</span>
-                                <span class="badge bg-secondary">Support</span>
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="avatar-circle bg-warning text-dark me-3">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">IT Department</h6>
+                                        <small class="text-muted">Phòng Công nghệ thông tin</small>
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="badge bg-info me-1">Technical</span>
+                                    <span class="badge bg-secondary">Support</span>
+                                </div>
+                                <p class="card-text text-muted small mb-2">Thành viên: <span class="text-info">12
+                                        người</span></p>
+                                <p class="card-text text-muted small">Trưởng nhóm: Nguyễn Văn B</p>
                             </div>
-                            <p class="card-text text-muted small mb-2">Thành viên: <span class="text-info">12
-                                    người</span></p>
-                            <p class="card-text text-muted small">Trưởng nhóm: Nguyễn Văn B</p>
-                        </div>
-                        <div class="card-footer bg-light">
-                            <small class="text-muted">Cập nhật: 18/07/2025</small>
+                            <div class="card-footer bg-light">
+                                <small class="text-muted">Cập nhật: 18/07/2025</small>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Sample Card 4 -->
-                <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0">Người dùng</h6>
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
-                                    id="dropdownMenuButton4" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-ellipsis-v"></i>
-                                </button>
-                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton4">
-                                    <li><a class="dropdown-item" href="#">Xem chi tiết</a></li>
-                                    <li><a class="dropdown-item" href="#">Chỉnh sửa</a></li>
-                                    <li>
-                                        <hr class="dropdown-divider">
-                                    </li>
-                                    <li><a class="dropdown-item text-danger" href="#">Xóa</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="avatar-circle bg-secondary text-white me-3">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-1">Trần Thị B</h6>
-                                    <small class="text-muted">user@example.com</small>
+                    <!-- Sample Card 4 -->
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                        <div class="card h-100 shadow-sm">
+                            <div
+                                class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Người dùng</h6>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
+                                        id="dropdownMenuButton4" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton4">
+                                        <li><a class="dropdown-item" href="#">Xem chi tiết</a></li>
+                                        <li><a class="dropdown-item" href="#">Chỉnh sửa</a></li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li><a class="dropdown-item text-danger" href="#">Xóa</a></li>
+                                    </ul>
                                 </div>
                             </div>
-                            <div class="mb-2">
-                                <span class="badge bg-info me-1">User</span>
-                                <span class="badge bg-light text-dark">Viewer</span>
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="avatar-circle bg-secondary text-white me-3">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">Trần Thị B</h6>
+                                        <small class="text-muted">user@example.com</small>
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="badge bg-info me-1">User</span>
+                                    <span class="badge bg-light text-dark">Viewer</span>
+                                </div>
+                                <p class="card-text text-muted small mb-2">Nhóm: HR Department</p>
+                                <p class="card-text text-muted small">Trạng thái: <span class="text-warning">Tạm
+                                        khóa</span>
+                                </p>
                             </div>
-                            <p class="card-text text-muted small mb-2">Nhóm: HR Department</p>
-                            <p class="card-text text-muted small">Trạng thái: <span class="text-warning">Tạm khóa</span>
-                            </p>
-                        </div>
-                        <div class="card-footer bg-light">
-                            <small class="text-muted">Cập nhật: 19/07/2025</small>
+                            <div class="card-footer bg-light">
+                                <small class="text-muted">Cập nhật: 19/07/2025</small>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Pagination -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <nav aria-label="Phân trang">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#" tabindex="-1">Trước</a>
-                    </li>
-                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                    <li class="page-item"><a class="page-link" href="#">2</a></li>
-                    <li class="page-item"><a class="page-link" href="#">3</a></li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">Sau</a>
-                    </li>
-                </ul>
-            </nav>
+        <!-- Pagination -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <nav aria-label="Phân trang">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1">Trước</a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">Sau</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
         </div>
     </div>
-</div>
 </div>
 
 @code {
