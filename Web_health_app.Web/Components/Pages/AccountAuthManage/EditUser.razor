@@ -1,0 +1,343 @@
+﻿@page "/accountAuthManage/edituser"
+@using Web_health_app.Web.Components.Layout
+
+@layout EmptyLayout
+
+<link href="/css/AccountAuthManage/edit-user.css" rel="stylesheet" />
+
+<div class="edit-user-container">
+    <div class="edit-user-card">
+        <!-- Header -->
+        <div class="card-header">
+            <div class="header-content">
+                <div class="header-icon">
+                    <i class="fas fa-user-edit"></i>
+                </div>
+                <div class="header-text">
+                    <h2>Chỉnh Sửa Người Dùng</h2>
+                    <p>Cập nhật thông tin tài khoản người dùng</p>
+                </div>
+            </div>
+            <button type="button" class="btn-close" aria-label="Đóng">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Form Content -->
+        <div class="card-body">
+            <form class="edit-user-form">
+                <!-- Current User Info Display -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-info-circle"></i>
+                        Thông tin hiện tại
+                    </h4>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-clock"></i>
+                                Ngày tạo
+                            </label>
+                            <div class="info-display">
+                                <i class="fas fa-calendar-plus"></i>
+                                15/07/2024 - 10:30 AM
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-sync-alt"></i>
+                                Lần cập nhật cuối
+                            </label>
+                            <div class="info-display">
+                                <i class="fas fa-calendar-edit"></i>
+                                20/07/2024 - 02:15 PM
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-toggle-on"></i>
+                                Trạng thái hiện tại
+                            </label>
+                            <div class="status-badge active">
+                                <i class="fas fa-check-circle"></i>
+                                Đang hoạt động
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-sign-in-alt"></i>
+                                Đăng nhập cuối
+                            </label>
+                            <div class="info-display">
+                                <i class="fas fa-clock"></i>
+                                20/07/2024 - 09:45 AM
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Basic Information -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="userId" class="form-label">
+                            <i class="fas fa-id-card"></i>
+                            Mã người dùng <span class="required">*</span>
+                        </label>
+                        <input type="text" id="userId" class="form-control" value="USR001" disabled />
+                    </div>
+                    <div class="form-group">
+                        <label for="userName" class="form-label">
+                            <i class="fas fa-user"></i>
+                            Tên người dùng <span class="required">*</span>
+                        </label>
+                        <input type="text" id="userName" class="form-control" value="johndoe" placeholder="Nhập tên người dùng" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="fullName" class="form-label">
+                            <i class="fas fa-address-card"></i>
+                            Họ và tên đầy đủ <span class="required">*</span>
+                        </label>
+                        <input type="text" id="fullName" class="form-control" value="Nguyễn Văn A" placeholder="Nhập họ và tên đầy đủ" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email" class="form-label">
+                            <i class="fas fa-envelope"></i>
+                            Email <span class="required">*</span>
+                        </label>
+                        <input type="email" id="email" class="form-control" value="johndoe@company.com" placeholder="Nhập địa chỉ email" />
+                    </div>
+                    <div class="form-group">
+                        <label for="phoneNumber" class="form-label">
+                            <i class="fas fa-phone"></i>
+                            Số điện thoại
+                        </label>
+                        <input type="tel" id="phoneNumber" class="form-control" value="+84 123 456 789" placeholder="Nhập số điện thoại" />
+                    </div>
+                </div>
+
+                <!-- Password Update Section -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-key"></i>
+                        Cập nhật mật khẩu
+                    </h4>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="currentPassword" class="form-label">
+                                <i class="fas fa-lock"></i>
+                                Mật khẩu hiện tại
+                            </label>
+                            <div class="password-input-group">
+                                <input type="password" id="currentPassword" class="form-control" placeholder="Nhập mật khẩu hiện tại" />
+                                <button type="button" class="password-toggle">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="newPassword" class="form-label">
+                                <i class="fas fa-key"></i>
+                                Mật khẩu mới
+                            </label>
+                            <div class="password-input-group">
+                                <input type="password" id="newPassword" class="form-control" placeholder="Nhập mật khẩu mới" />
+                                <button type="button" class="password-toggle">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="confirmPassword" class="form-label">
+                                <i class="fas fa-shield-alt"></i>
+                                Xác nhận mật khẩu mới
+                            </label>
+                            <div class="password-input-group">
+                                <input type="password" id="confirmPassword" class="form-control" placeholder="Xác nhận mật khẩu mới" />
+                                <button type="button" class="password-toggle">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <!-- Empty space for layout balance -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Organization Information -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-building"></i>
+                        Thông tin tổ chức
+                    </h4>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="department" class="form-label">
+                                <i class="fas fa-briefcase"></i>
+                                Phòng ban
+                            </label>
+                            <select id="department" class="form-select">
+                                <option value="">Chọn phòng ban</option>
+                                <option value="it" selected>Công nghệ thông tin</option>
+                                <option value="hr">Nhân sự</option>
+                                <option value="finance">Tài chính</option>
+                                <option value="marketing">Marketing</option>
+                                <option value="operations">Vận hành</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="position" class="form-label">
+                                <i class="fas fa-user-tie"></i>
+                                Chức vụ
+                            </label>
+                            <input type="text" id="position" class="form-control" value="Senior Developer" placeholder="Nhập chức vụ" />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="manageBy" class="form-label">
+                                <i class="fas fa-user-crown"></i>
+                                Được quản lý bởi
+                            </label>
+                            <select id="manageBy" class="form-select">
+                                <option value="">Chọn người quản lý</option>
+                                <option value="manager1" selected>Nguyễn Văn B - IT Manager</option>
+                                <option value="manager2">Trần Thị C - HR Manager</option>
+                                <option value="manager3">Lê Văn D - Finance Manager</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="groupId" class="form-label">
+                                <i class="fas fa-users"></i>
+                                Nhóm người dùng
+                            </label>
+                            <select id="groupId" class="form-select">
+                                <option value="">Chọn nhóm người dùng</option>
+                                <option value="1" selected>IT Development Team</option>
+                                <option value="2">IT Support Team</option>
+                                <option value="3">Management</option>
+                                <option value="4">Finance Team</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security & Access -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-shield-check"></i>
+                        Bảo mật & Truy cập
+                    </h4>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="userStatus" class="form-label">
+                                <i class="fas fa-toggle-on"></i>
+                                Trạng thái tài khoản
+                            </label>
+                            <select id="userStatus" class="form-select">
+                                <option value="active" selected>Hoạt động</option>
+                                <option value="inactive">Không hoạt động</option>
+                                <option value="pending">Chờ duyệt</option>
+                                <option value="suspended">Tạm khóa</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="levelSecurity" class="form-label">
+                                <i class="fas fa-lock"></i>
+                                Cấp độ bảo mật
+                            </label>
+                            <select id="levelSecurity" class="form-select">
+                                <option value="low">Thấp</option>
+                                <option value="medium" selected>Trung bình</option>
+                                <option value="high">Cao</option>
+                                <option value="critical">Tối mật</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="roleAssignment" class="form-label">
+                                <i class="fas fa-user-shield"></i>
+                                Vai trò được gán
+                            </label>
+                            <select id="roleAssignment" class="form-select" multiple style="height: 120px;">
+                                <option value="user" selected>User - Người dùng cơ bản</option>
+                                <option value="developer" selected>Developer - Nhà phát triển</option>
+                                <option value="team-lead">Team Lead - Trưởng nhóm</option>
+                                <option value="admin">Admin - Quản trị viên</option>
+                                <option value="hr-manager">HR Manager - Quản lý nhân sự</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="accessLevel" class="form-label">
+                                <i class="fas fa-key"></i>
+                                Mức độ truy cập
+                            </label>
+                            <select id="accessLevel" class="form-select">
+                                <option value="read">Chỉ đọc</option>
+                                <option value="write" selected>Đọc & Ghi</option>
+                                <option value="admin">Toàn quyền</option>
+                                <option value="custom">Tùy chỉnh</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Notes -->
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="notes" class="form-label">
+                            <i class="fas fa-sticky-note"></i>
+                            Ghi chú bổ sung
+                        </label>
+                        <textarea id="notes" class="form-control" rows="4" placeholder="Nhập ghi chú về người dùng này...">Người dùng có kinh nghiệm phát triển ứng dụng web với .NET và Angular. Đã làm việc tại công ty 3 năm.</textarea>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="card-footer">
+            <div class="action-buttons">
+                <button type="button" class="btn btn-cancel">
+                    <i class="fas fa-times"></i>
+                    Hủy bỏ
+                </button>
+                <button type="button" class="btn btn-danger">
+                    <i class="fas fa-trash-alt"></i>
+                    Xóa người dùng
+                </button>
+                <button type="button" class="btn btn-reset">
+                    <i class="fas fa-undo"></i>
+                    Khôi phục
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    Cập nhật thông tin
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+}
