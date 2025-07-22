@@ -1,0 +1,896 @@
+/* Daily Health Monitoring Styles - .NET 8 Health Theme */
+
+:root {
+    --primary-health: #059669;
+    --light-health: #10B981;
+    --dark-health: #047857;
+    --health-light-bg: #ECFDF5;
+    --health-border: #A7F3D0;
+    --success-green: #10B981;
+    --warning-orange: #F59E0B;
+    --error-red: #EF4444;
+    --info-blue: #3B82F6;
+    --gray-50: #F9FAFB;
+    --gray-100: #F3F4F6;
+    --gray-200: #E5E7EB;
+    --gray-300: #D1D5DB;
+    --gray-400: #9CA3AF;
+    --gray-500: #6B7280;
+    --gray-600: #4B5563;
+    --gray-700: #374151;
+    --gray-800: #1F2937;
+    --gray-900: #111827;
+}
+
+/* Page Layout */
+.daily-health-page {
+    background: linear-gradient(135deg, var(--health-light-bg) 0%, #FFFFFF 100%);
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Page Header */
+.page-header {
+    background: linear-gradient(135deg, var(--primary-health) 0%, var(--light-health) 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 20px rgba(5, 150, 105, 0.2);
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.header-icon {
+    width: 64px;
+    height: 64px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.15);
+}
+
+.header-text h2 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.header-text p {
+    margin: 0.5rem 0 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+    line-height: 1.4;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+    margin-left: auto;
+}
+
+.header-actions .btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.header-actions .btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+}
+
+.header-actions .btn-secondary {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Summary Cards */
+.summary-section {
+    margin-bottom: 2rem;
+}
+
+.summary-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--gray-200);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-health), var(--light-health));
+}
+
+.summary-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.summary-card.steps::before {
+    background: linear-gradient(90deg, #3B82F6, #60A5FA);
+}
+
+.summary-card.calories::before {
+    background: linear-gradient(90deg, #F59E0B, #FBBF24);
+}
+
+.summary-card.heart-rate::before {
+    background: linear-gradient(90deg, #EF4444, #F87171);
+}
+
+.summary-card.sleep::before {
+    background: linear-gradient(90deg, #8B5CF6, #A78BFA);
+}
+
+.card-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.summary-card.steps .card-icon {
+    background: linear-gradient(135deg, #3B82F6, #60A5FA);
+}
+
+.summary-card.calories .card-icon {
+    background: linear-gradient(135deg, #F59E0B, #FBBF24);
+}
+
+.summary-card.heart-rate .card-icon {
+    background: linear-gradient(135deg, #EF4444, #F87171);
+}
+
+.summary-card.sleep .card-icon {
+    background: linear-gradient(135deg, #8B5CF6, #A78BFA);
+}
+
+.card-content h3 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    line-height: 1;
+}
+
+.card-content p {
+    margin: 0.5rem 0 0;
+    color: var(--gray-600);
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.card-content small {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+/* Filter Section */
+.filter-section {
+    margin-bottom: 2rem;
+}
+
+.search-container {
+    position: relative;
+}
+
+.search-box {
+    position: relative;
+}
+
+.search-box .form-control {
+    padding-left: 3rem;
+    border-radius: 12px;
+    border: 2px solid var(--gray-200);
+    padding: 1rem 1rem 1rem 3rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.search-box .form-control:focus {
+    border-color: var(--primary-health);
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray-400);
+    font-size: 1.1rem;
+}
+
+.filter-controls {
+    display: flex;
+    gap: 1rem;
+}
+
+.filter-controls .form-select {
+    border-radius: 12px;
+    border: 2px solid var(--gray-200);
+    padding: 1rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.filter-controls .form-select:focus {
+    border-color: var(--primary-health);
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+/* Student Health Cards */
+.students-grid {
+    margin-bottom: 2rem;
+}
+
+.student-health-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--gray-200);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.student-health-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Student Header */
+.student-header {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, var(--gray-50) 0%, white 100%);
+    border-bottom: 1px solid var(--gray-200);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.student-avatar {
+    position: relative;
+    width: 56px;
+    height: 56px;
+}
+
+.student-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--primary-health);
+}
+
+.avatar-fallback {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-health), var(--light-health));
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.student-info {
+    flex: 1;
+}
+
+.student-info h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    line-height: 1.2;
+}
+
+.student-info p {
+    margin: 0 0 0.5rem 0;
+    color: var(--gray-600);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.active {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success-green);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-badge.warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning-orange);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.status-badge.excellent {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--info-blue);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.status-badge.inactive {
+    background: rgba(107, 114, 128, 0.1);
+    color: var(--gray-500);
+    border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+.sync-status {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.sync-status i {
+    font-size: 1.2rem;
+}
+
+.sync-status small {
+    color: var(--gray-500);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* Health Metrics */
+.health-metrics {
+    padding: 1.5rem;
+}
+
+.metric-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: var(--gray-50);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.metric-item:last-child {
+    margin-bottom: 0;
+}
+
+.metric-item:hover {
+    background: var(--health-light-bg);
+}
+
+.metric-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.metric-icon.steps-icon {
+    background: linear-gradient(135deg, #3B82F6, #60A5FA);
+}
+
+.metric-icon.calories-icon {
+    background: linear-gradient(135deg, #F59E0B, #FBBF24);
+}
+
+.metric-icon.heart-icon {
+    background: linear-gradient(135deg, #EF4444, #F87171);
+}
+
+.metric-icon.sleep-icon {
+    background: linear-gradient(135deg, #8B5CF6, #A78BFA);
+}
+
+.metric-data {
+    flex: 1;
+}
+
+.metric-value {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    line-height: 1;
+}
+
+.metric-label {
+    display: block;
+    color: var(--gray-600);
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-top: 0.25rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--gray-200);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 0.75rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-health), var(--light-health));
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.progress-fill.warning {
+    background: linear-gradient(90deg, var(--warning-orange), #FBBF24);
+}
+
+.progress-fill.excellent {
+    background: linear-gradient(90deg, var(--info-blue), #60A5FA);
+}
+
+.heart-rate-status,
+.sleep-quality {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
+.heart-rate-status.normal,
+.sleep-quality.good {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success-green);
+}
+
+.heart-rate-status.elevated {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning-orange);
+}
+
+.heart-rate-status.excellent,
+.sleep-quality.excellent {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--info-blue);
+}
+
+.sleep-quality.poor {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error-red);
+}
+
+/* Additional Metrics */
+.additional-metrics {
+    padding: 0 1.5rem 1.5rem;
+}
+
+.metric-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--gray-50);
+    border-radius: 12px;
+}
+
+.metric-col {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.metric-col i {
+    color: var(--primary-health);
+    font-size: 1.1rem;
+}
+
+.metric-col span {
+    font-weight: 700;
+    color: var(--gray-900);
+    font-size: 1rem;
+}
+
+.metric-col small {
+    color: var(--gray-600);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* No Data State */
+.health-metrics.no-data {
+    padding: 3rem 1.5rem;
+}
+
+.no-data-message {
+    text-align: center;
+    color: var(--gray-500);
+}
+
+.no-data-message i {
+    font-size: 3rem;
+    color: var(--gray-400);
+    margin-bottom: 1rem;
+}
+
+.no-data-message p {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--gray-700);
+}
+
+.no-data-message small {
+    font-size: 0.9rem;
+    color: var(--gray-500);
+}
+
+/* Card Actions */
+.card-actions {
+    padding: 1rem 1.5rem 1.5rem;
+    display: flex;
+    gap: 0.75rem;
+    border-top: 1px solid var(--gray-200);
+    background: var(--gray-50);
+}
+
+.card-actions .btn {
+    flex: 1;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
+.btn-outline-primary {
+    border: 2px solid var(--info-blue);
+    color: var(--info-blue);
+    background: white;
+}
+
+.btn-outline-primary:hover {
+    background: var(--info-blue);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.btn-outline-success {
+    border: 2px solid var(--success-green);
+    color: var(--success-green);
+    background: white;
+}
+
+.btn-outline-success:hover {
+    background: var(--success-green);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.btn-outline-warning {
+    border: 2px solid var(--warning-orange);
+    color: var(--warning-orange);
+    background: white;
+}
+
+.btn-outline-warning:hover {
+    background: var(--warning-orange);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.btn-outline-info {
+    border: 2px solid var(--gray-500);
+    color: var(--gray-500);
+    background: white;
+}
+
+.btn-outline-info:hover {
+    background: var(--gray-500);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-health), var(--light-health));
+    border: none;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--dark-health), var(--primary-health));
+    transform: translateY(-1px);
+}
+
+/* Pagination */
+.pagination-section {
+    padding: 2rem 0;
+    border-top: 1px solid var(--gray-200);
+    background: white;
+    border-radius: 16px;
+    margin-top: 2rem;
+}
+
+.pagination {
+    --bs-pagination-color: var(--primary-health);
+    --bs-pagination-hover-color: white;
+    --bs-pagination-hover-bg: var(--primary-health);
+    --bs-pagination-active-bg: var(--primary-health);
+    --bs-pagination-active-border-color: var(--primary-health);
+}
+
+.page-link {
+    border-radius: 8px;
+    margin: 0 0.25rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.page-link:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+
+    .header-actions {
+        margin-left: 0;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        padding: 1.5rem 0;
+    }
+
+    .header-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 1.5rem;
+    }
+
+    .header-text h2 {
+        font-size: 1.5rem;
+    }
+
+    .header-text p {
+        font-size: 1rem;
+    }
+
+    .header-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .summary-card {
+        padding: 1.5rem;
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+
+    .card-content h3 {
+        font-size: 2rem;
+    }
+
+    .filter-controls {
+        flex-direction: column;
+    }
+
+    .student-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+
+    .sync-status {
+        flex-direction: row;
+        gap: 0.5rem;
+    }
+
+    .metric-row {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .metric-col {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .card-actions {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 576px) {
+    .summary-card .card-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.2rem;
+    }
+
+    .card-content h3 {
+        font-size: 1.8rem;
+    }
+
+    .student-health-card {
+        border-radius: 16px;
+    }
+
+    .student-header {
+        padding: 1rem;
+    }
+
+    .health-metrics {
+        padding: 1rem;
+    }
+
+    .metric-item {
+        padding: 0.75rem;
+    }
+
+    .metric-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+
+    .metric-value {
+        font-size: 1.2rem;
+    }
+
+    .additional-metrics {
+        padding: 0 1rem 1rem;
+    }
+
+    .card-actions {
+        padding: 1rem;
+    }
+}
+
+/* Loading States */
+.loading-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* Animation for cards entrance */
+.student-health-card {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.student-health-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.student-health-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.student-health-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.student-health-card:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.student-health-card:nth-child(5) {
+    animation-delay: 0.5s;
+}
+
+.student-health-card:nth-child(6) {
+    animation-delay: 0.6s;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Focus states for accessibility */
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+    outline: 2px solid var(--primary-health);
+    outline-offset: 2px;
+}
+
+/* Custom scrollbar */
+.card-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.card-body::-webkit-scrollbar-track {
+    background: var(--gray-100);
+    border-radius: 3px;
+}
+
+.card-body::-webkit-scrollbar-thumb {
+    background: var(--primary-health);
+    border-radius: 3px;
+}
+
+.card-body::-webkit-scrollbar-thumb:hover {
+    background: var(--dark-health);
+}

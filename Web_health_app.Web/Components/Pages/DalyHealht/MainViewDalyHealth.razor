@@ -1,0 +1,674 @@
+﻿@page "/dalyhealth/mainview"
+@using Web_health_app.Web.Components.Layout
+
+@layout MainLayout
+
+<link href="/css/DalyHealth/daily-health.css" rel="stylesheet" />
+
+<div class="daily-health-page">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container-fluid">
+            <div class="header-content">
+                <div class="header-icon">
+                    <i class="fas fa-heartbeat"></i>
+                </div>
+                <div class="header-text">
+                    <h2>Theo Dõi Sức Khỏe Hàng Ngày</h2>
+                    <p>Quản lý và theo dõi các chỉ số sức khỏe của học sinh từ Samsung Health</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary">
+                    <i class="fas fa-sync-alt"></i>
+                    Đồng Bộ Dữ Liệu
+                </button>
+                <button class="btn btn-secondary">
+                    <i class="fas fa-download"></i>
+                    Xuất Báo Cáo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Health Summary Cards -->
+    <div class="container-fluid">
+        
+
+        <!-- Filter and Search Section -->
+        <div class="filter-section">
+            <div class="row">
+                <div class="col-lg-8 col-md-7">
+                    <div class="search-container">
+                        <div class="search-box">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" class="form-control" placeholder="Tìm kiếm học sinh theo tên, lớp hoặc mã số..." />
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-5">
+                    <div class="filter-controls">
+                        <select class="form-select">
+                            <option>Tất cả lớp</option>
+                            <option>Lớp 10A1</option>
+                            <option>Lớp 10A2</option>
+                            <option>Lớp 11B1</option>
+                            <option>Lớp 12C1</option>
+                        </select>
+                        <select class="form-select">
+                            <option>Hôm nay</option>
+                            <option>7 ngày qua</option>
+                            <option>30 ngày qua</option>
+                            <option>Tùy chọn</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Students Health Data Grid -->
+        <div class="students-grid">
+            <div class="row">
+                <!-- Student Card 1 -->
+                <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
+                    <div class="student-health-card">
+                        <div class="student-header">
+                            <div class="student-avatar">
+                                <img src="/images/avatars/student1.jpg" alt="Nguyễn Văn An" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                                <div class="avatar-fallback">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            </div>
+                            <div class="student-info">
+                                <h4>Nguyễn Văn An</h4>
+                                <p>Lớp 10A1 - Mã: HS001</p>
+                                <span class="status-badge active">Đang hoạt động</span>
+                            </div>
+                            <div class="sync-status">
+                                <i class="fas fa-check-circle text-success" title="Đã đồng bộ"></i>
+                                <small>2 phút trước</small>
+                            </div>
+                        </div>
+
+                        <div class="health-metrics">
+                            <div class="metric-item">
+                                <div class="metric-icon steps-icon">
+                                    <i class="fas fa-walking"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-value">8,234</span>
+                                    <span class="metric-label">Bước chân</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: 82%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="metric-item">
+                                <div class="metric-icon calories-icon">
+                                    <i class="fas fa-fire"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-value">1,845</span>
+                                    <span class="metric-label">Calories</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: 74%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="metric-item">
+                                <div class="metric-icon heart-icon">
+                                    <i class="fas fa-heart"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-value">68 BPM</span>
+                                    <span class="metric-label">Nhịp tim</span>
+                                    <div class="heart-rate-status normal">Bình thường</div>
+                                </div>
+                            </div>
+
+                            <div class="metric-item">
+                                <div class="metric-icon sleep-icon">
+                                    <i class="fas fa-moon"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-value">8.2h</span>
+                                    <span class="metric-label">Giấc ngủ</span>
+                                    <div class="sleep-quality good">Chất lượng tốt</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="additional-metrics">
+                            <div class="metric-row">
+                                <div class="metric-col">
+                                    <i class="fas fa-dumbbell"></i>
+                                    <span>45 phút</span>
+                                    <small>Vận động</small>
+                                </div>
+                                <div class="metric-col">
+                                    <i class="fas fa-glass-water"></i>
+                                    <span>1.8L</span>
+                                    <small>Nước uống</small>
+                                </div>
+                                <div class="metric-col">
+                                    <i class="fas fa-thermometer-half"></i>
+                                    <span>36.5°C</span>
+                                    <small>Thân nhiệt</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-actions">
+                            <button class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-chart-line"></i>
+                                Chi tiết
+                            </button>
+                            <button class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-bell"></i>
+                                Nhắc nhở
+                            </button>
+                            <button class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-comments"></i>
+                                Ghi chú
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Student Card 2 -->
+                <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
+                    <div class="student-health-card">
+                        <div class="student-header">
+                            <div class="student-avatar">
+                                <img src="/images/avatars/student2.jpg" alt="Trần Thị Bình" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                                <div class="avatar-fallback">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            </div>
+                            <div class="student-info">
+                                <h4>Trần Thị Bình</h4>
+                                <p>Lớp 10A1 - Mã: HS002</p>
+                                <span class="status-badge warning">Cần chú ý</span>
+                            </div>
+                            <div class="sync-status">
+                                <i class="fas fa-exclamation-triangle text-warning" title="Đồng bộ có vấn đề"></i>
+                                <small>1 giờ trước</small>
+                            </div>
+                        </div>
+
+                        <div class="health-metrics">
+                            <div class="metric-item">
+                                <div class="metric-icon steps-icon">
+                                    <i class="fas fa-walking"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-value">4,567</span>
+                                    <span class="metric-label">Bước chân</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill warning" style="width: 46%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="metric-item">
+                                <div class="metric-icon calories-icon">
+                                    <i class="fas fa-fire"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-value">1,234</span>
+                                    <span class="metric-label">Calories</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill warning" style="width: 49%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="metric-item">
+                                <div class="metric-icon heart-icon">
+                                    <i class="fas fa-heart"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-value">85 BPM</span>
+                                    <span class="metric-label">Nhịp tim</span>
+                                    <div class="heart-rate-status elevated">Hơi cao</div>
+                                </div>
+                            </div>
+
+                            <div class="metric-item">
+                                <div class="metric-icon sleep-icon">
+                                    <i class="fas fa-moon"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-value">5.8h</span>
+                                    <span class="metric-label">Giấc ngủ</span>
+                                    <div class="sleep-quality poor">Thiếu ngủ</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="additional-metrics">
+                            <div class="metric-row">
+                                <div class="metric-col">
+                                    <i class="fas fa-dumbbell"></i>
+                                    <span>15 phút</span>
+                                    <small>Vận động</small>
+                                </div>
+                                <div class="metric-col">
+                                    <i class="fas fa-glass-water"></i>
+                                    <span>0.9L</span>
+                                    <small>Nước uống</small>
+                                </div>
+                                <div class="metric-col">
+                                    <i class="fas fa-thermometer-half"></i>
+                                    <span>37.2°C</span>
+                                    <small>Thân nhiệt</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-actions">
+                            <button class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-chart-line"></i>
+                                Chi tiết
+                            </button>
+                            <button class="btn btn-outline-warning btn-sm">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Cảnh báo
+                            </button>
+                            <button class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-comments"></i>
+                                Ghi chú
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Student Card 3 -->
+                <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
+                    <div class="student-health-card">
+                        <div class="student-header">
+                            <div class="student-avatar">
+                                <img src="/images/avatars/student3.jpg" alt="Lê Minh Châu" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                                <div class="avatar-fallback">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            </div>
+                            <div class="student-info">
+                                <h4>Lê Minh Châu</h4>
+                                <p>Lớp 11B1 - Mã: HS003</p>
+                                <span class="status-badge excellent">Xuất sắc</span>
+                            </div>
+                            <div class="sync-status">
+                                <i class="fas fa-check-circle text-success" title="Đã đồng bộ"></i>
+                                <small>1 phút trước</small>
+                            </div>
+                        </div>
+
+                        <div class="health-metrics">
+                            <div class="metric-item">
+                                <div class="metric-icon steps-icon">
+                                    <i class="fas fa-walking"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-value">12,890</span>
+                                    <span class="metric-label">Bước chân</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill excellent" style="width: 95%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="metric-item">
+                                <div class="metric-icon calories-icon">
+                                    <i class="fas fa-fire"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-value">2,456</span>
+                                    <span class="metric-label">Calories</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill excellent" style="width: 98%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="metric-item">
+                                <div class="metric-icon heart-icon">
+                                    <i class="fas fa-heart"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-value">65 BPM</span>
+                                    <span class="metric-label">Nhịp tim</span>
+                                    <div class="heart-rate-status excellent">Rất tốt</div>
+                                </div>
+                            </div>
+
+                            <div class="metric-item">
+                                <div class="metric-icon sleep-icon">
+                                    <i class="fas fa-moon"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-value">8.5h</span>
+                                    <span class="metric-label">Giấc ngủ</span>
+                                    <div class="sleep-quality excellent">Rất tốt</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="additional-metrics">
+                            <div class="metric-row">
+                                <div class="metric-col">
+                                    <i class="fas fa-dumbbell"></i>
+                                    <span>75 phút</span>
+                                    <small>Vận động</small>
+                                </div>
+                                <div class="metric-col">
+                                    <i class="fas fa-glass-water"></i>
+                                    <span>2.5L</span>
+                                    <small>Nước uống</small>
+                                </div>
+                                <div class="metric-col">
+                                    <i class="fas fa-thermometer-half"></i>
+                                    <span>36.4°C</span>
+                                    <small>Thân nhiệt</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-actions">
+                            <button class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-chart-line"></i>
+                                Chi tiết
+                            </button>
+                            <button class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-trophy"></i>
+                                Khen thưởng
+                            </button>
+                            <button class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-comments"></i>
+                                Ghi chú
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Student Card 4 -->
+                <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
+                    <div class="student-health-card">
+                        <div class="student-header">
+                            <div class="student-avatar">
+                                <img src="/images/avatars/student4.jpg" alt="Phạm Hoàng Duy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                                <div class="avatar-fallback">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            </div>
+                            <div class="student-info">
+                                <h4>Phạm Hoàng Duy</h4>
+                                <p>Lớp 12C1 - Mã: HS004</p>
+                                <span class="status-badge inactive">Chưa kết nối</span>
+                            </div>
+                            <div class="sync-status">
+                                <i class="fas fa-times-circle text-danger" title="Chưa đồng bộ"></i>
+                                <small>1 ngày trước</small>
+                            </div>
+                        </div>
+
+                        <div class="health-metrics no-data">
+                            <div class="no-data-message">
+                                <i class="fas fa-mobile-alt"></i>
+                                <p>Chưa có dữ liệu sức khỏe</p>
+                                <small>Học sinh chưa kết nối Samsung Health</small>
+                                <button class="btn btn-primary btn-sm mt-2">
+                                    <i class="fas fa-link"></i>
+                                    Kết nối ngay
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Student Card 5 -->
+                <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
+                    <div class="student-health-card">
+                        <div class="student-header">
+                            <div class="student-avatar">
+                                <img src="/images/avatars/student5.jpg" alt="Võ Thị Lan" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                                <div class="avatar-fallback">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            </div>
+                            <div class="student-info">
+                                <h4>Võ Thị Lan</h4>
+                                <p>Lớp 10A2 - Mã: HS005</p>
+                                <span class="status-badge active">Đang hoạt động</span>
+                            </div>
+                            <div class="sync-status">
+                                <i class="fas fa-check-circle text-success" title="Đã đồng bộ"></i>
+                                <small>5 phút trước</small>
+                            </div>
+                        </div>
+
+                        <div class="health-metrics">
+                            <div class="metric-item">
+                                <div class="metric-icon steps-icon">
+                                    <i class="fas fa-walking"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-value">9,876</span>
+                                    <span class="metric-label">Bước chân</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: 78%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="metric-item">
+                                <div class="metric-icon calories-icon">
+                                    <i class="fas fa-fire"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-value">1,678</span>
+                                    <span class="metric-label">Calories</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: 67%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="metric-item">
+                                <div class="metric-icon heart-icon">
+                                    <i class="fas fa-heart"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-value">72 BPM</span>
+                                    <span class="metric-label">Nhịp tim</span>
+                                    <div class="heart-rate-status normal">Bình thường</div>
+                                </div>
+                            </div>
+
+                            <div class="metric-item">
+                                <div class="metric-icon sleep-icon">
+                                    <i class="fas fa-moon"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-value">7.2h</span>
+                                    <span class="metric-label">Giấc ngủ</span>
+                                    <div class="sleep-quality good">Tốt</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="additional-metrics">
+                            <div class="metric-row">
+                                <div class="metric-col">
+                                    <i class="fas fa-dumbbell"></i>
+                                    <span>30 phút</span>
+                                    <small>Vận động</small>
+                                </div>
+                                <div class="metric-col">
+                                    <i class="fas fa-glass-water"></i>
+                                    <span>1.5L</span>
+                                    <small>Nước uống</small>
+                                </div>
+                                <div class="metric-col">
+                                    <i class="fas fa-thermometer-half"></i>
+                                    <span>36.6°C</span>
+                                    <small>Thân nhiệt</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-actions">
+                            <button class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-chart-line"></i>
+                                Chi tiết
+                            </button>
+                            <button class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-bell"></i>
+                                Nhắc nhở
+                            </button>
+                            <button class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-comments"></i>
+                                Ghi chú
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Student Card 6 -->
+                <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
+                    <div class="student-health-card">
+                        <div class="student-header">
+                            <div class="student-avatar">
+                                <img src="/images/avatars/student6.jpg" alt="Đặng Văn Em" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                                <div class="avatar-fallback">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            </div>
+                            <div class="student-info">
+                                <h4>Đặng Văn Em</h4>
+                                <p>Lớp 11B2 - Mã: HS006</p>
+                                <span class="status-badge active">Đang hoạt động</span>
+                            </div>
+                            <div class="sync-status">
+                                <i class="fas fa-check-circle text-success" title="Đã đồng bộ"></i>
+                                <small>3 phút trước</small>
+                            </div>
+                        </div>
+
+                        <div class="health-metrics">
+                            <div class="metric-item">
+                                <div class="metric-icon steps-icon">
+                                    <i class="fas fa-walking"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-value">11,245</span>
+                                    <span class="metric-label">Bước chân</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: 89%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="metric-item">
+                                <div class="metric-icon calories-icon">
+                                    <i class="fas fa-fire"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-value">2,123</span>
+                                    <span class="metric-label">Calories</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: 85%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="metric-item">
+                                <div class="metric-icon heart-icon">
+                                    <i class="fas fa-heart"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-value">70 BPM</span>
+                                    <span class="metric-label">Nhịp tim</span>
+                                    <div class="heart-rate-status normal">Bình thường</div>
+                                </div>
+                            </div>
+
+                            <div class="metric-item">
+                                <div class="metric-icon sleep-icon">
+                                    <i class="fas fa-moon"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-value">7.8h</span>
+                                    <span class="metric-label">Giấc ngủ</span>
+                                    <div class="sleep-quality good">Tốt</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="additional-metrics">
+                            <div class="metric-row">
+                                <div class="metric-col">
+                                    <i class="fas fa-dumbbell"></i>
+                                    <span>50 phút</span>
+                                    <small>Vận động</small>
+                                </div>
+                                <div class="metric-col">
+                                    <i class="fas fa-glass-water"></i>
+                                    <span>2.1L</span>
+                                    <small>Nước uống</small>
+                                </div>
+                                <div class="metric-col">
+                                    <i class="fas fa-thermometer-half"></i>
+                                    <span>36.3°C</span>
+                                    <small>Thân nhiệt</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-actions">
+                            <button class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-chart-line"></i>
+                                Chi tiết
+                            </button>
+                            <button class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-bell"></i>
+                                Nhắc nhở
+                            </button>
+                            <button class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-comments"></i>
+                                Ghi chú
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-section">
+            <nav aria-label="Student health pagination">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="#" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+@code {
+
+}
