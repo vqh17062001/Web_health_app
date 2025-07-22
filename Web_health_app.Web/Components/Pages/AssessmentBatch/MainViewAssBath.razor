@@ -1,0 +1,491 @@
+﻿@page "/assessment-batch"
+@using Microsoft.AspNetCore.Components.Web
+
+<PageTitle>Quản lý Kiểm tra Thể lực</PageTitle>
+
+<link href="/css/AssessmentBatch/assessment-batch.css" rel="stylesheet" />
+
+<div class="assessment-batch-page">
+    <div class="container-fluid">
+        <!-- Header Section -->
+        <div class="page-header">
+            <div class="header-content">
+                <div class="header-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <div class="header-text">
+                    <h2>Quản lý Kiểm tra Thể lực</h2>
+                    <p>Tạo, quản lý và theo dõi các đợt kiểm tra sức khỏe thể chất của học sinh</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button type="button" class="btn btn-primary" @onclick="ShowCreateAssessmentModal">
+                    <i class="fas fa-plus"></i>
+                    Tạo đợt kiểm tra
+                </button>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-section mb-4">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon total">
+                            <i class="fas fa-list-check"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>@totalAssessments</h3>
+                            <p>Tổng số đợt</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon active">
+                            <i class="fas fa-play-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>@activeAssessments</h3>
+                            <p>Đang tiến hành</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon completed">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>@completedAssessments</h3>
+                            <p>Đã hoàn thành</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon participants">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>@totalParticipants</h3>
+                            <p>Học sinh tham gia</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter and Search Section -->
+        <div class="card filter-card mb-4">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Tìm kiếm</label>
+                        <div class="search-box">
+                            <input type="text" class="form-control" placeholder="Tên đợt kiểm tra..." @bind="searchText"
+                                @onkeyup="FilterAssessments">
+                            <i class="fas fa-search search-icon"></i>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Trạng thái</label>
+                        <select class="form-select" @bind="selectedStatus" @bind:event="onchange">
+                            <option value="">Tất cả</option>
+                            <option value="draft">Nháp</option>
+                            <option value="active">Đang tiến hành</option>
+                            <option value="completed">Hoàn thành</option>
+                            <option value="cancelled">Đã hủy</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Loại kiểm tra</label>
+                        <select class="form-select" @bind="selectedType" @bind:event="onchange">
+                            <option value="">Tất cả</option>
+                            <option value="physical">Thể lực</option>
+                            <option value="health">Sức khỏe</option>
+                            <option value="comprehensive">Toàn diện</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Từ ngày</label>
+                        <input type="date" class="form-control" @bind="fromDate" @bind:event="onchange">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Đến ngày</label>
+                        <input type="date" class="form-control" @bind="toDate" @bind:event="onchange">
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button type="button" class="btn btn-outline-secondary" @onclick="ClearFilters">
+                                <i class="fas fa-refresh"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assessment Batches List -->
+        <div class="assessment-list">
+            @if (filteredAssessments == null || !filteredAssessments.Any())
+            {
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <h4>Chưa có đợt kiểm tra nào</h4>
+                    <p>Bắt đầu tạo đợt kiểm tra thể lực đầu tiên của bạn</p>
+                    <button type="button" class="btn btn-primary" @onclick="ShowCreateAssessmentModal">
+                        <i class="fas fa-plus"></i>
+                        Tạo đợt kiểm tra mới
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="row g-4">
+                    @foreach (var assessment in filteredAssessments)
+                    {
+                        <div class="col-md-6 col-lg-4">
+                            <div class="assessment-card">
+                                <div class="card-header">
+                                    <div class="assessment-status status-@assessment.Status.ToLower()">
+                                        @GetStatusText(assessment.Status)
+                                    </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-link dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li><a class="dropdown-item" href="#" @onclick="() => ViewDetails(assessment.Id)">
+                                                    <i class="fas fa-eye"></i> Chi tiết
+                                                </a></li>
+                                            <li><a class="dropdown-item" href="#"
+                                                    @onclick="() => EditAssessment(assessment.Id)">
+                                                    <i class="fas fa-edit"></i> Chỉnh sửa
+                                                </a></li>
+                                            <li><a class="dropdown-item" href="#"
+                                                    @onclick="() => ManageParticipants(assessment.Id)">
+                                                    <i class="fas fa-users"></i> Quản lý HS
+                                                </a></li>
+                                            <li>
+                                                <hr class="dropdown-divider">
+                                            </li>
+                                            <li><a class="dropdown-item text-danger" href="#"
+                                                    @onclick="() => DeleteAssessment(assessment.Id)">
+                                                    <i class="fas fa-trash"></i> Xóa
+                                                </a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="assessment-type">
+                                        <i class="fas fa-tag"></i>
+                                        @GetTypeText(assessment.Type)
+                                    </div>
+                                    <h5 class="assessment-title">@assessment.Name</h5>
+                                    <p class="assessment-description">@assessment.Description</p>
+
+                                    <div class="assessment-info">
+                                        <div class="info-item">
+                                            <i class="fas fa-calendar"></i>
+                                            <span>@assessment.StartDate.ToString("dd/MM/yyyy") -
+                                                @assessment.EndDate.ToString("dd/MM/yyyy")</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <i class="fas fa-users"></i>
+                                            <span>@assessment.ParticipantCount học sinh</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <i class="fas fa-chart-line"></i>
+                                            <span>@assessment.CompletionRate% hoàn thành</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="progress-section">
+                                        <div class="progress-info">
+                                            <span>Tiến độ</span>
+                                            <span>@assessment.CompletedCount/@assessment.ParticipantCount</span>
+                                        </div>
+                                        <div class="progress">
+                                            <div class="progress-bar" style="width: @(assessment.CompletionRate)%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <button class="btn btn-primary btn-sm" @onclick="() => ViewDetails(assessment.Id)">
+                                        <i class="fas fa-eye"></i>
+                                        Xem chi tiết
+                                    </button>
+                                    @if (assessment.Status == "active")
+                                    {
+                                        <button class="btn btn-success btn-sm" @onclick="() => ManageParticipants(assessment.Id)">
+                                            <i class="fas fa-users"></i>
+                                            Quản lý HS
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination-section mt-4">
+                    <nav aria-label="Assessment pagination">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                                <button class="page-link" @onclick="() => GoToPage(currentPage - 1)">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                            </li>
+                            @for (int i = 1; i <= totalPages; i++)
+                            {
+                                <li class="page-item @(i == currentPage ? "active" : "")">
+                                    <button class="page-link" @onclick="() => GoToPage(i)">@i</button>
+                                </li>
+                            }
+                            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                                <button class="page-link" @onclick="() => GoToPage(currentPage + 1)">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Quick Actions Float Button -->
+    <div class="quick-actions">
+        <button type="button" class="btn btn-primary btn-floating" @onclick="ShowCreateAssessmentModal"
+            title="Tạo đợt kiểm tra mới">
+            <i class="fas fa-plus"></i>
+        </button>
+    </div>
+</div>
+
+@code {
+    // Filter properties
+    private string searchText = "";
+    private string _selectedStatus = "";
+    private string _selectedType = "";
+    private DateTime? _fromDate;
+    private DateTime? _toDate;
+
+    private string selectedStatus
+    {
+        get => _selectedStatus;
+        set
+        {
+            _selectedStatus = value;
+            FilterAssessments();
+        }
+    }
+
+    private string selectedType
+    {
+        get => _selectedType;
+        set
+        {
+            _selectedType = value;
+            FilterAssessments();
+        }
+    }
+
+    private DateTime? fromDate
+    {
+        get => _fromDate;
+        set
+        {
+            _fromDate = value;
+            FilterAssessments();
+        }
+    }
+
+    private DateTime? toDate
+    {
+        get => _toDate;
+        set
+        {
+            _toDate = value;
+            FilterAssessments();
+        }
+    }
+
+    // Pagination properties
+    private int currentPage = 1;
+    private int pageSize = 9;
+    private int totalPages = 1;
+
+    // Statistics
+    private int totalAssessments = 12;
+    private int activeAssessments = 3;
+    private int completedAssessments = 7;
+    private int totalParticipants = 1250;
+
+    // Data
+    private List<AssessmentBatch> assessments = new();
+    private List<AssessmentBatch> filteredAssessments = new();
+
+    protected override void OnInitialized()
+    {
+        LoadSampleData();
+        FilterAssessments();
+    }
+
+    private void LoadSampleData()
+    {
+        assessments = new List<AssessmentBatch>
+{
+new AssessmentBatch
+{
+Id = 1,
+Name = "Kiểm tra thể lực học kỳ I",
+Description = "Đánh giá thể lực tổng hợp cho tất cả học sinh khối 10, 11, 12",
+Type = "comprehensive",
+Status = "active",
+StartDate = DateTime.Now.AddDays(-5),
+EndDate = DateTime.Now.AddDays(10),
+ParticipantCount = 450,
+CompletedCount = 320,
+CompletionRate = 71
+},
+new AssessmentBatch
+{
+Id = 2,
+Name = "Kiểm tra sức bền tim mạch",
+Description = "Đo lường khả năng hoạt động tim mạch qua bài tập chạy 12 phút",
+Type = "physical",
+Status = "completed",
+StartDate = DateTime.Now.AddDays(-20),
+EndDate = DateTime.Now.AddDays(-10),
+ParticipantCount = 200,
+CompletedCount = 200,
+CompletionRate = 100
+},
+new AssessmentBatch
+{
+Id = 3,
+Name = "Đo chỉ số BMI và tầm vóc",
+Description = "Kiểm tra chiều cao, cân nặng và các chỉ số cơ bản",
+Type = "health",
+Status = "draft",
+StartDate = DateTime.Now.AddDays(5),
+EndDate = DateTime.Now.AddDays(20),
+ParticipantCount = 600,
+CompletedCount = 0,
+CompletionRate = 0
+}
+};
+    }
+
+    private void FilterAssessments()
+    {
+        filteredAssessments = assessments.Where(a =>
+        (string.IsNullOrEmpty(searchText) || a.Name.ToLower().Contains(searchText.ToLower()) ||
+        a.Description.ToLower().Contains(searchText.ToLower())) &&
+        (string.IsNullOrEmpty(_selectedStatus) || a.Status == _selectedStatus) &&
+        (string.IsNullOrEmpty(_selectedType) || a.Type == _selectedType) &&
+        (_fromDate == null || a.StartDate >= _fromDate) &&
+        (_toDate == null || a.EndDate <= _toDate)
+        ).ToList();
+
+        totalPages = (int)Math.Ceiling((double)filteredAssessments.Count / pageSize);
+        currentPage = Math.Min(currentPage, Math.Max(1, totalPages));
+
+        var startIndex = (currentPage - 1) * pageSize;
+        filteredAssessments = filteredAssessments.Skip(startIndex).Take(pageSize).ToList();
+
+        StateHasChanged();
+    }
+
+    private void ClearFilters()
+    {
+        searchText = "";
+        _selectedStatus = "";
+        _selectedType = "";
+        _fromDate = null;
+        _toDate = null;
+        currentPage = 1;
+        FilterAssessments();
+    }
+
+    private void GoToPage(int page)
+    {
+        if (page >= 1 && page <= totalPages)
+        {
+            currentPage = page;
+            FilterAssessments();
+        }
+    }
+
+    private string GetStatusText(string status) => status switch
+    {
+        "draft" => "Nháp",
+        "active" => "Đang tiến hành",
+        "completed" => "Hoàn thành",
+        "cancelled" => "Đã hủy",
+        _ => "Không xác định"
+    };
+
+    private string GetTypeText(string type) => type switch
+    {
+        "physical" => "Thể lực",
+        "health" => "Sức khỏe",
+        "comprehensive" => "Toàn diện",
+        _ => "Khác"
+    };
+
+    private void ShowCreateAssessmentModal()
+    {
+        // Implement create assessment modal logic
+    }
+
+    private void ViewDetails(int id)
+    {
+        // Navigate to assessment details page
+    }
+
+    private void EditAssessment(int id)
+    {
+        // Navigate to edit assessment page
+    }
+
+    private void ManageParticipants(int id)
+    {
+        // Navigate to participants management page
+    }
+
+    private void DeleteAssessment(int id)
+    {
+        // Implement delete confirmation and logic
+    }
+
+    public class AssessmentBatch
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Type { get; set; } = "";
+        public string Status { get; set; } = "";
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public int ParticipantCount { get; set; }
+        public int CompletedCount { get; set; }
+        public int CompletionRate { get; set; }
+    }
+}
+
+                                       
+                                                           
+                                                           
+                                                
+                                            
+                                                           
+                                               
+           
+       
