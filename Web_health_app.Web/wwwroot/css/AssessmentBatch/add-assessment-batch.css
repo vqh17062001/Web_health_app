@@ -40,6 +40,7 @@
         opacity: 0;
         transform: translateY(30px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -246,7 +247,7 @@ textarea.form-control {
     height: 18px;
 }
 
-.checkbox-item input[type="checkbox"]:checked + .checkbox-label {
+.checkbox-item input[type="checkbox"]:checked+.checkbox-label {
     color: var(--assessment-primary);
     font-weight: 600;
 }
@@ -422,11 +423,11 @@ textarea.form-control {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.toggle-input:checked + .toggle-label {
+.toggle-input:checked+.toggle-label {
     background: var(--assessment-primary);
 }
 
-.toggle-input:checked + .toggle-label .toggle-button {
+.toggle-input:checked+.toggle-label .toggle-button {
     transform: translateX(22px);
 }
 
@@ -516,20 +517,20 @@ textarea.form-control {
     .add-assessment-container {
         padding: 1.5rem 1rem;
     }
-    
+
     .card-body {
         padding: 2rem;
     }
-    
+
     .form-section {
         padding: 1.5rem;
     }
-    
+
     .form-row {
         grid-template-columns: 1fr;
         gap: 1.5rem;
     }
-    
+
     .form-group.full-width {
         grid-column: span 1;
     }
@@ -539,55 +540,55 @@ textarea.form-control {
     .add-assessment-container {
         padding: 1rem 0.5rem;
     }
-    
+
     .card-header {
         padding: 1.5rem;
         flex-direction: column;
         text-align: center;
         gap: 1rem;
     }
-    
+
     .header-content {
         flex-direction: column;
         text-align: center;
         gap: 1rem;
     }
-    
+
     .header-text h2 {
         font-size: 1.5rem;
     }
-    
+
     .card-body {
         padding: 1.5rem;
     }
-    
+
     .form-section {
         padding: 1rem;
     }
-    
+
     .checkbox-group {
         gap: 0.5rem;
     }
-    
+
     .checkbox-item {
         min-width: 80px;
         font-size: 0.875rem;
     }
-    
+
     .equipment-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .action-buttons {
         flex-direction: column;
         gap: 0.75rem;
     }
-    
+
     .btn {
         width: 100%;
         min-width: auto;
     }
-    
+
     .card-footer {
         padding: 1.5rem;
     }
@@ -599,33 +600,33 @@ textarea.form-control {
         height: 48px;
         font-size: 1.4rem;
     }
-    
+
     .header-text h2 {
         font-size: 1.25rem;
     }
-    
+
     .header-text p {
         font-size: 0.9rem;
     }
-    
+
     .section-title {
         font-size: 1.1rem;
     }
-    
+
     .form-control,
     .form-select {
         padding: 0.75rem;
         font-size: 0.9rem;
     }
-    
+
     .test-option {
         padding: 0.75rem;
     }
-    
+
     .test-name {
         font-size: 0.9rem;
     }
-    
+
     .test-description {
         font-size: 0.8rem;
     }
@@ -667,19 +668,40 @@ textarea.form-control {
     opacity: 0;
 }
 
-.form-section:nth-child(1) { animation-delay: 0.1s; }
-.form-section:nth-child(2) { animation-delay: 0.2s; }
-.form-section:nth-child(3) { animation-delay: 0.3s; }
-.form-section:nth-child(4) { animation-delay: 0.4s; }
-.form-section:nth-child(5) { animation-delay: 0.5s; }
-.form-section:nth-child(6) { animation-delay: 0.6s; }
-.form-section:nth-child(7) { animation-delay: 0.7s; }
+.form-section:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.form-section:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.form-section:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.form-section:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.form-section:nth-child(5) {
+    animation-delay: 0.5s;
+}
+
+.form-section:nth-child(6) {
+    animation-delay: 0.6s;
+}
+
+.form-section:nth-child(7) {
+    animation-delay: 0.7s;
+}
 
 @keyframes fadeInSection {
     from {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
