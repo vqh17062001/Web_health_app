@@ -1,0 +1,416 @@
+﻿@page "/studentmanage/editstudent"
+@using Microsoft.AspNetCore.Authorization
+@using Web_health_app.Web.Components.Layout
+
+@layout EmptyLayout
+
+<link href="/css/StudentManage/edit-student.css" rel="stylesheet" />
+
+<div class="edit-student-container">
+    <div class="edit-student-card">
+        <!-- Header -->
+        <div class="card-header">
+            <div class="header-content">
+                <div class="header-icon">
+                    <i class="fas fa-user-edit"></i>
+                </div>
+                <div class="header-text">
+                    <h2>Chỉnh Sửa Thông Tin Sinh Viên</h2>
+                    <p>Cập nhật thông tin sinh viên trong hệ thống</p>
+                </div>
+            </div>
+            <button type="button" class="btn-close" onclick="window.history.back()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Form Body -->
+        <div class="card-body">
+            <form class="edit-student-form">
+                <!-- Current Student Info Section -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-info-circle"></i>
+                        Thông Tin Hiện Tại
+                    </h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-hashtag"></i>
+                                Mã Sinh Viên
+                            </label>
+                            <div class="info-display">
+                                <i class="fas fa-id-badge"></i>
+                                SV12345
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-calendar"></i>
+                                Ngày Tạo Hồ Sơ
+                            </label>
+                            <div class="info-display">
+                                <i class="fas fa-clock"></i>
+                                15/01/2024
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-toggle-on"></i>
+                                Trạng Thái Hiện Tại
+                            </label>
+                            <div class="status-badge active">
+                                <i class="fas fa-check-circle"></i>
+                                Đang Học
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-edit"></i>
+                                Lần Cập Nhật Cuối
+                            </label>
+                            <div class="info-display">
+                                <i class="fas fa-history"></i>
+                                20/01/2024 14:30
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Basic Student Information Section -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-user"></i>
+                        Thông Tin Cơ Bản
+                    </h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-user"></i>
+                                Họ và Tên <span class="required">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="fullName" name="fullName"
+                                placeholder="Nhập họ và tên đầy đủ" value="Nguyễn Văn A" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-calendar-alt"></i>
+                                Ngày Sinh <span class="required">*</span>
+                            </label>
+                            <input type="date" class="form-control" id="dateOfBirth" name="dateOfBirth"
+                                value="2002-05-15" required />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-venus-mars"></i>
+                                Giới Tính <span class="required">*</span>
+                            </label>
+                            <select class="form-select" id="gender" name="gender" required>
+                                <option value="">Chọn giới tính</option>
+                                <option value="male" selected>Nam</option>
+                                <option value="female">Nữ</option>
+                                <option value="other">Khác</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-id-card"></i>
+                                CMND/CCCD <span class="required">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="idNumber" name="idNumber"
+                                placeholder="Nhập số CMND/CCCD" value="123456789012" maxlength="12" required />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                <i class="fas fa-map-marker-alt"></i>
+                                Địa Chỉ Thường Trú
+                            </label>
+                            <textarea class="form-control" id="address" name="address" rows="3"
+                                placeholder="Nhập địa chỉ thường trú">123 Đường ABC, Phường XYZ, Quận 1, TP.HCM</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Academic Information Section -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-graduation-cap"></i>
+                        Thông Tin Học Tập
+                    </h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-university"></i>
+                                Khoa <span class="required">*</span>
+                            </label>
+                            <select class="form-select" id="faculty" name="faculty" required>
+                                <option value="">Chọn khoa</option>
+                                <option value="cntt" selected>Công Nghệ Thông Tin</option>
+                                <option value="kt">Kinh Tế</option>
+                                <option value="nn">Ngoại Ngữ</option>
+                                <option value="sp">Sư Phạm</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-book"></i>
+                                Chuyên Ngành <span class="required">*</span>
+                            </label>
+                            <select class="form-select" id="major" name="major" required>
+                                <option value="">Chọn chuyên ngành</option>
+                                <option value="ktpm" selected>Kỹ Thuật Phần Mềm</option>
+                                <option value="httt">Hệ Thống Thông Tin</option>
+                                <option value="tmdt">Thương Mại Điện Tử</option>
+                                <option value="attt">An Toàn Thông Tin</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-layer-group"></i>
+                                Khóa Học <span class="required">*</span>
+                            </label>
+                            <select class="form-select" id="academicYear" name="academicYear" required>
+                                <option value="">Chọn khóa học</option>
+                                <option value="2020">Khóa 2020</option>
+                                <option value="2021">Khóa 2021</option>
+                                <option value="2022" selected>Khóa 2022</option>
+                                <option value="2023">Khóa 2023</option>
+                                <option value="2024">Khóa 2024</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-users"></i>
+                                Lớp Học <span class="required">*</span>
+                            </label>
+                            <select class="form-select" id="class" name="class" required>
+                                <option value="">Chọn lớp học</option>
+                                <option value="KTPM01" selected>KTPM01</option>
+                                <option value="KTPM02">KTPM02</option>
+                                <option value="HTTT01">HTTT01</option>
+                                <option value="TMDT01">TMDT01</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-chart-line"></i>
+                                GPA Hiện Tại
+                            </label>
+                            <input type="number" class="form-control" id="gpa" name="gpa" step="0.01" min="0" max="4"
+                                placeholder="Nhập GPA (0.0 - 4.0)" value="3.25" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-toggle-on"></i>
+                                Trạng Thái Học Tập <span class="required">*</span>
+                            </label>
+                            <select class="form-select" id="academicStatus" name="academicStatus" required>
+                                <option value="">Chọn trạng thái</option>
+                                <option value="active" selected>Đang Học</option>
+                                <option value="suspended">Tạm Nghỉ</option>
+                                <option value="probation">Cảnh Báo Học Vụ</option>
+                                <option value="graduated">Đã Tốt Nghiệp</option>
+                                <option value="dropped">Thôi Học</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Information Section -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-address-book"></i>
+                        Thông Tin Liên Hệ
+                    </h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-phone"></i>
+                                Số Điện Thoại <span class="required">*</span>
+                            </label>
+                            <input type="tel" class="form-control" id="phone" name="phone"
+                                placeholder="Nhập số điện thoại" value="0987654321" maxlength="11" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-envelope"></i>
+                                Email <span class="required">*</span>
+                            </label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                placeholder="Nhập địa chỉ email" value="nguyenvana@student.edu.vn" required />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-user-friends"></i>
+                                Họ Tên Phụ Huynh
+                            </label>
+                            <input type="text" class="form-control" id="guardianName" name="guardianName"
+                                placeholder="Nhập họ tên phụ huynh" value="Nguyễn Văn B" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-phone-alt"></i>
+                                SĐT Phụ Huynh
+                            </label>
+                            <input type="tel" class="form-control" id="guardianPhone" name="guardianPhone"
+                                placeholder="Nhập SĐT phụ huynh" value="0912345678" maxlength="11" />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                <i class="fas fa-home"></i>
+                                Địa Chỉ Liên Hệ Hiện Tại
+                            </label>
+                            <textarea class="form-control" id="currentAddress" name="currentAddress" rows="3"
+                                placeholder="Nhập địa chỉ liên hệ hiện tại (nếu khác với địa chỉ thường trú)">456 Đường DEF, Phường ABC, Quận 3, TP.HCM</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Health Information Section -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-heartbeat"></i>
+                        Thông Tin Sức Khỏe
+                    </h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-weight"></i>
+                                Cân Nặng (kg)
+                            </label>
+                            <input type="number" class="form-control" id="weight" name="weight" step="0.1" min="0"
+                                max="300" placeholder="Nhập cân nặng" value="65.5" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-ruler-vertical"></i>
+                                Chiều Cao (cm)
+                            </label>
+                            <input type="number" class="form-control" id="height" name="height" min="0" max="300"
+                                placeholder="Nhập chiều cao" value="170" />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-tint"></i>
+                                Nhóm Máu
+                            </label>
+                            <select class="form-select" id="bloodType" name="bloodType">
+                                <option value="">Chọn nhóm máu</option>
+                                <option value="A">A</option>
+                                <option value="B" selected>B</option>
+                                <option value="AB">AB</option>
+                                <option value="O">O</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-allergies"></i>
+                                Tình Trạng Sức Khỏe
+                            </label>
+                            <select class="form-select" id="healthStatus" name="healthStatus">
+                                <option value="">Chọn tình trạng</option>
+                                <option value="good" selected>Tốt</option>
+                                <option value="fair">Trung Bình</option>
+                                <option value="poor">Kém</option>
+                                <option value="chronic">Bệnh Mãn Tính</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                <i class="fas fa-notes-medical"></i>
+                                Ghi Chú Sức Khỏe
+                            </label>
+                            <textarea class="form-control" id="healthNotes" name="healthNotes" rows="3"
+                                placeholder="Ghi chú về tình trạng sức khỏe, dị ứng, bệnh lý...">Không có tiền sử bệnh lý đặc biệt</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Notes Section -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-sticky-note"></i>
+                        Ghi Chú Bổ Sung
+                    </h3>
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                <i class="fas fa-comment-alt"></i>
+                                Ghi Chú
+                            </label>
+                            <textarea class="form-control" id="additionalNotes" name="additionalNotes" rows="4"
+                                placeholder="Ghi chú bổ sung về sinh viên...">Sinh viên tích cực tham gia các hoạt động ngoại khóa</textarea>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="card-footer">
+            <div class="action-buttons">
+                <button type="button" class="btn btn-reset">
+                    <i class="fas fa-undo"></i>
+                    Khôi Phục
+                </button>
+                <button type="button" class="btn btn-cancel" onclick="window.history.back()">
+                    <i class="fas fa-times"></i>
+                    Hủy Bỏ
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    Cập Nhật
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+}
+ max="300"
