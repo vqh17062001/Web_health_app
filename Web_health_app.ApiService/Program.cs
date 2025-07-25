@@ -1,11 +1,14 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Web_health_app.ApiService.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
 
+// Thêm dòng này để cấu hình DbContext
+builder.Services.AddDbContext<HealthDbContext>();
 
 // Add services to the container.
 builder.Services.AddProblemDetails();

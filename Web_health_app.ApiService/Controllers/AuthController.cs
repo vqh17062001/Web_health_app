@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Web_health_app.ApiService.Entities;
 using Web_health_app.Models.Models;
 
 namespace Web_health_app.ApiService.Controllers
@@ -13,12 +14,14 @@ namespace Web_health_app.ApiService.Controllers
     [ApiController]
     public class AuthController (IConfiguration configuration) : ControllerBase
     {
+       
+
         [HttpPost("login")]
       
         public ActionResult<LoginResponseModel> Login([FromBody] LoginModel request)
         {
             // Simulate a login process
-            if (request.Username == "admin" && request.Password == "password")
+            if (CheckUsernamePassword(request))
 
             {
                 var token = GenerateJwtToken(request.Username);
@@ -52,6 +55,28 @@ namespace Web_health_app.ApiService.Controllers
             );
             return new JwtSecurityTokenHandler().WriteToken(token) ;
         }
+        private bool CheckUsernamePassword(LoginModel request) {
+
+            using (HealthDbContext context = new HealthDbContext())
+            {
+                var hasvalue = context.Users.FirstOrDefault(u => u.UserName == request.Username && u.PasswordHash == request.Password);
+                if (hasvalue == null)
+                {
+                    return false; // User not found or password does not match
+                }
+                else
+                {
+                    return true; // User found and password matches
+
+
+                }
+            }
+
+                 // Replace with actual username/password check logic
+        }
+
+
+
 
 
         [HttpGet("testauthen")]
