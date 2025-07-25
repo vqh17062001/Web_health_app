@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Models\Models.csproj" />
+    <ProjectReference Include="..\Web_health_app.ApiService\Web_health_app.ApiService.csproj" />
     <ProjectReference Include="..\Web_health_app.ServiceDefaults\Web_health_app.ServiceDefaults.csproj" />
   </ItemGroup>
 
