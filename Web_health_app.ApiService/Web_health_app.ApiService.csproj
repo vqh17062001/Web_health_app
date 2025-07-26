@@ -27,6 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Entities\NonTable\" />
     <Folder Include="Repository\" />
   </ItemGroup>
 

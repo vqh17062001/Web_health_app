@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Web_health_app.ApiService.Entities;
@@ -36,13 +37,23 @@ namespace Web_health_app.ApiService.Controllers
                 // Validate user credentials using repository
                 if (await _authRepository.ValidateUserCredentialsAsync(request))
                 {
-                    var token = GenerateJwtToken(request.Username);
-
+                    List<string> listStringcodePerm = new List<string>();
                     // Record successful login
                     await _authRepository.RecordLoginHistoryAsync(request.Username, ipAddress, true);
                     var permissions = await _authRepository.GetUserEffectivePermissionsByUsernameAsync(request.Username);
+                    if (permissions != null )
 
-                    return Ok(new LoginResponseModel { Token = token });
+                    {
+                        listStringcodePerm = PermissionToStringCode(permissions);
+                    }
+
+                    var token = GenerateJwtToken(request.Username, listStringcodePerm);
+
+                    return Ok(new LoginResponseModel { Token = token 
+                    
+                    
+                    
+                    });
                 }
 
                 // Record failed login attempt
@@ -58,15 +69,38 @@ namespace Web_health_app.ApiService.Controllers
             }
         }
 
-        private string GenerateJwtToken(string username)
+        private List<string> PermissionToStringCode(List<UserPermissionDto> permissions)
+        {
+            var listStringcodePerm = new List<string>();    
+            foreach ( var permission in permissions)
+            {
+                listStringcodePerm.Add(permission.action_ID+"."+permission.entity_ID);
+            }
+            return listStringcodePerm;
+        }
+
+        private string GenerateJwtToken(string username, List<string> listStringcodePerm = null )
         {
 
-            var claims = new[]
+            var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, username),
-                new Claim(ClaimTypes.Role, "Admin"),
+                
                 // Add other claims as needed
             };
+
+            if (listStringcodePerm != null)
+            {
+                foreach (var stringpermission in listStringcodePerm)
+                {
+                    claims.Add(new Claim(ClaimTypes.Role, stringpermission));
+                }
+                
+            }
+
+
+
+
 
             string? secretKey = _configuration.GetValue<string>("Jwt:Secret");
             if (string.IsNullOrEmpty(secretKey))

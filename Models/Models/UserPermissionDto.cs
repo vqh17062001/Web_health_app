@@ -1,4 +1,4 @@
-﻿namespace Web_health_app.ApiService.Entities.NonTable
+﻿namespace Web_health_app.Models.Models
 {
     public class UserPermissionDto
     {

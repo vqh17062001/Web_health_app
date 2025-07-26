@@ -2,7 +2,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using Web_health_app.Web.Components.Layout
 @layout MainLayout
-@attribute [Authorize]
+@attribute [Authorize(Roles = "CREATE.AssessmentBatch")]
 <link href="/css/AccountAuthManage/MainViewAccount.css" rel="stylesheet" />
 
 <div class="account-auth-page">
