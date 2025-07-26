@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Web_health_app.ApiService.Entities;
+using Web_health_app.ApiService.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,10 +11,13 @@ builder.AddServiceDefaults();
 // Thêm dòng này để cấu hình DbContext
 builder.Services.AddDbContext<HealthDbContext>();
 
+// Register repositories
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+
 // Add services to the container.
 builder.Services.AddProblemDetails();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
-    
+
     options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -38,7 +42,7 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c=>
+builder.Services.AddSwaggerGen(c =>
 {
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
