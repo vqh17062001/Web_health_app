@@ -3,13 +3,10 @@
     public class LoginResponseModel
     {
         public string Token { get; set; }
-        public string Username { get; set; }
+        public string FullName { get; set; }
         public long TokenExpired { get; set; }
-        //public LoginResponseModel(string token, string username, long expiration)
-        //{
-        //    Token = token;
-        //    Username = username;
-        //    TokenExpired = expiration;
-        //}
+
+
+      
     }
 }

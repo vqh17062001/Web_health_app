@@ -10,7 +10,9 @@
         <div class="top-row px-4">
             <AuthorizeView>
                 <Authorized>
-                    <span class="username">@context.User.Identity.Name</span>
+                    <span class="username">
+                        @context.User.FindFirst("fullname")?.Value
+                    </span>
                     <a href="/logout" class="logout-button" >Logout</a>
                 </Authorized>
                 <NotAuthorized>

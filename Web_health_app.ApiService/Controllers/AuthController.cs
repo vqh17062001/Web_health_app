@@ -46,13 +46,15 @@ namespace Web_health_app.ApiService.Controllers
                     {
                         listStringcodePerm = PermissionToStringCode(permissions);
                     }
+                    var user = await _authRepository.GetUserByUsernameAsync(request.Username);
 
-                    var token = GenerateJwtToken(request.Username, listStringcodePerm);
+                    var token = GenerateJwtToken(request.Username, listStringcodePerm, user);
 
-                    return Ok(new LoginResponseModel { Token = token 
-                    
-                    
-                    
+
+
+                    return Ok(new LoginResponseModel { Token = token, 
+                        FullName = user?.FullName ?? "Unknown User",
+
                     });
                 }
 
@@ -79,12 +81,13 @@ namespace Web_health_app.ApiService.Controllers
             return listStringcodePerm;
         }
 
-        private string GenerateJwtToken(string username, List<string> listStringcodePerm = null )
+        private string GenerateJwtToken(string username, List<string> listStringcodePerm = null, User user = null )
         {
 
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, username),
+                new Claim("fullname", user?.FullName ?? "Unknown User"),
                 
                 // Add other claims as needed
             };
