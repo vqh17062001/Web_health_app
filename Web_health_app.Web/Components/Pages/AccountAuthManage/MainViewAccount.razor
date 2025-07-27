@@ -1,8 +1,19 @@
 ﻿@page "/accountAuthManage"
 @using Microsoft.AspNetCore.Authorization
+@using System.Net.Http
+@using System.Text.Json
+@using System.Text.Json.Serialization
 @using Web_health_app.Web.Components.Layout
+@using Web_health_app.Models.Models
+@using Web_health_app.Web.ApiClients
+@using Microsoft.AspNetCore.Components
+@using System.Threading
+@using static Web_health_app.Web.ApiClients.UserApiClient
 @layout MainLayout
 @attribute [Authorize(Roles = "ACCESS.MainViewAccount")]
+@inject UserApiClient UserApi
+@inject IJSRuntime JSRuntime
+@implements IDisposable
 
 <link href="/css/AccountAuthManage/MainViewAccount.css" rel="stylesheet" />
 
@@ -18,7 +29,7 @@
                         <div class="row align-items-center">
                             <div class="col-md-3">
                                 <label for="filterSelect" class="form-label">Lọc theo:</label>
-                                <select id="filterSelect" class="form-select">
+                                <select id="filterSelect" class="form-select" @onchange="OnFilterChanged">
                                     <option value="users">Người dùng</option>
                                     <option value="roles">Vai trò</option>
                                     <option value="usergroups">Nhóm người dùng</option>
@@ -27,7 +38,8 @@
                             <div class="col-md-6">
                                 <label for="searchInput" class="form-label">Tìm kiếm:</label>
                                 <input type="text" id="searchInput" class="form-control"
-                                    placeholder="Nhập từ khóa tìm kiếm...">
+                                    placeholder="Nhập từ khóa tìm kiếm..." @bind="searchTerm"
+                                    @oninput="OnSearchChanged">
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">&nbsp;</label>
@@ -45,212 +57,320 @@
         <div class="row">
             <div class="col-12">
                 <div class="row g-4" id="contentCards">
-                    <!-- Sample Card 1 -->
-                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                        <div class="card h-100 shadow-sm">
-                            <div
-                                class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0">Người dùng</h6>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
-                                        id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                                        <li><a class="dropdown-item" href="#">Xem chi tiết</a></li>
-                                        <li><a class="dropdown-item" href="#">Chỉnh sửa</a></li>
-                                        <li>
-                                            <hr class="dropdown-divider">
-                                        </li>
-                                        <li><a class="dropdown-item text-danger" href="#">Xóa</a></li>
-                                    </ul>
+                    @if (isLoading)
+                    {
+                        <div class="col-12">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
                                 </div>
-                            </div>
-                            <div class="card-body">
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="avatar-circle bg-info text-white me-3">
-                                        <i class="fas fa-user"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1">Nguyễn Văn A</h6>
-                                        <small class="text-muted">admin@example.com</small>
-                                    </div>
-                                </div>
-                                <div class="mb-2">
-                                    <span class="badge bg-success me-1">Admin</span>
-                                    <span class="badge bg-secondary">Manager</span>
-                                </div>
-                                <p class="card-text text-muted small mb-2">Nhóm: IT Department</p>
-                                <p class="card-text text-muted small">Trạng thái: <span class="text-success">Hoạt
-                                        động</span></p>
-                            </div>
-                            <div class="card-footer bg-light">
-                                <small class="text-muted">Cập nhật: 20/07/2025</small>
+                                <p>Đang tải dữ liệu...</p>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Sample Card 2 -->
-                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                        <div class="card h-100 shadow-sm">
-                            <div
-                                class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0">Vai trò</h6>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
-                                        id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
-                                        <li><a class="dropdown-item" href="#">Xem chi tiết</a></li>
-                                        <li><a class="dropdown-item" href="#">Chỉnh sửa</a></li>
-                                        <li>
-                                            <hr class="dropdown-divider">
-                                        </li>
-                                        <li><a class="dropdown-item text-danger" href="#">Xóa</a></li>
-                                    </ul>
+                    }
+                    else if (currentView == "users")
+                    {
+                        @if (users?.Any() == true)
+                        {
+                            @foreach (var user in users)
+                            {
+                                <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                                    <div class="card h-100 shadow-sm">
+                                        <div
+                                            class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">Người dùng</h6>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
+                                                    id="dropdownMenuButton@(user.UserId)" data-bs-toggle="dropdown"
+                                                    aria-expanded="false">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton@(user.UserId)">
+                                                    <li><a class="dropdown-item" href="#"
+                                                            @onclick="() => ViewUserDetail(user.UserId)">Xem chi tiết</a></li>
+                                                    <li><a class="dropdown-item" href="#"
+                                                            @onclick="() => EditUser(user.UserId)">Chỉnh sửa</a></li>
+                                                    <li>
+                                                        <hr class="dropdown-divider">
+                                                    </li>
+                                                    <li><a class="dropdown-item text-danger" href="#"
+                                                            @onclick="() => DeleteUser(user.UserId)"
+                                                            @onclick:preventDefault="true">Xóa</a></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="avatar-circle bg-info text-white me-3">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1">@(user.FullName ?? user.UserName)</h6>
+                                                    <small class="text-muted">@user.UserName</small>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <span
+                                                    class="badge @GetStatusBadgeClass(user.UserStatus)">@user.UserStatusString</span>
+                                                @if (user.LevelSecurity > 1)
+                                                {
+                                                    <span class="badge bg-warning">Level @user.LevelSecurity</span>
+                                                }
+                                            </div>
+                                            <p class="card-text text-muted small mb-2">
+                                                @if (!string.IsNullOrEmpty(user.GroupName))
+                                                {
+                                                    <span>Nhóm: @user.GroupName</span>
+                                                }
+                                                else if (!string.IsNullOrEmpty(user.Department))
+                                                {
+                                                    <span>Phòng ban: @user.Department</span>
+                                                }
+                                            </p>
+                                            @if (!string.IsNullOrEmpty(user.ManagerName))
+                                            {
+                                                <p class="card-text text-muted small">Quản lý bởi: <span
+                                                        class="text-info">@user.ManagerName</span></p>
+                                            }
+                                            @if (!string.IsNullOrEmpty(user.PhoneNumber))
+                                            {
+                                                <p class="card-text text-muted small">SĐT: @user.PhoneNumber</p>
+                                            }
+                                        </div>
+                                        <div class="card-footer bg-light">
+                                            <small class="text-muted">
+                                                @if (user.UpdateAt.HasValue)
+                                                {
+                                                    <span>Cập nhật: @user.UpdateAt.Value.ToString("dd/MM/yyyy")</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>Tạo: @user.CreateAt.ToString("dd/MM/yyyy")</span>
+                                                }
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="col-12">
+                                <div class="alert alert-info text-center">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Không tìm thấy người dùng nào.
                                 </div>
                             </div>
-                            <div class="card-body">
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="avatar-circle bg-success text-white me-3">
-                                        <i class="fas fa-shield-alt"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1">Administrator</h6>
-                                        <small class="text-muted">Quản trị viên hệ thống</small>
-                                    </div>
-                                </div>
-                                <div class="mb-2">
-                                    <span class="badge bg-primary me-1">Toàn quyền</span>
-                                </div>
-                                <p class="card-text text-muted small mb-2">Quyền: Create, Read, Update, Delete</p>
-                                <p class="card-text text-muted small">Người dùng: <span class="text-info">5 người</span>
-                                </p>
-                            </div>
-                            <div class="card-footer bg-light">
-                                <small class="text-muted">Tạo: 15/07/2025</small>
+                        }
+                    }
+                    else
+                    {
+                        <!-- Placeholder for other views (roles, usergroups) -->
+                        <div class="col-12">
+                            <div class="alert alert-warning text-center">
+                                <i class="fas fa-construction me-2"></i>
+                                Chức năng này đang được phát triển.
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Sample Card 3 -->
-                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                        <div class="card h-100 shadow-sm">
-                            <div
-                                class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0">Nhóm người dùng</h6>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-dark dropdown-toggle" type="button"
-                                        id="dropdownMenuButton3" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton3">
-                                    
-                                       
-                                        <li><a class="dropdown-item" href="#">Xem chi tiết</a></li>
-                                        <li><a class="dropdown-item" href="#">Chỉnh sửa</a></li>
-                                        <li>
-                                            <hr class="dropdown-divider">
-                                        </li>
-                                        <li><a class="dropdown-item text-danger" href="#">Xóa</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="avatar-circle bg-warning text-dark me-3">
-                                        <i class="fas fa-users"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1">IT Department</h6>
-                                        <small class="text-muted">Phòng Công nghệ thông tin</small>
-                                    </div>
-                                </div>
-                                <div class="mb-2">
-                                    <span class="badge bg-info me-1">Technical</span>
-                                    <span class="badge bg-secondary">Support</span>
-                                </div>
-                                <p class="card-text text-muted small mb-2">Thành viên: <span class="text-info">12
-                                        người</span></p>
-                                <p class="card-text text-muted small">Trưởng nhóm: Nguyễn Văn B</p>
-                            </div>
-                            <div class="card-footer bg-light">
-                                <small class="text-muted">Cập nhật: 18/07/2025</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Sample Card 4 -->
-                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                        <div class="card h-100 shadow-sm">
-                            <div
-                                class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0">Người dùng</h6>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
-                                        id="dropdownMenuButton4" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton4">
-                                        <li><a class="dropdown-item" href="#">Xem chi tiết</a></li>
-                                        <li><a class="dropdown-item" href="#">Chỉnh sửa</a></li>
-                                        <li>
-                                            <hr class="dropdown-divider">
-                                        </li>
-                                        <li><a class="dropdown-item text-danger" href="#">Xóa</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="avatar-circle bg-secondary text-white me-3">
-                                        <i class="fas fa-user"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1">Trần Thị B</h6>
-                                        <small class="text-muted">user@example.com</small>
-                                    </div>
-                                </div>
-                                <div class="mb-2">
-                                    <span class="badge bg-info me-1">User</span>
-                                    <span class="badge bg-light text-dark">Viewer</span>
-                                </div>
-                                <p class="card-text text-muted small mb-2">Nhóm: HR Department</p>
-                                <p class="card-text text-muted small">Trạng thái: <span class="text-warning">Tạm
-                                        khóa</span>
-                                </p>
-                            </div>
-                            <div class="card-footer bg-light">
-                                <small class="text-muted">Cập nhật: 19/07/2025</small>
-                            </div>
-                        </div>
-                    </div>
+                    }
                 </div>
             </div>
         </div>
 
         <!-- Pagination -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <nav aria-label="Phân trang">
-                    <ul class="pagination justify-content-center">
-                        <li class="page-item disabled">
-                            <a class="page-link" href="#" tabindex="-1">Trước</a>
-                        </li>
-                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                        <li class="page-item">
-                            <a class="page-link" href="#">Sau</a>
-                        </li>
-                    </ul>
-                </nav>
+        @if (currentView == "users" && pagination != null && pagination.TotalPages > 1)
+        {
+            <div class="row mt-4">
+                <div class="col-12">
+                    <nav aria-label="Phân trang">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item @(pagination.HasPreviousPage ? "" : "disabled")">
+                                <a class="page-link" href="#" @onclick="() => LoadPage(pagination.CurrentPage - 1)"
+                                    @onclick:preventDefault="true" tabindex="-1">Trước</a>
+                            </li>
+
+                            @for (int i = Math.Max(1, pagination.CurrentPage - 2); i <= Math.Min(pagination.TotalPages,
+                                                    pagination.CurrentPage + 2); i++)
+                            {
+                                <li class="page-item @(i == pagination.CurrentPage ? "active" : "")">
+                                    <a class="page-link" href="#" @onclick="() => LoadPage(i)"
+                                        @onclick:preventDefault="true">@i</a>
+                                </li>
+                            }
+
+                            <li class="page-item @(pagination.HasNextPage ? "" : "disabled")">
+                                <a class="page-link" href="#" @onclick="() => LoadPage(pagination.CurrentPage + 1)"
+                                    @onclick:preventDefault="true">Sau</a>
+                            </li>
+                        </ul>
+                    </nav>
+                    <div class="text-center mt-2">
+                        <small class="text-muted">
+                            Hiển thị @((pagination.CurrentPage - 1) * pagination.PageSize + 1) -
+                            @(Math.Min(pagination.CurrentPage * pagination.PageSize, pagination.TotalCount))
+                            trong tổng số @pagination.TotalCount kết quả
+                        </small>
+                    </div>
+                </div>
             </div>
-        </div>
+        }
     </div>
 </div>
 
 @code {
+    // Properties for data binding
+    private List<UserInfoDto>? users = new();
+    private string currentView = "users";
+    private string searchTerm = "";
+    private bool isLoading = false;
+    private UsersPaginationInfo? pagination;
+    private Timer? searchTimer;
 
-} =        
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers(int pageNumber = 1, string? searchTerm = null)
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            var response = await UserApi.GetAllUsersAsync(pageNumber, 12, searchTerm);
+
+            if (response.IsSuccess && response.Data != null)
+            {
+                users = response.Data.Users;
+                pagination = response.Data.Pagination;
+            }
+            else
+            {
+                // Handle error - could show a toast notification
+                Console.WriteLine($"Error loading users: {response.Message}");
+                users = new List<UserInfoDto>();
+
+                // Show error message to user if needed
+                await JSRuntime.InvokeVoidAsync("console.error", $"Failed to load users: {response.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle error - could show a toast notification
+            Console.WriteLine($"Exception loading users: {ex.Message}");
+            users = new List<UserInfoDto>();
+            await JSRuntime.InvokeVoidAsync("console.error", $"Exception loading users: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnFilterChanged(ChangeEventArgs e)
+    {
+        currentView = e.Value?.ToString() ?? "users";
+
+        if (currentView == "users")
+        {
+            await LoadUsers();
+        }
+        else
+        {
+            // Clear users when switching to other views
+            users = new List<UserInfoDto>();
+            pagination = null;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task OnSearchChanged(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? "";
+
+        // Debounce search to avoid too many API calls
+        searchTimer?.Dispose();
+        searchTimer = new Timer(async _ =>
+        {
+            if (currentView == "users")
+            {
+                await InvokeAsync(async () => await LoadUsers(1, searchTerm));
+            }
+        }, null, 500, Timeout.Infinite);
+    }
+
+    private async Task LoadPage(int pageNumber)
+    {
+        if (pageNumber < 1 || (pagination != null && pageNumber > pagination.TotalPages))
+            return;
+
+        await LoadUsers(pageNumber, searchTerm);
+    }
+
+    private string GetStatusBadgeClass(short userStatus)
+    {
+        return userStatus switch
+        {
+            0 => "bg-warning", // Cần đổi MK
+            1 => "bg-success", // Active
+            2 => "bg-secondary", // Tạm khóa
+            3 => "bg-info", // Cần reset MK
+            -1 => "bg-danger", // Khóa vĩnh viễn
+            -2 => "bg-dark", // Đã xóa
+            _ => "bg-light text-dark" // Không xác định
+        };
+    }
+
+
+
+    private async Task ViewUserDetail(Guid userId)
+    {
+        // Navigate to user detail page or open modal
+        // This can be implemented based on your routing structure
+        await JSRuntime.InvokeVoidAsync("console.log", $"View user detail: {userId}");
+    }
+
+    private async Task EditUser(Guid userId)
+    {
+        // Navigate to edit user page or open modal
+        // This can be implemented based on your routing structure
+        await JSRuntime.InvokeVoidAsync("console.log", $"Edit user: {userId}");
+    }
+
+    private async Task DeleteUser(Guid userId)
+    {
+        // Show confirmation dialog and delete user
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Bạn có chắc chắn muốn xóa người dùng này?");
+
+        if (confirmed)
+        {
+            try
+            {
+                var response = await UserApi.DeleteUserAsync(userId);
+                if (response.IsSuccess)
+                {
+                    // Reload current page
+                    await LoadUsers(pagination?.CurrentPage ?? 1, searchTerm);
+                    await JSRuntime.InvokeVoidAsync("alert", "Xóa người dùng thành công!");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", $"Có lỗi xảy ra khi xóa người dùng: {response.Message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Lỗi: {ex.Message}");
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        searchTimer?.Dispose();
+    }
+}
+}
