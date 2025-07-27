@@ -12,6 +12,7 @@
 @layout MainLayout
 @attribute [Authorize(Roles = "ACCESS.MainViewAccount")]
 @inject UserApiClient UserApi
+@inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @implements IDisposable
 
@@ -43,9 +44,10 @@
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">&nbsp;</label>
-                                <a href="#" class="btn btn-primary w-100 d-block">
-                                    <i class="fas fa-plus me-2"></i>Thêm mới
-                                </a>
+                                <button type="button" class="btn btn-primary w-100 d-block" @onclick="NavigateToAddPage"
+                                    disabled="@isLoading" title="@GetAddButtonTooltip()">
+                                    <i class="fas fa-plus me-2"></i>@GetAddButtonText()
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -112,7 +114,9 @@
                                             <div class="mb-2">
                                                 <span
                                                     class="badge @GetStatusBadgeClass(user.UserStatus)">@user.UserStatusString</span>
-                                                @if (user.LevelSecurity > 1)
+                                                <span></span>
+
+                                                @if (user.LevelSecurity > 0)
                                                 {
                                                     <span class="badge bg-warning">Level @user.LevelSecurity</span>
                                                 }
@@ -324,7 +328,47 @@
         };
     }
 
+    private string GetAddButtonTooltip()
+    {
+        return currentView.ToLower() switch
+        {
+            "users" => "Thêm người dùng mới",
+            "roles" => "Thêm vai trò mới",
+            "usergroups" => "Thêm nhóm người dùng mới",
+            _ => "Thêm mới"
+        };
+    }
 
+    private string GetAddButtonText()
+    {
+        return currentView.ToLower() switch
+        {
+            "users" => "Thêm User",
+            "roles" => "Thêm Role",
+            "usergroups" => "Thêm Group",
+            _ => "Thêm mới"
+        };
+    }
+
+    private void NavigateToAddPage()
+    {
+        switch (currentView.ToLower())
+        {
+            case "users":
+                Navigation.NavigateTo("/accountAuthManage/AddUser");
+                break;
+            case "roles":
+                Navigation.NavigateTo("/accountAuthManage/addrole");
+                break;
+            case "usergroups":
+                Navigation.NavigateTo("/AccountAuthManage/AddGroup");
+                break;
+            default:
+                // Default to users if unknown view
+                Navigation.NavigateTo("/accountAuthManage/AddUser");
+                break;
+        }
+    }
 
     private async Task ViewUserDetail(Guid userId)
     {
@@ -373,4 +417,4 @@
         searchTimer?.Dispose();
     }
 }
-}
+}        
