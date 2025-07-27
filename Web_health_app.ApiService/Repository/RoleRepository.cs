@@ -46,7 +46,8 @@ namespace Web_health_app.ApiService.Repository
                         RoleId = r.RoleId,
                         RoleName = r.RoleName,
                         IsActive = r.IsActive,
-                        Permissions = r.Permissions.Select(p => p.PermissionId).ToList()
+                        Permissions = r.Permissions.Select(p => p.PermissionId).ToList(),
+                        UserCount = _context.RoleUsers.Count(ru => ru.RoleId == r.RoleId)
                     })
                     .ToListAsync();
 
@@ -70,7 +71,8 @@ namespace Web_health_app.ApiService.Repository
                         RoleId = r.RoleId,
                         RoleName = r.RoleName,
                         IsActive = r.IsActive,
-                        Permissions = r.Permissions.Select(p => p.PermissionId).ToList()
+                        Permissions = r.Permissions.Select(p => p.PermissionId).ToList(),
+                        UserCount = _context.RoleUsers.Count(ru => ru.RoleId == r.RoleId)
                     })
                     .FirstOrDefaultAsync();
 
@@ -95,7 +97,8 @@ namespace Web_health_app.ApiService.Repository
                         RoleId = r.RoleId,
                         RoleName = r.RoleName,
                         IsActive = r.IsActive,
-                        Permissions = r.Permissions.Select(p => p.PermissionId).ToList()
+                        Permissions = r.Permissions.Select(p => p.PermissionId).ToList(),
+                        UserCount = _context.RoleUsers.Count(ru => ru.RoleId == r.RoleId)
                     })
                     .ToListAsync();
 
@@ -347,6 +350,46 @@ namespace Web_health_app.ApiService.Repository
             catch (Exception ex)
             {
                 throw new Exception("Error retrieving role permissions", ex);
+            }
+        }
+
+        public async Task<List<UserInfoDto>> GetUsersInRoleAsync(string roleId)
+        {
+            try
+            {
+                var users = await _context.RoleUsers
+                    .Where(ru => ru.RoleId == roleId)
+                    .Include(ru => ru.User)
+                        .ThenInclude(u => u.Group)
+                    .Include(ru => ru.User)
+                        .ThenInclude(u => u.ManageByNavigation)
+                    .Where(ru => ru.User.UserStatus != -2) // Exclude deleted users
+                    .Select(ru => new UserInfoDto
+                    {
+                        UserId = ru.User.UserId,
+                        UserName = ru.User.UserName,
+                        FullName = ru.User.FullName,
+                        PhoneNumber = ru.User.PhoneNumber,
+                        Department = ru.User.Department,
+                        UserStatus = ru.User.UserStatus,
+                        UserStatusString = ru.User.GetUserStatusString(),
+                        ManageBy = ru.User.ManageBy,
+                        ManagerName = ru.User.ManageByNavigation != null ?
+                            ru.User.ManageByNavigation.FullName ?? ru.User.ManageByNavigation.UserName : null,
+                        LevelSecurity = ru.User.LevelSecurity,
+                        CreateAt = ru.User.CreateAt,
+                        UpdateAt = ru.User.UpdateAt,
+                        GroupId = ru.User.GroupId,
+                        GroupName = ru.User.Group != null ? ru.User.Group.GroupName : null
+                    })
+                    .OrderBy(u => u.FullName ?? u.UserName)
+                    .ToListAsync();
+
+                return users;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error retrieving users in role", ex);
             }
         }
     }

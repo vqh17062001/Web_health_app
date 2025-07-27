@@ -88,5 +88,12 @@ namespace Web_health_app.ApiService.Repository
         /// <param name="roleId">Role ID</param>
         /// <returns>List of permission IDs assigned to the role</returns>
         Task<List<string>> GetRolePermissionsAsync(string roleId);
+
+        /// <summary>
+        /// Get users assigned to a specific role
+        /// </summary>
+        /// <param name="roleId">Role ID</param>
+        /// <returns>List of user information assigned to the role</returns>
+        Task<List<UserInfoDto>> GetUsersInRoleAsync(string roleId);
     }
 }

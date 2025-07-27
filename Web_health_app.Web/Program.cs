@@ -21,6 +21,7 @@ var apiBase = builder.Configuration["ApiSettings:BaseUrl"];
 builder.Services.AddHttpClient<WeatherApiClient>(c => c.BaseAddress = new Uri(apiBase));
 builder.Services.AddHttpClient<LoginApiClient>(c => c.BaseAddress = new Uri(apiBase));
 builder.Services.AddHttpClient<UserApiClient>(c => c.BaseAddress = new Uri(apiBase));
+builder.Services.AddHttpClient<RoleApiClient>(c => c.BaseAddress = new Uri(apiBase));
 // … thêm client khác …
 
 // Add HttpContextAccessor (required for JwtTokenService)

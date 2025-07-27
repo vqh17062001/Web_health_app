@@ -20,6 +20,8 @@ namespace Web_health_app.Models.Models
         public List<string> Permissions { get; set; } = new List<string>();
 
         public int PermissionCount => Permissions.Count;
+
+        public int UserCount { get; set; }
     }
 
     /// <summary>
@@ -60,10 +62,10 @@ namespace Web_health_app.Models.Models
     }
 
     /// <summary>
-    /// DTO for role with user count
+    /// DTO for role with user count (inherits UserCount from RoleInfoDto)
     /// </summary>
     public class RoleWithUserCountDto : RoleInfoDto
     {
-        public int UserCount { get; set; }
+        // UserCount is now inherited from RoleInfoDto
     }
 }

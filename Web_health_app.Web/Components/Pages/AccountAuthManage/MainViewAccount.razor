@@ -12,6 +12,7 @@
 @layout MainLayout
 @attribute [Authorize(Roles = "ACCESS.MainViewAccount")]
 @inject UserApiClient UserApi
+@inject RoleApiClient RoleApi
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @implements IDisposable
@@ -167,9 +168,108 @@
                             </div>
                         }
                     }
+                    else if (currentView == "roles")
+                    {
+                        @if (roles?.Any() == true)
+                        {
+                            @foreach (var role in roles)
+                            {
+                                <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                                    <div class="card h-100 shadow-sm">
+                                        <div
+                                            class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">Vai trò</h6>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
+                                                    id="dropdownMenuButton@(role.RoleId)" data-bs-toggle="dropdown"
+                                                    aria-expanded="false">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton@(role.RoleId)">
+                                                    <li><a class="dropdown-item" href="#"
+                                                            @onclick="() => ViewRoleDetail(role.RoleId)">Xem chi tiết</a></li>
+                                                    <li><a class="dropdown-item" href="#"
+                                                            @onclick="() => EditRole(role.RoleId)">Chỉnh sửa</a></li>
+                                                    <li><a class="dropdown-item" href="#"
+                                                            @onclick="() => ViewUsersInRole(role.RoleId)">Xem thành viên</a></li>
+                                                    <li>
+                                                        <hr class="dropdown-divider">
+                                                    </li>
+                                                    <li><a class="dropdown-item text-danger" href="#"
+                                                            @onclick="() => DeleteRole(role.RoleId)"
+                                                            @onclick:preventDefault="true">Xóa</a></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="avatar-circle bg-success text-white me-3">
+                                                    <i class="fas fa-user-tag"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1">@role.RoleName</h6>
+                                                    <small class="text-muted">@role.RoleId</small>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <span class="badge @GetRoleStatusBadgeClass(role.IsActive)">
+                                                    @(role.IsActive ? "Hoạt động" : "Không hoạt động")
+                                                </span>
+                                            </div>
+                                            <div class="row text-center">
+                                                <div class="col-6">
+                                                    <div class="border-end">
+                                                        <div class="h5 mb-0 text-primary">@role.UserCount</div>
+                                                        <small class="text-muted">Thành viên</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div class="h5 mb-0 text-info">@role.PermissionCount</div>
+                                                    <small class="text-muted">Quyền hạn</small>
+                                                </div>
+                                            </div>
+                                            @if (role.Permissions?.Any() == true)
+                                            {
+                                                <div class="mt-3">
+                                                    <small class="text-muted">Một số quyền hạn:</small>
+                                                    <div class="mt-1">
+                                                        @foreach (var permission in role.Permissions.Take(2))
+                                                        {
+                                                            <span class="badge bg-light text-dark me-1 mb-1">
+                                                                @permission
+                                                            </span>
+                                                        }
+                                                        @if (role.Permissions.Count > 2)
+                                                        {
+                                                            <span class="badge bg-secondary">+@(role.Permissions.Count - 2) khác</span>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                        <div class="card-footer bg-light">
+                                            <small class="text-muted">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                ID: @role.RoleId
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="col-12">
+                                <div class="alert alert-info text-center">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Không tìm thấy vai trò nào.
+                                </div>
+                            </div>
+                        }
+                    }
                     else
                     {
-                        <!-- Placeholder for other views (roles, usergroups) -->
+                        <!-- Placeholder for other views (usergroups) -->
                         <div class="col-12">
                             <div class="alert alert-warning text-center">
                                 <i class="fas fa-construction me-2"></i>
@@ -182,7 +282,7 @@
         </div>
 
         <!-- Pagination -->
-        @if (currentView == "users" && pagination != null && pagination.TotalPages > 1)
+        @if ((currentView == "users" || currentView == "roles") && pagination != null && pagination.TotalPages > 1)
         {
             <div class="row mt-4">
                 <div class="col-12">
@@ -224,10 +324,12 @@
 @code {
     // Properties for data binding
     private List<UserInfoDto>? users = new();
+    private List<RoleInfoDto>? roles = new();
     private string currentView = "users";
     private string searchTerm = "";
     private bool isLoading = false;
     private UsersPaginationInfo? pagination;
+    private RolesPaginationInfo? rolesPagination;
     private Timer? searchTimer;
 
     protected override async Task OnInitializedAsync()
@@ -248,6 +350,7 @@
             {
                 users = response.Data.Users;
                 pagination = response.Data.Pagination;
+                rolesPagination = null; // Clear roles pagination when loading users
             }
             else
             {
@@ -273,6 +376,60 @@
         }
     }
 
+    private async Task LoadRoles(int pageNumber = 1, string? searchTerm = null)
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            var response = await RoleApi.GetRolesWithUserCountAsync(pageNumber, 12, searchTerm, false);
+
+            if (response.IsSuccess && response.Data != null)
+            {
+                // Map RoleWithUserCountDto to RoleInfoDto
+                roles = response.Data.Roles.Select(r => new RoleInfoDto
+                {
+                    RoleId = r.RoleId,
+                    RoleName = r.RoleName,
+                    IsActive = r.IsActive,
+                    Permissions = r.Permissions,
+                    UserCount = r.UserCount
+                }).ToList();
+
+                rolesPagination = response.Data.Pagination;
+                pagination = new UsersPaginationInfo
+                {
+                    CurrentPage = rolesPagination.CurrentPage,
+                    PageSize = rolesPagination.PageSize,
+                    TotalCount = rolesPagination.TotalCount,
+                    TotalPages = rolesPagination.TotalPages,
+                    HasNextPage = rolesPagination.HasNextPage,
+                    HasPreviousPage = rolesPagination.HasPreviousPage
+                };
+            }
+            else
+            {
+                // Handle error
+                Console.WriteLine($"Error loading roles: {response.Message}");
+                roles = new List<RoleInfoDto>();
+                await JSRuntime.InvokeVoidAsync("console.error", $"Failed to load roles: {response.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle error
+            Console.WriteLine($"Exception loading roles: {ex.Message}");
+            roles = new List<RoleInfoDto>();
+            await JSRuntime.InvokeVoidAsync("console.error", $"Exception loading roles: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
     private async Task OnFilterChanged(ChangeEventArgs e)
     {
         currentView = e.Value?.ToString() ?? "users";
@@ -281,17 +438,23 @@
         {
             await LoadUsers();
         }
+        else if (currentView == "roles")
+        {
+            await LoadRoles();
+        }
         else
         {
-            // Clear users when switching to other views
+            // Clear data when switching to other views
             users = new List<UserInfoDto>();
+            roles = new List<RoleInfoDto>();
             pagination = null;
+            rolesPagination = null;
         }
 
         StateHasChanged();
     }
 
-    private async Task OnSearchChanged(ChangeEventArgs e)
+    private void OnSearchChanged(ChangeEventArgs e)
     {
         searchTerm = e.Value?.ToString() ?? "";
 
@@ -303,6 +466,10 @@
             {
                 await InvokeAsync(async () => await LoadUsers(1, searchTerm));
             }
+            else if (currentView == "roles")
+            {
+                await InvokeAsync(async () => await LoadRoles(1, searchTerm));
+            }
         }, null, 500, Timeout.Infinite);
     }
 
@@ -311,7 +478,14 @@
         if (pageNumber < 1 || (pagination != null && pageNumber > pagination.TotalPages))
             return;
 
-        await LoadUsers(pageNumber, searchTerm);
+        if (currentView == "users")
+        {
+            await LoadUsers(pageNumber, searchTerm);
+        }
+        else if (currentView == "roles")
+        {
+            await LoadRoles(pageNumber, searchTerm);
+        }
     }
 
     private string GetStatusBadgeClass(short userStatus)
@@ -326,6 +500,11 @@
             -2 => "bg-dark", // Đã xóa
             _ => "bg-light text-dark" // Không xác định
         };
+    }
+
+    private string GetRoleStatusBadgeClass(bool isActive)
+    {
+        return isActive ? "bg-success" : "bg-danger";
     }
 
     private string GetAddButtonTooltip()
@@ -412,9 +591,120 @@
         }
     }
 
+    // Role-related methods
+    private async Task ViewRoleDetail(string roleId)
+    {
+        // Navigate to role detail page or open modal
+        await JSRuntime.InvokeVoidAsync("console.log", $"View role detail: {roleId}");
+    }
+
+    private async Task EditRole(string roleId)
+    {
+        // Navigate to edit role page or open modal
+        await JSRuntime.InvokeVoidAsync("console.log", $"Edit role: {roleId}");
+    }
+
+    private async Task ViewUsersInRole(string roleId)
+    {
+        // Navigate to users in role page or open modal
+        await JSRuntime.InvokeVoidAsync("console.log", $"View users in role: {roleId}");
+    }
+
+    private async Task DeleteRole(string roleId)
+    {
+        // Show confirmation dialog and delete role
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Bạn có chắc chắn muốn xóa vai trò này?");
+
+        if (confirmed)
+        {
+            try
+            {
+                var response = await RoleApi.DeleteRoleAsync(roleId);
+                if (response.IsSuccess)
+                {
+                    // Reload current page
+                    await LoadRoles(rolesPagination?.CurrentPage ?? 1, searchTerm);
+                    await JSRuntime.InvokeVoidAsync("alert", "Xóa vai trò thành công!");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", $"Có lỗi xảy ra khi xóa vai trò: {response.Message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Lỗi: {ex.Message}");
+            }
+        }
+    }
+
     public void Dispose()
     {
         searchTimer?.Dispose();
     }
 }
+
+<style>
+    .account-auth-page .avatar-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+
+    .account-auth-page .card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+
+    .account-auth-page .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .account-auth-page .dropdown-toggle::after {
+        display: none;
+    }
+
+    .account-auth-page .badge {
+        font-size: 0.75rem;
+    }
+
+    .account-auth-page .card-header h6 {
+        font-weight: 600;
+    }
+
+    .account-auth-page .text-muted.small {
+        font-size: 0.8rem;
+    }
+
+    .account-auth-page .border-end {
+        border-right: 1px solid #dee2e6 !important;
+    }
+
+    .account-auth-page .pagination .page-link {
+        color: #0d6efd;
+    }
+
+    .account-auth-page .pagination .page-item.active .page-link {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+
+    .account-auth-page .card-footer {
+        font-size: 0.8rem;
+    }
+
+    .account-auth-page .alert {
+        border: none;
+        border-radius: 8px;
+    }
+
+    .account-auth-page .spinner-border {
+        width: 3rem;
+        height: 3rem;
+    }
+</style>
 }        

@@ -142,30 +142,30 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="id">Role ID</param>
         /// <param name="updateRoleDto">Updated role data</param>
         /// <returns>Updated role information</returns>
-        [HttpPut("{id}")]
-        [Authorize(Roles = "UPDATE.ROLES")]
-        public async Task<ActionResult<RoleInfoDto>> UpdateRole(string id, [FromBody] UpdateRoleDto updateRoleDto)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
+        //[HttpPut("{id}")]
+        //[Authorize(Roles = "UPDATE.ROLES")]
+        //public async Task<ActionResult<RoleInfoDto>> UpdateRole(string id, [FromBody] UpdateRoleDto updateRoleDto)
+        //{
+        //    try
+        //    {
+        //        if (!ModelState.IsValid)
+        //        {
+        //            return BadRequest(ModelState);
+        //        }
 
-                var updatedRole = await _roleRepository.UpdateRoleAsync(id, updateRoleDto);
-                if (updatedRole == null)
-                {
-                    return NotFound(new { message = "Role not found" });
-                }
+        //        var updatedRole = await _roleRepository.UpdateRoleAsync(id, updateRoleDto);
+        //        if (updatedRole == null)
+        //        {
+        //            return NotFound(new { message = "Role not found" });
+        //        }
 
-                return Ok(updatedRole);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while updating role", error = ex.Message });
-            }
-        }
+        //        return Ok(updatedRole);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, new { message = "An error occurred while updating role", error = ex.Message });
+        //    }
+        //}
 
         /// <summary>
         /// Delete role (soft delete)
@@ -243,35 +243,35 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="id">Role ID</param>
         /// <param name="roleAssignmentDto">Role assignment data</param>
         /// <returns>Success message</returns>
-        [HttpPost("{id}/permissions")]
-        [Authorize(Roles = "UPDATE.ROLES")]
-        public async Task<ActionResult> AssignPermissionsToRole(string id, [FromBody] RoleAssignmentDto roleAssignmentDto)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
+        //[HttpPost("{id}/permissions")]
+        //[Authorize(Roles = "UPDATE.ROLES")]
+        //public async Task<ActionResult> AssignPermissionsToRole(string id, [FromBody] RoleAssignmentDto roleAssignmentDto)
+        //{
+        //    try
+        //    {
+        //        if (!ModelState.IsValid)
+        //        {
+        //            return BadRequest(ModelState);
+        //        }
 
-                if (id != roleAssignmentDto.RoleId)
-                {
-                    return BadRequest(new { message = "Role ID in URL and body must match" });
-                }
+        //        if (id != roleAssignmentDto.RoleId)
+        //        {
+        //            return BadRequest(new { message = "Role ID in URL and body must match" });
+        //        }
 
-                var result = await _roleRepository.AssignPermissionsToRoleAsync(id, roleAssignmentDto.PermissionIds);
-                if (!result)
-                {
-                    return NotFound(new { message = "Role not found" });
-                }
+        //        var result = await _roleRepository.AssignPermissionsToRoleAsync(id, roleAssignmentDto.PermissionIds);
+        //        if (!result)
+        //        {
+        //            return NotFound(new { message = "Role not found" });
+        //        }
 
-                return Ok(new { message = "Permissions assigned successfully" });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while assigning permissions", error = ex.Message });
-            }
-        }
+        //        return Ok(new { message = "Permissions assigned successfully" });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, new { message = "An error occurred while assigning permissions", error = ex.Message });
+        //    }
+        //}
 
         /// <summary>
         /// Get roles with user count
@@ -340,6 +340,31 @@ namespace Web_health_app.ApiService.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "An error occurred while retrieving role permissions", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Get users assigned to a specific role
+        /// </summary>
+        /// <param name="id">Role ID</param>
+        /// <returns>List of users assigned to the role</returns>
+        [HttpGet("{id}/users")]
+        [Authorize(Roles = "READ.ROLES")]
+        public async Task<ActionResult<List<UserInfoDto>>> GetUsersInRole(string id)
+        {
+            try
+            {
+                var users = await _roleRepository.GetUsersInRoleAsync(id);
+                return Ok(new
+                {
+                    roleId = id,
+                    users = users,
+                    totalUsers = users.Count
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while retrieving users in role", error = ex.Message });
             }
         }
     }
