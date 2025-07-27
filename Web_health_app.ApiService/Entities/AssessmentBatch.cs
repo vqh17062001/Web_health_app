@@ -13,7 +13,7 @@ public partial class AssessmentBatch
 
     public DateTime? ScheduledAt { get; set; }
 
-    public byte? Status { get; set; }
+    public short Status { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 
@@ -24,4 +24,19 @@ public partial class AssessmentBatch
     public Guid? ManagerBy { get; set; }
 
     public virtual ICollection<AssessmentBatchStudent> AssessmentBatchStudents { get; set; } = new List<AssessmentBatchStudent>();
+
+    public string GetAssessmentBatchStatusString()
+    {
+        return Status switch
+        {
+            0 => "Khởi tạo chưa được phê duyệt",
+            1 => "Đã được phê duyệt",
+            2 => "Đang tiến hành kiểm tra",
+            3 => "Hoàn tất kiểm tra",
+            -1 => "Lỗi phải tổ chức lại",
+            -2 => "Đã xóa",
+            _ => "Không xác định"
+        };
+    }
+
 }

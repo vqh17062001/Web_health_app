@@ -17,7 +17,7 @@ public partial class Student
 
     public string? Email { get; set; }
 
-    public byte Status { get; set; }
+    public short Status { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
@@ -46,4 +46,16 @@ public partial class Student
     public virtual ICollection<PhysiologicalMetric> PhysiologicalMetrics { get; set; } = new List<PhysiologicalMetric>();
 
     public virtual ICollection<SleepSession> SleepSessions { get; set; } = new List<SleepSession>();
+
+    public string GetStudentStatusString()
+    {
+        return Status switch
+        {
+            1 => "Có dữ liệu đồng bộ với Atlas",
+            10 => "offline",
+            11 => "online",
+            -1 => "Do user tạo ra",
+            _ => "Không xác định"
+        };
+    }
 }

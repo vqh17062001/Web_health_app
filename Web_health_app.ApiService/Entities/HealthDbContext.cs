@@ -10,7 +10,7 @@ public partial class HealthDbContext : DbContext
     {
     }
 
-    public HealthDbContext(DbContextOptions<DbContext> options)
+    public HealthDbContext(DbContextOptions<HealthDbContext> options)
         : base(options)
     {
     }
@@ -115,9 +115,7 @@ public partial class HealthDbContext : DbContext
             entity.Property(e => e.ScheduledAt)
                 .HasColumnType("datetime")
                 .HasColumnName("scheduled_at");
-            entity.Property(e => e.Status)
-                .HasDefaultValue((byte)0)
-                .HasColumnName("status");
+            entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
@@ -751,7 +749,7 @@ public partial class HealthDbContext : DbContext
                 .IsUnicode(false)
                 .HasColumnName("phone");
             entity.Property(e => e.Status)
-                .HasDefaultValue((byte)1)
+                .HasDefaultValue((short)1)
                 .HasColumnName("status");
             entity.Property(e => e.UpdateAt)
                 .HasColumnType("datetime")
@@ -850,7 +848,7 @@ public partial class HealthDbContext : DbContext
                 .IsUnicode(false)
                 .HasColumnName("user_name");
             entity.Property(e => e.UserStatus)
-                .HasDefaultValue((byte)1)
+                .HasDefaultValue((short)1)
                 .HasColumnName("user_status");
 
             entity.HasOne(d => d.Group).WithMany(p => p.Users)

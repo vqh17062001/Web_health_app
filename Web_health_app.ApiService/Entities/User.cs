@@ -17,7 +17,7 @@ public partial class User
 
     public string? Department { get; set; }
 
-    public byte UserStatus { get; set; }
+    public short UserStatus { get; set; }
 
     public Guid? ManageBy { get; set; }
 
@@ -40,4 +40,18 @@ public partial class User
     public virtual ICollection<Student> StudentCreatedByNavigations { get; set; } = new List<Student>();
 
     public virtual ICollection<Student> StudentManageByNavigations { get; set; } = new List<Student>();
+
+    public string GetUserStatusString()
+    {
+        return UserStatus switch
+        {
+            0 => "Cần đổi MK",
+            1 => "Active",
+            2 => "Tạm khóa",
+            3 => "Cần reset MK",
+            -1 => "Khóa vĩnh viễn",
+            -2 => "Đã xóa",
+            _ => "Không xác định"
+        };
+    }
 }
