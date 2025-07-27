@@ -1,7 +1,9 @@
 ﻿@page "/accountAuthManage/addrole"
+@using Microsoft.AspNetCore.Authorization
 @using Web_health_app.Web.Components.Layout
 
 @layout EmptyLayout
+@attribute [Authorize(Roles = "ACCESS.AddRole")]
 
 <link href="/css/AccountAuthManage/add-role.css" rel="stylesheet" />
 

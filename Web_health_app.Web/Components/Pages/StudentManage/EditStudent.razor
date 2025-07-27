@@ -3,6 +3,7 @@
 @using Web_health_app.Web.Components.Layout
 
 @layout EmptyLayout
+@attribute [Authorize(Roles = "ACCESS.EditStudent")]
 
 <link href="/css/StudentManage/edit-student.css" rel="stylesheet" />
 

@@ -1,5 +1,7 @@
 ﻿@page "/dalyhealth/mainview"
+@using Microsoft.AspNetCore.Authorization
 @using Web_health_app.Web.Components.Layout
+@attribute [Authorize(Roles = "ACCESS.MainViewDalyHealth")]
 
 @layout MainLayout
 

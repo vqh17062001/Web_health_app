@@ -1,5 +1,7 @@
 ﻿@page "/assessment-batch"
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Web
+@attribute [Authorize(Roles = "ACCESS.MainViewAssBath")]
 
 <PageTitle>Quản lý Kiểm tra Thể lực</PageTitle>
 

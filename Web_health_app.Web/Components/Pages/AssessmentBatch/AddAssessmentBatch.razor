@@ -1,7 +1,9 @@
 ﻿@page "/assessmentbatch/add"
+@using Microsoft.AspNetCore.Authorization
 @using Web_health_app.Web.Components.Layout
 
 @layout EmptyLayout
+@attribute [Authorize(Roles = "AddAssessmentBatch")]
 
 <link href="/css/AssessmentBatch/add-assessment-batch.css" rel="stylesheet" />
 

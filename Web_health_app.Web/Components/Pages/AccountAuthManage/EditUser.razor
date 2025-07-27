@@ -1,7 +1,9 @@
 ﻿@page "/accountAuthManage/edituser"
+@using Microsoft.AspNetCore.Authorization
 @using Web_health_app.Web.Components.Layout
 
 @layout EmptyLayout
+@attribute [Authorize(Roles = "ACCESS.EditUser")]
 
 <link href="/css/AccountAuthManage/edit-user.css" rel="stylesheet" />
 

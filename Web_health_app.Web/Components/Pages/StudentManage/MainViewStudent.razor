@@ -2,6 +2,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using Web_health_app.Web.Components.Layout
 @layout MainLayout
+@attribute [Authorize(Roles = "ACCESS.MainViewStudent")]
 
 <link href="/css/StudentManage/MainViewStudent.css" rel="stylesheet" />
 

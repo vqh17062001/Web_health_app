@@ -1,7 +1,9 @@
 ﻿@page "/AccountAuthManage/AddGroup"
+@using Microsoft.AspNetCore.Authorization
 @using Web_health_app.Web.Components.Layout
 
 @layout EmptyLayout
+@attribute [Authorize(Roles = "ACCESS.AddGroup")]
 
 <link href="/css/AccountAuthManage/add-group.css" rel="stylesheet" />
 
