@@ -13,6 +13,7 @@ builder.Services.AddDbContext<HealthDbContext>();
 
 // Register repositories
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // Add services to the container.
 builder.Services.AddProblemDetails();
