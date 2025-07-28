@@ -27,21 +27,23 @@
 
         <!-- Form Content -->
         <div class="card-body">
-            <form class="add-user-form">
+            <form class="add-user-form" @onsubmit="HandleSubmit" @onsubmit:preventDefault="true">
                 <div class="form-row">
                     <div class="form-group">
                         <label for="userId" class="form-label">
                             <i class="fas fa-id-card"></i>
                             Mã người dùng
                         </label>
-                        <input type="text" id="userId" class="form-control" placeholder="Nhập mã người dùng" />
+                        <input type="text" id="userId" class="form-control" placeholder="Tự động sinh" disabled />
+                        <small class="form-text text-muted">Mã người dùng sẽ được tự động sinh</small>
                     </div>
                     <div class="form-group">
                         <label for="userName" class="form-label">
                             <i class="fas fa-user"></i>
-                            Tên người dùng
+                            Tên người dùng <span class="required">*</span>
                         </label>
-                        <input type="text" id="userName" class="form-control" placeholder="Nhập tên người dùng" />
+                        <input type="text" id="userName" class="form-control" placeholder="Nhập tên người dùng"
+                            @bind="createUserDto.UserName" required />
                     </div>
                 </div>
 
@@ -49,10 +51,11 @@
                     <div class="form-group">
                         <label for="password" class="form-label">
                             <i class="fas fa-lock"></i>
-                            Mật khẩu
+                            Mật khẩu <span class="required">*</span>
                         </label>
                         <div class="password-input-group">
-                            <input type="password" id="password" class="form-control" placeholder="Nhập mật khẩu" />
+                            <input type="password" id="password" class="form-control" placeholder="Nhập mật khẩu"
+                                @bind="createUserDto.Password" required />
                             <button type="button" class="password-toggle">
                                 <i class="fas fa-eye"></i>
                             </button>
@@ -61,11 +64,11 @@
                     <div class="form-group">
                         <label for="passwordHash" class="form-label">
                             <i class="fas fa-shield-alt"></i>
-                            Xác nhận mật khẩu
+                            Xác nhận mật khẩu <span class="required">*</span>
                         </label>
                         <div class="password-input-group">
                             <input type="password" id="passwordHash" class="form-control"
-                                placeholder="Xác nhận mật khẩu" />
+                                placeholder="Xác nhận mật khẩu" @bind="confirmPassword" required />
                             <button type="button" class="password-toggle">
                                 <i class="fas fa-eye"></i>
                             </button>
@@ -77,9 +80,10 @@
                     <div class="form-group full-width">
                         <label for="fullName" class="form-label">
                             <i class="fas fa-address-card"></i>
-                            Họ và tên đầy đủ
+                            Họ và tên đầy đủ <span class="required">*</span>
                         </label>
-                        <input type="text" id="fullName" class="form-control" placeholder="Nhập họ và tên đầy đủ" />
+                        <input type="text" id="fullName" class="form-control" placeholder="Nhập họ và tên đầy đủ"
+                            @bind="createUserDto.FullName" required />
                     </div>
                 </div>
 
@@ -89,14 +93,15 @@
                             <i class="fas fa-phone"></i>
                             Số điện thoại
                         </label>
-                        <input type="tel" id="phoneNumber" class="form-control" placeholder="Nhập số điện thoại" />
+                        <input type="tel" id="phoneNumber" class="form-control" placeholder="Nhập số điện thoại"
+                            @bind="createUserDto.PhoneNumber" />
                     </div>
                     <div class="form-group">
                         <label for="department" class="form-label">
                             <i class="fas fa-building"></i>
                             Phòng ban
                         </label>
-                        <select id="department" class="form-select">
+                        <select id="department" class="form-select" @bind="createUserDto.Department">
                             <option value="">Chọn phòng ban</option>
                             <option value="it">Công nghệ thông tin</option>
                             <option value="hr">Nhân sự</option>
@@ -113,10 +118,10 @@
                             <i class="fas fa-toggle-on"></i>
                             Trạng thái
                         </label>
-                        <select id="userStatus" class="form-select">
-                            <option value="active">Hoạt động</option>
-                            <option value="inactive">Không hoạt động</option>
-                            <option value="pending">Chờ duyệt</option>
+                        <select id="userStatus" class="form-select" @bind="createUserDto.UserStatus">
+                            <option value="0">Tạo mới cần đổi MK</option>
+                            <option value="1">Hoạt động</option>
+                            <option value="2">Tạm khóa</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -124,7 +129,7 @@
                             <i class="fas fa-users"></i>
                             Nhóm người dùng
                         </label>
-                        <select id="groupId" class="form-select">
+                        <select id="groupId" class="form-select" @bind="createUserDto.GroupId">
                             <option value="">Chọn nhóm người dùng</option>
                             <option value="1">IT Department</option>
                             <option value="2">HR Department</option>
@@ -147,7 +152,7 @@
                                 <i class="fas fa-user-crown"></i>
                                 Được quản lý bởi
                             </label>
-                            <select id="manageBy" class="form-select">
+                            <select id="manageBy" class="form-select" @bind="createUserDto.ManageBy">
                                 <option value="">Chọn người quản lý</option>
                                 <option value="manager1">Nguyễn Văn A - IT Manager</option>
                                 <option value="manager2">Trần Thị B - HR Manager</option>
@@ -159,11 +164,13 @@
                                 <i class="fas fa-shield-check"></i>
                                 Cấp độ bảo mật
                             </label>
-                            <select id="levelSecurity" class="form-select">
-                                <option value="low">Thấp</option>
-                                <option value="medium">Trung bình</option>
-                                <option value="high">Cao</option>
-                                <option value="critical">Tối mật</option>
+                            <select id="levelSecurity" class="form-select" @bind="createUserDto.LevelSecurity">
+                                <option value="1">Tối mật</option>
+                                <option value="2">Mật</option>
+                                <option value="3">Cao</option>
+                                <option value="4">Trung bình</option>
+                                <option value="5">Thấp</option>
+
                             </select>
                         </div>
                     </div>
@@ -182,15 +189,100 @@
                                 <i class="fas fa-calendar-plus"></i>
                                 Ngày tạo
                             </label>
-                            <input type="datetime-local" id="createAt" class="form-control" />
+                            <input type="datetime-local" id="createAt" class="form-control" disabled
+                                value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
                         </div>
                         <div class="form-group">
                             <label for="updateAt" class="form-label">
                                 <i class="fas fa-calendar-edit"></i>
                                 Ngày cập nhật
                             </label>
-                            <input type="datetime-local" id="updateAt" class="form-control" />
+                            <input type="datetime-local" id="updateAt" class="form-control" disabled
+                                value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
                         </div>
+                    </div>
+                </div>
+
+                <!-- Role Assignment Section -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-user-shield"></i>
+                        Phân quyền
+                    </h4>
+                    <p class="section-description">
+                        Chọn các vai trò để gán cho người dùng này
+                    </p>
+
+                    <div class="roles-container">
+                        @if (isLoadingRoles)
+                        {
+                            <div class="text-center">
+                                <div class="spinner-border spinner-border-sm" role="status">
+                                    <span class="visually-hidden">Đang tải...</span>
+                                </div>
+                                <span class="ms-2">Đang tải danh sách vai trò...</span>
+                            </div>
+                        }
+                        else if (availableRoles?.Any() == true)
+                        {
+                            <div class="roles-grid">
+                                @foreach (var role in availableRoles)
+                                {
+                                    <div class="role-item">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="role_@role.RoleId"
+                                                checked="@selectedRoles[role.RoleId]"
+                                                @onchange="@(() => OnRoleSelectionChanged(role.RoleId))" />
+                                            <label class="form-check-label" for="role_@role.RoleId">
+                                                <div class="role-info">
+                                                    <div class="role-name">@role.RoleName</div>
+                                                    <div class="role-details">
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-key"></i> @role.PermissionCount quyền
+                                                            <span class="mx-1">|</span>
+                                                            <i class="fas fa-users"></i> @role.UserCount người dùng
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                        @if (!role.IsActive)
+                                        {
+                                            <span class="badge bg-warning">Không hoạt động</span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+
+                            @if (selectedRolesList.Any())
+                            {
+                                <div class="selected-roles-summary">
+                                    <h6><i class="fas fa-check-circle text-success"></i> Vai trò đã chọn
+                                        (@selectedRolesList.Count):</h6>
+                                    <div class="selected-roles-tags">
+                                        @foreach (var roleId in selectedRolesList)
+                                        {
+                                            var role = availableRoles.FirstOrDefault(r => r.RoleId == roleId);
+                                            if (role != null)
+                                            {
+                                                <span class="badge bg-primary me-2 mb-2">
+                                                    @role.RoleName
+                                                    <button type="button" class="btn-close btn-close-white ms-2"
+                                                        @onclick="@(() => RemoveRole(roleId))" aria-label="Xóa vai trò"></button>
+                                                </span>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Không có vai trò nào để gán. Vui lòng tạo vai trò trước khi thêm người dùng.
+                            </div>
+                        }
                     </div>
                 </div>
             </form>
@@ -199,25 +291,238 @@
         <!-- Footer Actions -->
         <div class="card-footer">
             <div class="action-buttons">
-                <button type="button" class="btn btn-cancel">
+                <button type="button" class="btn btn-cancel" @onclick="CancelAndGoBack" disabled="@isSaving">
                     <i class="fas fa-times"></i>
                     Hủy bỏ
                 </button>
-                <button type="button" class="btn btn-reset">
+                <button type="button" class="btn btn-reset" @onclick="ResetForm" disabled="@isSaving">
                     <i class="fas fa-redo"></i>
                     Đặt lại
                 </button>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i>
-                    Lưu người dùng
+                <button type="submit" class="btn btn-primary" @onclick="HandleSubmit" disabled="@isSaving">
+                    @if (isSaving)
+                    {
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span class="ms-1">Đang lưu...</span>
+                    }
+                    else
+                    {
+                        <i class="fas fa-save"></i>
+                        <span class="ms-1">Lưu người dùng</span>
+                    }
                 </button>
             </div>
+
+            @if (!string.IsNullOrEmpty(validationMessage))
+            {
+                <div class="alert alert-danger mt-3">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    @validationMessage
+                </div>
+            }
         </div>
     </div>
 </div>
 
-@code {
+@using Web_health_app.Models.Models
+@using Web_health_app.Web.ApiClients
+@using Microsoft.AspNetCore.Components
+@inject UserApiClient UserApi
+@inject RoleApiClient RoleApi
+@inject RoleUserApiClient RoleUserApi
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
+@code {
+    // User form data
+    private CreateUserDto createUserDto = new CreateUserDto();
+    private string confirmPassword = string.Empty;
+
+    // Role management
+    private List<RoleInfoDto> availableRoles = new List<RoleInfoDto>();
+    private Dictionary<string, bool> selectedRoles = new Dictionary<string, bool>();
+    private List<string> selectedRolesList => selectedRoles.Where(sr => sr.Value).Select(sr => sr.Key).ToList();
+
+    // Loading states
+    private bool isLoading = false;
+    private bool isLoadingRoles = false;
+    private bool isSaving = false;
+
+    // Form validation
+    private bool showPasswordValidation = false;
+    private string validationMessage = string.Empty;
+    private bool isFormValid = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAvailableRoles();
+    }
+
+    private async Task LoadAvailableRoles()
+    {
+        try
+        {
+            isLoadingRoles = true;
+            StateHasChanged();
+
+            var response = await RoleApi.GetActiveRolesAsync();
+            if (response.IsSuccess && response.Data != null)
+            {
+                availableRoles = response.Data;
+
+                // Initialize selected roles dictionary
+                selectedRoles.Clear();
+                foreach (var role in availableRoles)
+                {
+                    selectedRoles[role.RoleId] = false;
+                }
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("console.error", $"Failed to load roles: {response.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"Exception loading roles: {ex.Message}");
+        }
+        finally
+        {
+            isLoadingRoles = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnRoleSelectionChanged(string roleId)
+    {
+        if (selectedRoles.ContainsKey(roleId))
+        {
+            selectedRoles[roleId] = !selectedRoles[roleId];
+        }
+        StateHasChanged();
+    }
+
+    private void RemoveRole(string roleId)
+    {
+        if (selectedRoles.ContainsKey(roleId))
+        {
+            selectedRoles[roleId] = false;
+        }
+        StateHasChanged();
+    }
+
+    private bool ValidateForm()
+    {
+        validationMessage = string.Empty;
+
+        // Basic validation
+        if (string.IsNullOrWhiteSpace(createUserDto.UserName))
+        {
+            validationMessage = "Tên người dùng không được để trống";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(createUserDto.Password))
+        {
+            validationMessage = "Mật khẩu không được để trống";
+            return false;
+        }
+
+        if (createUserDto.Password != confirmPassword)
+        {
+            validationMessage = "Mật khẩu xác nhận không khớp";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(createUserDto.FullName))
+        {
+            validationMessage = "Họ và tên không được để trống";
+            return false;
+        }
+
+        // Password strength validation
+        if (createUserDto.Password.Length < 6)
+        {
+            validationMessage = "Mật khẩu phải có ít nhất 6 ký tự";
+            return false;
+        }
+
+        return true;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (isSaving) return;
+
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            // Validate form
+            if (!ValidateForm())
+            {
+                await JSRuntime.InvokeVoidAsync("alert", validationMessage);
+                return;
+            }
+
+            // Step 1: Create user
+            var userResponse = await UserApi.CreateUserAsync(createUserDto);
+            if (!userResponse.IsSuccess || userResponse.Data == null)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Lỗi tạo người dùng: {userResponse.Message}");
+                return;
+            }
+
+            var createdUser = userResponse.Data;
+
+            // Step 2: Assign roles if any selected
+            if (selectedRolesList.Any())
+            {
+                var roleAssignResponse = await RoleUserApi.AssignRolesToUserAsync(createdUser.UserId, selectedRolesList);
+                if (!roleAssignResponse.IsSuccess)
+                {
+                    // User created but role assignment failed - show warning
+                    await JSRuntime.InvokeVoidAsync("alert",
+                    $"Người dùng đã được tạo thành công nhưng có lỗi khi gán quyền: {roleAssignResponse.Message}");
+                }
+            }
+
+            // Success
+            await JSRuntime.InvokeVoidAsync("alert", "Thêm người dùng thành công!");
+
+            // Navigate back or reset form
+            Navigation.NavigateTo("/accountAuthManage");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Lỗi không xác định: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ResetForm()
+    {
+        createUserDto = new CreateUserDto();
+        confirmPassword = string.Empty;
+
+        // Reset role selections
+        foreach (var key in selectedRoles.Keys.ToList())
+        {
+            selectedRoles[key] = false;
+        }
+
+        validationMessage = string.Empty;
+        StateHasChanged();
+    }
+
+    private void CancelAndGoBack()
+    {
+        Navigation.NavigateTo("/accountAuthManage");
+    }
 }
 
-                               
