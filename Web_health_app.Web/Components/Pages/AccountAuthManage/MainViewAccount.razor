@@ -556,11 +556,10 @@
         await JSRuntime.InvokeVoidAsync("console.log", $"View user detail: {userId}");
     }
 
-    private async Task EditUser(Guid userId)
+    private void EditUser(Guid userId)
     {
-        // Navigate to edit user page or open modal
-        // This can be implemented based on your routing structure
-        await JSRuntime.InvokeVoidAsync("console.log", $"Edit user: {userId}");
+        // Navigate to edit user page with userId parameter
+        Navigation.NavigateTo($"/accountAuthManage/edituser?userId={userId}");
     }
 
     private async Task DeleteUser(Guid userId)

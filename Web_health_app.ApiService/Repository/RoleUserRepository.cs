@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using Web_health_app.ApiService.Entities;
 using Web_health_app.Models.Models;
 
@@ -85,23 +86,30 @@ namespace Web_health_app.ApiService.Repository
         {
             try
             {
-                var roles = await _context.RoleUsers
-                    .Where(ru => ru.UserId == userId)
-                    .Include(ru => ru.Role)
-                        .ThenInclude(r => r.Permissions)
-                    .Where(ru => ru.Role.IsActive)
-                    .Select(ru => new RoleInfoDto
-                    {
-                        RoleId = ru.Role.RoleId,
-                        RoleName = ru.Role.RoleName,
-                        IsActive = ru.Role.IsActive,
-                        Permissions = ru.Role.Permissions.Select(p => p.PermissionId).ToList(),
-                        UserCount = _context.RoleUsers.Count(r => r.RoleId == ru.Role.RoleId)
-                    })
-                    .OrderBy(r => r.RoleName)
-                    .ToListAsync();
+                var listRoleId = _context.Database.SqlQueryRaw<string>("SELECT role_ID FROM ROLE_USERS WHERE user_ID = {0}", userId);
 
-                return roles;
+                var lStringRoleId =  listRoleId.ToList();
+
+                var result = new List<RoleInfoDto>();
+                foreach (var roleId in lStringRoleId)
+                {
+                    var role = await _context.Roles
+                     .Include(r => r.Permissions)
+                     .Where(r => r.RoleId == roleId)
+                     .Select(r => new RoleInfoDto
+                     {
+                         RoleId = r.RoleId,
+                         RoleName = r.RoleName,
+                         IsActive = r.IsActive,
+                         Permissions = r.Permissions.Select(p => p.PermissionId).ToList(),
+                         UserCount = _context.RoleUsers.Count(ru => ru.RoleId == r.RoleId)
+                     })
+                     .FirstOrDefaultAsync();
+                    result.Add(role);
+                }
+                
+
+                return result;
             }
             catch (Exception ex)
             {
@@ -185,23 +193,17 @@ namespace Web_health_app.ApiService.Repository
                 }
 
                 // Remove all existing role assignments
-                var existingAssignments = await _context.RoleUsers
-                    .Where(ru => ru.UserId == userId)
-                    .ToListAsync();
+                await _context.Database.ExecuteSqlRawAsync("DELETE FROM ROLE_USERS WHERE user_ID = {0}", userId);
 
-                _context.RoleUsers.RemoveRange(existingAssignments);
 
                 // Add new role assignments
                 foreach (var roleId in roleIds)
                 {
-                    _context.RoleUsers.Add(new RoleUser
-                    {
-                        UserId = userId,
-                        RoleId = roleId
-                    });
+                    _context.Database.ExecuteSqlRaw("INSERT INTO ROLE_USERS (user_ID, role_ID) VALUES ({0}, {1})", userId, roleId);
+
                 }
 
-                await _context.SaveChangesAsync();
+             
                 return true;
             }
             catch (Exception ex)
