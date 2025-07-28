@@ -18,7 +18,7 @@ namespace Web_health_app.ApiService.Repository
         {
             try
             {
-                var user = await _context.Users
+                var user = await _context.Users.Where(u => u.UserStatus != -1 && u.UserStatus!=-2 && u.UserStatus != 2)
                     .FirstOrDefaultAsync(u => u.UserName == request.Username && u.PasswordHash == request.Password);
 
                 return user != null;

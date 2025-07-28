@@ -314,6 +314,77 @@ namespace Web_health_app.ApiService.Repository
             }
         }
 
+
+        public async Task<List<UserInfoDto>> GetUserWithCompareSecurityLevel(int level, bool lessThen = true) {
+            try
+            {
+
+             
+                if (lessThen)
+                {
+
+                    var listUserResult = await _context.Users
+                    .Where(u => u.LevelSecurity <= level)
+                    .Select(u => new UserInfoDto
+                    {
+                        UserId = u.UserId,
+                        UserName = u.UserName,
+                        FullName = u.FullName,
+                        PhoneNumber = u.PhoneNumber,
+                        Department = u.Department,
+                        UserStatus = u.UserStatus,
+                        UserStatusString = u.GetUserStatusString(),
+                        ManageBy = u.ManageBy,
+                        ManagerName = u.ManageByNavigation != null ? u.ManageByNavigation.FullName ?? u.ManageByNavigation.UserName : null,
+                        LevelSecurity = u.LevelSecurity,
+                        CreateAt = u.CreateAt,
+                        UpdateAt = u.UpdateAt,
+                        GroupId = u.GroupId,
+                        GroupName = u.Group != null ? u.Group.GroupName : null
+                    })
+                    .OrderBy(u => u.CreateAt)
+                    .ToListAsync();
+                    return listUserResult;
+
+                }
+                else
+                {
+                    var listUserResult = await _context.Users
+                    .Where(u => u.LevelSecurity >= level)
+                    .Select(u => new UserInfoDto
+                    {
+                        UserId = u.UserId,
+                        UserName = u.UserName,
+                        FullName = u.FullName,
+                        PhoneNumber = u.PhoneNumber,
+                        Department = u.Department,
+                        UserStatus = u.UserStatus,
+                        UserStatusString = u.GetUserStatusString(),
+                        ManageBy = u.ManageBy,
+                        ManagerName = u.ManageByNavigation != null ? u.ManageByNavigation.FullName ?? u.ManageByNavigation.UserName : null,
+                        LevelSecurity = u.LevelSecurity,
+                        CreateAt = u.CreateAt,
+                        UpdateAt = u.UpdateAt,
+                        GroupId = u.GroupId,
+                        GroupName = u.Group != null ? u.Group.GroupName : null
+                    })
+                    .OrderBy(u => u.CreateAt)
+                    .ToListAsync();
+                    return listUserResult;
+
+                }
+
+
+
+
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error get user with compare security", ex);
+            }
+
+        }
+
         public async Task<bool> ChangePasswordAsync(Guid userId, string newPassword)
         {
             try

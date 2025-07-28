@@ -20,7 +20,7 @@
                     <p>Tạo tài khoản người dùng trong hệ thống</p>
                 </div>
             </div>
-            <button type="button" class="btn-close" aria-label="Đóng">
+            <button type="button" class="btn-close" @onclick="CancelAndGoBack" aria-label="Đóng">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -154,9 +154,23 @@
                             </label>
                             <select id="manageBy" class="form-select" @bind="createUserDto.ManageBy">
                                 <option value="">Chọn người quản lý</option>
-                                <option value="manager1">Nguyễn Văn A - IT Manager</option>
-                                <option value="manager2">Trần Thị B - HR Manager</option>
-                                <option value="manager3">Lê Văn C - Finance Manager</option>
+                                @if (availableManagers?.Any() == true)
+                                {
+                                    @foreach (var manager in availableManagers)
+                                    {
+                                        <option value="@manager.UserId">
+                                            @(manager.FullName ?? manager.UserName) - Level @manager.LevelSecurity
+                                        </option>
+                                    }
+                                }
+                                else if (isLoadingManagers)
+                                {
+                                    <option value="" disabled>Đang tải danh sách quản lý...</option>
+                                }
+                                else if (createUserDto.LevelSecurity > 0)
+                                {
+                                    <option value="" disabled>Không có quản lý khả dụng cho cấp độ này</option>
+                                }
                             </select>
                         </div>
                         <div class="form-group">
@@ -164,7 +178,8 @@
                                 <i class="fas fa-shield-check"></i>
                                 Cấp độ bảo mật
                             </label>
-                            <select id="levelSecurity" class="form-select" @bind="createUserDto.LevelSecurity">
+                            <select id="levelSecurity" class="form-select" @bind="createUserDto.LevelSecurity"
+                                @bind:after="LoadAvailableManagers">
                                 <option value="1">Tối mật</option>
                                 <option value="2">Mật</option>
                                 <option value="3">Cao</option>
@@ -254,27 +269,7 @@
                                 }
                             </div>
 
-                            @if (selectedRolesList.Any())
-                            {
-                                <div class="selected-roles-summary">
-                                    <h6><i class="fas fa-check-circle text-success"></i> Vai trò đã chọn
-                                        (@selectedRolesList.Count):</h6>
-                                    <div class="selected-roles-tags">
-                                        @foreach (var roleId in selectedRolesList)
-                                        {
-                                            var role = availableRoles.FirstOrDefault(r => r.RoleId == roleId);
-                                            if (role != null)
-                                            {
-                                                <span class="badge bg-primary me-2 mb-2">
-                                                    @role.RoleName
-                                                    <button type="button" class="btn-close btn-close-white ms-2"
-                                                        @onclick="@(() => RemoveRole(roleId))" aria-label="Xóa vai trò"></button>
-                                                </span>
-                                            }
-                                        }
-                                    </div>
-                                </div>
-                            }
+
                         }
                         else
                         {
@@ -343,9 +338,13 @@
     private Dictionary<string, bool> selectedRoles = new Dictionary<string, bool>();
     private List<string> selectedRolesList => selectedRoles.Where(sr => sr.Value).Select(sr => sr.Key).ToList();
 
+    // Manager management
+    private List<UserInfoDto> availableManagers = new List<UserInfoDto>();
+
     // Loading states
     private bool isLoading = false;
     private bool isLoadingRoles = false;
+    private bool isLoadingManagers = false;
     private bool isSaving = false;
 
     // Form validation
@@ -356,6 +355,7 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadAvailableRoles();
+
     }
 
     private async Task LoadAvailableRoles()
@@ -524,5 +524,50 @@
     {
         Navigation.NavigateTo("/accountAuthManage");
     }
+    private async Task LoadAvailableManagers(int levelSecurity)
+    {
+        try
+        {
+            isLoadingManagers = true;
+            StateHasChanged();
+
+            var response = await UserApi.GetUsersByCompareSecurityLevelAsync(levelSecurity);
+
+            if (response.IsSuccess && response.Data != null)
+            {
+                // Filter users who have higher or equal security level (can manage this user)
+                availableManagers = response.Data
+                .Where(u => u.LevelSecurity <= levelSecurity && u.UserStatus == 1) // Only active users
+                .OrderBy(u => u.FullName ?? u.UserName)
+                .ToList();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("console.error", $"Failed to load managers: {response.Message}");
+                availableManagers = new List<UserInfoDto>();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"Error loading managers: {ex.Message}");
+            availableManagers = new List<UserInfoDto>();
+        }
+        finally
+        {
+            isLoadingManagers = false;
+            StateHasChanged();
+        }
+    }
+
+    // Overload method for compatibility with the existing call
+    private async Task LoadAvailableManagers()
+    {
+        if (createUserDto.LevelSecurity > 0)
+        {
+            await LoadAvailableManagers((int)createUserDto.LevelSecurity);
+        }
+    }
 }
 
+
+                                                                                   

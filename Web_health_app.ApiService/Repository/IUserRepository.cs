@@ -78,5 +78,11 @@ namespace Web_health_app.ApiService.Repository
         /// <param name="newPassword">New password</param>
         /// <returns>True if password changed successfully, false if user not found</returns>
         Task<bool> ChangePasswordAsync(Guid userId, string newPassword);
+
+
+
+        /// <summary>
+        
+        Task<List<UserInfoDto>> GetUserWithCompareSecurityLevel(int level, bool lessThen = true);
     }
 }

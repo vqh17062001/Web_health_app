@@ -274,6 +274,24 @@ namespace Web_health_app.ApiService.Controllers
             }
         }
 
+        [HttpGet("GetUsersByCompareSecurityLevel/{level}")]
+
+        public async Task<ActionResult> GetUsersByCompareSecurityLevel(int level)
+        {
+            try
+            {
+                var listUsers = await _userRepository.GetUserWithCompareSecurityLevel(level);
+                return Ok(listUsers);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while retrieving users by group", error = ex.Message });
+            }
+        }
+
+
+
+
         /// <summary>
         /// Change user password
         /// </summary>

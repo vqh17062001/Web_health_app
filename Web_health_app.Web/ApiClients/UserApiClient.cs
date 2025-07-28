@@ -480,6 +480,47 @@ namespace Web_health_app.Web.ApiClients
                 };
             }
         }
+
+        /// <summary>
+        /// Get users by comparing security level
+        /// </summary>
+        /// <param name="level">Security level to compare</param>
+        /// <returns>API response with list of users</returns>
+        public async Task<ApiResponse<List<UserInfoDto>>> GetUsersByCompareSecurityLevelAsync(int level)
+        {
+            await SetAuthorizeHeader();
+            try
+            {
+                var response = await _httpClient.GetAsync($"api/user/GetUsersByCompareSecurityLevel/{level}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<List<UserInfoDto>>();
+                    return new ApiResponse<List<UserInfoDto>>
+                    {
+                        IsSuccess = true,
+                        Message = "Users retrieved successfully",
+                        Data = result
+                    };
+                }
+                else
+                {
+                    return new ApiResponse<List<UserInfoDto>>
+                    {
+                        IsSuccess = false,
+                        Message = $"Failed to get users by security level: {response.ReasonPhrase}"
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<List<UserInfoDto>>
+                {
+                    IsSuccess = false,
+                    Message = $"Error getting users by security level: {ex.Message}"
+                };
+            }
+        }
     }
 
     // Supporting classes for API responses
