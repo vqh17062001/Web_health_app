@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Web_health_app.ApiService.Entities;
 using Web_health_app.Models.Models;
-
+using System.Text.RegularExpressions;
 namespace Web_health_app.ApiService.Repository
 {
     public class UserRepository : IUserRepository
@@ -26,11 +26,22 @@ namespace Web_health_app.ApiService.Repository
                 // Apply search filter
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
-                    query = query.Where(u =>
-                        u.UserName.Contains(searchTerm) ||
-                        (u.FullName != null && u.FullName.Contains(searchTerm)) ||
-                        (u.PhoneNumber != null && u.PhoneNumber.Contains(searchTerm)) ||
-                        (u.Department != null && u.Department.Contains(searchTerm)));
+                    if (searchTerm.Contains("Status") || searchTerm.Contains("status"))
+                    {
+                        var matches = Regex.Matches(searchTerm, @"-?\d+");
+                        query = query.Where(u => u.UserStatus == int.Parse(matches[0].Value)
+
+                            );
+
+                    }
+                    else
+                    {
+                        query = query.Where(u =>
+                            u.UserName.Contains(searchTerm) ||
+                            (u.FullName != null && u.FullName.Contains(searchTerm)) ||
+                            (u.PhoneNumber != null && u.PhoneNumber.Contains(searchTerm)) ||
+                            (u.Department != null && u.Department.Contains(searchTerm)));
+                    }
                 }
 
                 var totalCount = await query.CountAsync();
