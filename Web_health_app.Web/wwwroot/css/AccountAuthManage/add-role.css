@@ -1,4 +1,4 @@
-/* Add Role Form Styles - .NET 8 Purple Theme */
+﻿/* Add Role Form Styles - .NET 8 Purple Theme */
 
 :root {
     --primary-purple: #512BD4;
@@ -321,12 +321,16 @@ textarea.form-control {
 .checkbox-label {
     width: 20px;
     height: 20px;
+    min-width: 20px;
+    min-height: 20px;
     border: 2px solid var(--gray-300);
-    border-radius: 4px;
+    border-radius: 50%;
     cursor: pointer;
     position: relative;
     transition: all 0.3s ease;
     background: white;
+    display: inline-block;
+    flex-shrink: 0;
 }
 
 .checkbox-label:hover {
@@ -620,6 +624,297 @@ textarea.form-control {
     opacity: 1;
 }
 
+/* Permission Matrix Sections */
+.permission-matrix-section {
+    margin-bottom: 25px;
+    padding: 20px;
+    background: #FFFFFF;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.matrix-title {
+    color: var(--primary-purple);
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.matrix-title i {
+    color: var(--light-purple);
+}
+
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    /* 4 cột bằng nhau */
+    gap: 12px 10px;
+    /* row-gap: 12px, column-gap: 10px */
+    padding: 12px 0;
+    align-items: stretch;
+}
+
+.action-grid .action-col {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-700);
+    padding: 4px 2px;
+    background: var(--gray-50);
+    border-radius: 4px;
+    border: 1px solid var(--gray-200);
+}
+
+.action-grid .action-checkbox {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 6px;
+    background: #FFFFFF;
+    border-radius: 4px;
+    border: 1px solid var(--gray-200);
+    transition: all 0.2s ease;
+}
+
+.action-grid .action-checkbox:hover {
+    background: var(--purple-light-bg);
+    border-color: var(--purple-border);
+}
+
+/* Data Permission Container */
+.data-permission-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 16px;
+    background: var(--gray-50);
+    border-radius: 8px;
+    border: 1px solid var(--gray-200);
+}
+
+.entity-permission-group {
+    background: #FFFFFF;
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid var(--gray-200);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.entity-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--purple-border);
+    color: var(--primary-purple);
+    font-weight: 600;
+}
+
+.entity-header i {
+    color: var(--light-purple);
+    font-size: 16px;
+}
+
+.action-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 8px;
+    background: var(--gray-50);
+    border-radius: 6px;
+    border: 1px solid var(--gray-200);
+    transition: all 0.2s ease;
+}
+
+.action-item:hover {
+    background: var(--purple-light-bg);
+    border-color: var(--purple-border);
+    transform: translateY(-1px);
+}
+
+.action-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gray-700);
+    text-align: center;
+    line-height: 1.2;
+    margin-bottom: 4px;
+}
+
+.action-item .action-checkbox {
+    background: #FFFFFF;
+    border: 2px solid var(--gray-300);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.action-item .action-checkbox:hover {
+    border-color: var(--primary-purple);
+    background: var(--purple-light-bg);
+    transform: scale(1.05);
+}
+
+/* Đảm bảo tất cả checkbox đều tròn */
+.permission-checkbox+.checkbox-label,
+.action-checkbox input[type="checkbox"]+label,
+.action-item .action-checkbox {
+    border-radius: 50% !important;
+    aspect-ratio: 1/1;
+}
+
+/* Style cho checkbox được chọn trong action grid */
+.action-item .permission-checkbox:checked+.action-checkbox {
+    background: var(--primary-purple);
+    border-color: var(--primary-purple);
+}
+
+.action-item .permission-checkbox:checked+.action-checkbox::after {
+    content: '\f00c';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    color: white;
+    font-size: 10px;
+}
+
+/* Màu sắc cho các action item dựa trên vị trí trong grid (chia 4) */
+/* Dư 1 - Màu xanh lá */
+.action-item:nth-child(4n+1) {
+    background: #E8F5E8 !important;
+    border-color: #4CAF50 !important;
+}
+
+.action-item:nth-child(4n+1) .action-label {
+    color: #2E7D2E !important;
+    font-weight: 700;
+}
+
+.action-item:nth-child(4n+1):hover {
+    background: #C8E6C9 !important;
+    border-color: #388E3C !important;
+    transform: translateY(-2px);
+}
+
+/* Dư 2 - Màu vàng */
+.action-item:nth-child(4n+2) {
+    background: #FFF8E1 !important;
+    border-color: #FFC107 !important;
+}
+
+.action-item:nth-child(4n+2) .action-label {
+    color: #F57F17 !important;
+    font-weight: 700;
+}
+
+.action-item:nth-child(4n+2):hover {
+    background: #FFECB3 !important;
+    border-color: #FFA000 !important;
+    transform: translateY(-2px);
+}
+
+/* Dư 3 - Màu xanh biển */
+.action-item:nth-child(4n+3) {
+    background: #E3F2FD !important;
+    border-color: #2196F3 !important;
+}
+
+.action-item:nth-child(4n+3) .action-label {
+    color: #1565C0 !important;
+    font-weight: 700;
+}
+
+.action-item:nth-child(4n+3):hover {
+    background: #BBDEFB !important;
+    border-color: #1976D2 !important;
+    transform: translateY(-2px);
+}
+
+/* Dư 0 (chia hết cho 4) - Màu đỏ */
+.action-item:nth-child(4n) {
+    background: #FFEBEE !important;
+    border-color: #F44336 !important;
+}
+
+.action-item:nth-child(4n) .action-label {
+    color: #C62828 !important;
+    font-weight: 700;
+}
+
+.action-item:nth-child(4n):hover {
+    background: #FFCDD2 !important;
+    border-color: #D32F2F !important;
+    transform: translateY(-2px);
+}
+
+/* Responsive Design for Action Grid */
+@media (max-width: 1200px) {
+    .action-grid {
+        grid-template-columns: repeat(3, 1fr);
+        /* 3 cột trên màn hình vừa */
+        gap: 10px 8px;
+    }
+}
+
+@media (max-width: 768px) {
+    .action-grid {
+        grid-template-columns: repeat(2, 1fr);
+        /* 2 cột trên màn hình nhỏ */
+        gap: 8px 6px;
+    }
+
+    .action-item {
+        padding: 6px;
+    }
+
+    .action-label {
+        font-size: 10px;
+    }
+
+    .entity-permission-group {
+        padding: 12px;
+    }
+
+    .data-permission-container {
+        padding: 12px;
+        gap: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .action-grid {
+        grid-template-columns: 1fr;
+        /* 1 cột trên màn hình rất nhỏ */
+        gap: 6px;
+    }
+
+    .action-item {
+        flex-direction: row;
+        justify-content: space-between;
+        padding: 8px 12px;
+    }
+
+    .action-label {
+        font-size: 12px;
+        margin-bottom: 0;
+    }
+}
+
+
+
+
 /* Loading and alert styles */
 .spinner-border {
     width: 2rem;
@@ -648,6 +943,12 @@ textarea.form-control {
     border-left: 4px solid var(--primary-purple);
 }
 
+.alert-warning {
+    background-color: #FEF3CD;
+    color: var(--warning-orange);
+    border-left: 4px solid var(--warning-orange);
+}
+
 .alert-danger {
     background-color: #FEF2F2;
     color: var(--error-red);
@@ -658,4 +959,73 @@ textarea.form-control {
     background-color: #F0FDF4;
     color: var(--success-green);
     border-left: 4px solid var(--success-green);
+}
+
+/* Màu sắc cho các action item dựa trên vị trí trong grid (chia 4) */
+/* Dư 1 - Màu xanh lá */
+.action-item:nth-child(4n+1) {
+    background: #E8F5E8 !important;
+    border-color: #4CAF50 !important;
+}
+
+.action-item:nth-child(4n+1) .action-label {
+    color: #2E7D2E !important;
+    font-weight: 700;
+}
+
+.action-item:nth-child(4n+1):hover {
+    background: #C8E6C9 !important;
+    border-color: #388E3C !important;
+    transform: translateY(-2px);
+}
+
+/* Dư 2 - Màu vàng */
+.action-item:nth-child(4n+2) {
+    background: #FFF8E1 !important;
+    border-color: #FFC107 !important;
+}
+
+.action-item:nth-child(4n+2) .action-label {
+    color: #F57F17 !important;
+    font-weight: 700;
+}
+
+.action-item:nth-child(4n+2):hover {
+    background: #FFECB3 !important;
+    border-color: #FFA000 !important;
+    transform: translateY(-2px);
+}
+
+/* Dư 3 - Màu xanh biển */
+.action-item:nth-child(4n+3) {
+    background: #E3F2FD !important;
+    border-color: #2196F3 !important;
+}
+
+.action-item:nth-child(4n+3) .action-label {
+    color: #1565C0 !important;
+    font-weight: 700;
+}
+
+.action-item:nth-child(4n+3):hover {
+    background: #BBDEFB !important;
+    border-color: #1976D2 !important;
+    transform: translateY(-2px);
+}
+
+/* Dư 0 (chia hết cho 4) - Màu đỏ */
+.action-item:nth-child(4n) {
+    background: #FFEBEE !important;
+    border-color: #F44336 !important;
+}
+
+.action-item:nth-child(4n) .action-label {
+    color: #C62828 !important;
+    font-weight: 700;
+}
+
+.action-item:nth-child(4n):hover {
+    background: #FFCDD2 !important;
+    border-color: #D32F2F !important;
+    transform: translateY(-2px);
 }

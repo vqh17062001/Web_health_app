@@ -93,49 +93,133 @@
                         @if (actions != null && actions.Any() && entities != null && entities.Any())
                         {
                             <div class="permissions-container">
-                                <!-- Permission Matrix -->
-                                <div class="permission-content">
-                                    <div class="permission-table">
-                                        <div class="table-header">
-                                            <div class="module-col">Entity / Action</div>
-                                            @foreach (var action in actions)
+                                <!-- Matrix 1: Access to Pages -->
+                                <div class="permission-matrix-section">
+                                    <h4 class="matrix-title">
+                                        <i class="fas fa-desktop"></i>
+                                        Quyền truy cập trang (ACCESS - PAGE)
+                                    </h4>
+                                    
+                                    @if (accessActions.Any() && pageEntities.Any())
+                                    {
+                                        <div class="permission-table">
+                                            <div class="table-header">
+                                                <div class="module-col">Trang / Quyền truy cập</div>
+                                                @foreach (var action in accessActions)
+                                                {
+                                                    <div class="action-col">@action.ActionName</div>
+                                                }
+                                            </div>
+
+                                            @foreach (var entity in pageEntities)
                                             {
-                                                <div class="action-col">@action.ActionName</div>
+                                                <div class="table-row">
+                                                    <div class="module-name">
+                                                        <i class="fas fa-file-alt"></i>
+                                                        @entity.NameEntity
+                                                    </div>
+                                                    @foreach (var action in accessActions)
+                                                    {
+                                                        <div class="action-checkbox">
+                                                            <input type="checkbox" 
+                                                                   id="@($"access_{action.ActionId}_{entity.EntityId}")"
+                                                                   class="permission-checkbox"
+                                                                   checked="@IsPermissionSelected(action.ActionId, entity.EntityId)"
+                                                                   @onchange="@((e) => TogglePermission(action.ActionId, entity.EntityId, (bool)(e.Value ?? false)))" />
+                                                            <label for="@($"access_{action.ActionId}_{entity.EntityId}")" class="checkbox-label"></label>
+                                                        </div>
+                                                    }
+                                                </div>
                                             }
                                         </div>
 
-                                        @foreach (var entity in entities)
-                                        {
-                                            <div class="table-row">
-                                                <div class="module-name">
-                                                    <i class="fas fa-cube"></i>
-                                                    @entity.NameEntity
-                                                </div>
-                                                @foreach (var action in actions)
-                                                {
-                                                    <div class="action-checkbox">
-                                                        <input type="checkbox" id="@($"perm_{action.ActionId}_{entity.EntityId}")"
-                                                            class="permission-checkbox"
-                                                            checked="@IsPermissionSelected(action.ActionId, entity.EntityId)"
-                                                            @onchange="@((e) => TogglePermission(action.ActionId, entity.EntityId, (bool)e.Value))" />
-                                                        <label for="@($"perm_{action.ActionId}_{entity.EntityId}")"
-                                                            class="checkbox-label"></label>
-                                                    </div>
-                                                }
-                                            </div>
-                                        }
-                                    </div>
+                                        <div class="permission-actions">
+                                            <button type="button" class="btn-action btn-select-all" @onclick="SelectAllAccessPermissions">
+                                                <i class="fas fa-check-square"></i>
+                                                Chọn tất cả trang
+                                            </button>
+                                            <button type="button" class="btn-action btn-deselect-all" @onclick="DeselectAllAccessPermissions">
+                                                <i class="fas fa-square"></i>
+                                                Bỏ chọn tất cả trang
+                                            </button>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            Không tìm thấy dữ liệu ACCESS action hoặc page entities
+                                        </div>
+                                    }
                                 </div>
 
-                                <!-- Quick Actions -->
-                                <div class="permission-actions">
+                                <!-- Matrix 2: Actions on Tables -->
+                                <div class="permission-matrix-section mt-4">
+                                    <h4 class="matrix-title">
+                                        <i class="fas fa-table"></i>
+                                        Quyền thao tác dữ liệu (ACTIONS - TABLE)
+                                    </h4>
+                                    
+                                    @if (dataActions.Any() && tableEntities.Any())
+                                    {
+                                        <div class="data-permission-container">
+                                            @foreach (var entity in tableEntities)
+                                            {
+                                                <div class="entity-permission-group">
+                                                    <div class="entity-header">
+                                                        <i class="fas fa-database"></i>
+                                                        <strong>@entity.NameEntity</strong>
+                                                    </div>
+                                                    
+                                                    <div class="action-grid">
+                                                        @foreach (var action in dataActions)
+                                                        {
+                                                            <div class="action-item">
+                                                                <label class="action-label">@action.ActionName</label>
+                                                                <div class="action-checkbox">
+                                                                    <input type="checkbox" 
+                                                                           id="@($"data_{action.ActionId}_{entity.EntityId}")"
+                                                                           class="permission-checkbox"
+                                                                           checked="@IsPermissionSelected(action.ActionId, entity.EntityId)"
+                                                                           @onchange="@((e) => TogglePermission(action.ActionId, entity.EntityId, (bool)(e.Value ?? false)))" />
+                                                                    <label for="@($"data_{action.ActionId}_{entity.EntityId}")" class="checkbox-label"></label>
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+
+                                        <div class="permission-actions">
+                                            <button type="button" class="btn-action btn-select-all" @onclick="SelectAllDataPermissions">
+                                                <i class="fas fa-check-square"></i>
+                                                Chọn tất cả dữ liệu
+                                            </button>
+                                            <button type="button" class="btn-action btn-deselect-all" @onclick="DeselectAllDataPermissions">
+                                                <i class="fas fa-square"></i>
+                                                Bỏ chọn tất cả dữ liệu
+                                            </button>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            Không tìm thấy dữ liệu action hoặc table entities
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Global Quick Actions -->
+                                <div class="permission-actions mt-3">
                                     <button type="button" class="btn-action btn-select-all" @onclick="SelectAllPermissions">
-                                        <i class="fas fa-check-square"></i>
-                                        Chọn tất cả
+                                        <i class="fas fa-check-double"></i>
+                                        Chọn tất cả quyền
                                     </button>
                                     <button type="button" class="btn-action btn-deselect-all" @onclick="DeselectAllPermissions">
-                                        <i class="fas fa-square"></i>
-                                        Bỏ chọn tất cả
+                                        <i class="fas fa-times-circle"></i>
+                                        Bỏ chọn tất cả quyền
                                     </button>
                                 </div>
 
@@ -152,7 +236,7 @@
                                                 <span class="badge bg-secondary me-1 mb-1">
                                                     @action?.ActionName - @entity?.NameEntity
                                                     <button type="button" class="btn-close btn-close-white ms-1" aria-label="Remove"
-                                                        @onclick="@(() => TogglePermission(permission.ActionId, permission.EntityId, false))"></button>
+                                                            @onclick="@(() => TogglePermission(permission.ActionId, permission.EntityId, false))"></button>
                                                 </span>
                                             }
                                         </div>
@@ -222,6 +306,12 @@
     private string errorMessage = string.Empty;
     private string successMessage = string.Empty;
 
+    // Filtered data for the two matrices
+    private List<ActionInfoDto> accessActions => actions.Where(a => a.ActionId == "ACCESS").ToList();
+    private List<ActionInfoDto> dataActions => actions.Where(a => a.ActionId != "ACCESS").OrderBy(a => a.ActionId.Length).ToList();
+    private List<EntityInfoDto> pageEntities => entities.Where(e => e.Type == "page").ToList();
+    private List<EntityInfoDto> tableEntities => entities.Where(e => e.Type == "table").ToList();
+
     protected override async Task OnInitializedAsync()
     {
         await LoadData();
@@ -237,7 +327,6 @@
             var actionsTask = ActionEntityApiClient.GetActiveActionsAsync();
             var entitiesTask = ActionEntityApiClient.GetEntitiesBySecurityLevelAsync(5); // Load entities with minimum security
            
-
             await Task.WhenAll(actionsTask, entitiesTask);
 
             var actionsResponse = await actionsTask;
@@ -275,6 +364,7 @@
         }
     }
 
+    // Global permission methods
     private void SelectAllPermissions()
     {
         selectedPermissions.Clear();
@@ -290,6 +380,52 @@
     private void DeselectAllPermissions()
     {
         selectedPermissions.Clear();
+    }
+
+    // Access permissions methods
+    private void SelectAllAccessPermissions()
+    {
+        // Remove existing access permissions first
+        selectedPermissions.RemoveAll(p => accessActions.Any(a => a.ActionId == p.ActionId) && 
+                                          pageEntities.Any(e => e.EntityId == p.EntityId));
+        
+        // Add all access permissions
+        foreach (var action in accessActions)
+        {
+            foreach (var entity in pageEntities)
+            {
+                selectedPermissions.Add(new PermissionSelection { ActionId = action.ActionId, EntityId = entity.EntityId });
+            }
+        }
+    }
+
+    private void DeselectAllAccessPermissions()
+    {
+        selectedPermissions.RemoveAll(p => accessActions.Any(a => a.ActionId == p.ActionId) && 
+                                          pageEntities.Any(e => e.EntityId == p.EntityId));
+    }
+
+    // Data permissions methods
+    private void SelectAllDataPermissions()
+    {
+        // Remove existing data permissions first
+        selectedPermissions.RemoveAll(p => dataActions.Any(a => a.ActionId == p.ActionId) && 
+                                          tableEntities.Any(e => e.EntityId == p.EntityId));
+        
+        // Add all data permissions
+        foreach (var action in dataActions)
+        {
+            foreach (var entity in tableEntities)
+            {
+                selectedPermissions.Add(new PermissionSelection { ActionId = action.ActionId, EntityId = entity.EntityId });
+            }
+        }
+    }
+
+    private void DeselectAllDataPermissions()
+    {
+        selectedPermissions.RemoveAll(p => dataActions.Any(a => a.ActionId == p.ActionId) && 
+                                          tableEntities.Any(e => e.EntityId == p.EntityId));
     }
 
     private void ResetForm()
