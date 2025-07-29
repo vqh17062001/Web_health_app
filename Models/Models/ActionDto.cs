@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Web_health_app.Models.Models
 {
+   
     /// <summary>
     /// Data Transfer Object for Action Information
     /// </summary>

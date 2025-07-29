@@ -1,6 +1,14 @@
-﻿@page "/accountAuthManage/addrole"
+@page "/accountAuthManage/addrole"
+@rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authorization
 @using Web_health_app.Web.Components.Layout
+@using Web_health_app.Web.ApiClients
+@using Models.Models
+@inject RoleApiClient RoleApiClient
+@inject PermissionApiClient PermissionApiClient
+@inject ActionEntityApiClient ActionEntityApiClient
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
 @layout EmptyLayout
 @attribute [Authorize(Roles = "ACCESS.AddRole")]
@@ -20,355 +28,166 @@
                     <p>Tạo vai trò và phân quyền trong hệ thống</p>
                 </div>
             </div>
-            <button type="button" class="btn-close" aria-label="Đóng">
+            <button type="button" class="btn-close" aria-label="Đóng"
+                @onclick="@(() => Navigation.NavigateTo("/accountAuthManage/roles"))">
                 <i class="fas fa-times"></i>
             </button>
         </div>
 
         <!-- Form Content -->
         <div class="card-body">
-            <form class="add-role-form">
-                <!-- Basic Role Information -->
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-info-circle"></i>
-                        Thông tin cơ bản
-                    </h3>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-signature"></i>
-                                Tên vai trò <span class="required">*</span>
-                            </label>
-                            <input type="text" class="form-control" placeholder="Nhập tên vai trò (role_name)"
-                                maxlength="100">
-                            <small class="form-text text-muted">
-                                <i class="fas fa-info-circle"></i>
-                                Mã vai trò sẽ được tạo tự động từ tên vai trò
-                            </small>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-toggle-on"></i>
-                                Trạng thái
-                            </label>
-                            <select class="form-select">
-                                <option value="true">Hoạt động</option>
-                                <option value="false">Tạm khóa</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group full-width">
-                            <label class="form-label">
-                                <i class="fas fa-align-left"></i>
-                                Mô tả vai trò
-                            </label>
-                            <textarea class="form-control" rows="3"
-                                placeholder="Nhập mô tả chi tiết về vai trò này..."></textarea>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-layer-group"></i>
-                                Mức độ ưu tiên
-                            </label>
-                            <select class="form-select">
-                                <option value="1">Cao nhất</option>
-                                <option value="2">Cao</option>
-                                <option value="3">Trung bình</option>
-                                <option value="4">Thấp</option>
-                                <option value="5">Thấp nhất</option>
-                            </select>
-                        </div>
+            @if (isLoading)
+            {
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
                     </div>
                 </div>
+            }
+            else
+            {
+                <EditForm Model="@createRoleDto" OnValidSubmit="HandleSubmit" class="add-role-form">
+                    <DataAnnotationsValidator />
 
-                <!-- Permissions Section -->
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-key"></i>
-                        Phân quyền truy cập
-                    </h3>
+                    <!-- Basic Role Information -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-info-circle"></i>
+                            Thông tin cơ bản
+                        </h3>
 
-                    <div class="permissions-container">
-                        <!-- Permission Categories -->
-                        <div class="permission-tabs">
-                            <button type="button" class="tab-button active" data-category="user-management">
-                                <i class="fas fa-users"></i>
-                                Quản lý người dùng
-                            </button>
-                            <button type="button" class="tab-button" data-category="role-management">
-                                <i class="fas fa-shield-alt"></i>
-                                Quản lý vai trò
-                            </button>
-                            <button type="button" class="tab-button" data-category="system-settings">
-                                <i class="fas fa-cog"></i>
-                                Cài đặt hệ thống
-                            </button>
-                            <button type="button" class="tab-button" data-category="reports">
-                                <i class="fas fa-chart-bar"></i>
-                                Báo cáo
-                            </button>
-                        </div>
-
-                        <!-- Permission Content -->
-                        <div class="permission-content">
-                            <!-- User Management Permissions -->
-                            <div class="permission-category active" data-category="user-management">
-                                <div class="permission-table">
-                                    <div class="table-header">
-                                        <div class="module-col">Module</div>
-                                        <div class="action-col">Xem</div>
-                                        <div class="action-col">Thêm</div>
-                                        <div class="action-col">Sửa</div>
-                                        <div class="action-col">Xóa</div>
-                                        <div class="action-col">Xuất</div>
-                                    </div>
-
-                                    <div class="table-row">
-                                        <div class="module-name">
-                                            <i class="fas fa-user"></i>
-                                            Người dùng
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="user-read" class="permission-checkbox">
-                                            <label for="user-read" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="user-create" class="permission-checkbox">
-                                            <label for="user-create" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="user-update" class="permission-checkbox">
-                                            <label for="user-update" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="user-delete" class="permission-checkbox">
-                                            <label for="user-delete" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="user-export" class="permission-checkbox">
-                                            <label for="user-export" class="checkbox-label"></label>
-                                        </div>
-                                    </div>
-
-                                    <div class="table-row">
-                                        <div class="module-name">
-                                            <i class="fas fa-users-cog"></i>
-                                            Nhóm người dùng
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="group-read" class="permission-checkbox">
-                                            <label for="group-read" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="group-create" class="permission-checkbox">
-                                            <label for="group-create" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="group-update" class="permission-checkbox">
-                                            <label for="group-update" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="group-delete" class="permission-checkbox">
-                                            <label for="group-delete" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="group-export" class="permission-checkbox">
-                                            <label for="group-export" class="checkbox-label"></label>
-                                        </div>
-                                    </div>
-
-                                    <div class="table-row">
-                                        <div class="module-name">
-                                            <i class="fas fa-user-lock"></i>
-                                            Phân quyền
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="permission-read" class="permission-checkbox">
-                                            <label for="permission-read" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="permission-create" class="permission-checkbox">
-                                            <label for="permission-create" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="permission-update" class="permission-checkbox">
-                                            <label for="permission-update" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="permission-delete" class="permission-checkbox">
-                                            <label for="permission-delete" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="permission-export" class="permission-checkbox">
-                                            <label for="permission-export" class="checkbox-label"></label>
-                                        </div>
-                                    </div>
-                                </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-signature"></i>
+                                    Tên vai trò <span class="required">*</span>
+                                </label>
+                                <InputText @bind-Value="createRoleDto.RoleName" class="form-control"
+                                    placeholder="Nhập tên vai trò" maxlength="100" />
+                                <ValidationMessage For="@(() => createRoleDto.RoleName)" class="text-danger" />
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle"></i>
+                                    Mã vai trò sẽ được tạo tự động từ tên vai trò
+                                </small>
                             </div>
-
-                            <!-- Role Management Permissions -->
-                            <div class="permission-category" data-category="role-management">
-                                <div class="permission-table">
-                                    <div class="table-header">
-                                        <div class="module-col">Module</div>
-                                        <div class="action-col">Xem</div>
-                                        <div class="action-col">Thêm</div>
-                                        <div class="action-col">Sửa</div>
-                                        <div class="action-col">Xóa</div>
-                                        <div class="action-col">Xuất</div>
-                                    </div>
-
-                                    <div class="table-row">
-                                        <div class="module-name">
-                                            <i class="fas fa-shield-alt"></i>
-                                            Vai trò hệ thống
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="role-read" class="permission-checkbox">
-                                            <label for="role-read" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="role-create" class="permission-checkbox">
-                                            <label for="role-create" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="role-update" class="permission-checkbox">
-                                            <label for="role-update" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="role-delete" class="permission-checkbox">
-                                            <label for="role-delete" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="role-export" class="permission-checkbox">
-                                            <label for="role-export" class="checkbox-label"></label>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-toggle-on"></i>
+                                    Trạng thái
+                                </label>
+                                <InputSelect @bind-Value="createRoleDto.IsActive" class="form-select">
+                                    <option value="true">Hoạt động</option>
+                                    <option value="false">Tạm khóa</option>
+                                </InputSelect>
                             </div>
-
-                            <!-- System Settings Permissions -->
-                            <div class="permission-category" data-category="system-settings">
-                                <div class="permission-table">
-                                    <div class="table-header">
-                                        <div class="module-col">Module</div>
-                                        <div class="action-col">Xem</div>
-                                        <div class="action-col">Thêm</div>
-                                        <div class="action-col">Sửa</div>
-                                        <div class="action-col">Xóa</div>
-                                        <div class="action-col">Xuất</div>
-                                    </div>
-
-                                    <div class="table-row">
-                                        <div class="module-name">
-                                            <i class="fas fa-cogs"></i>
-                                            Cấu hình hệ thống
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="config-read" class="permission-checkbox">
-                                            <label for="config-read" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="config-create" class="permission-checkbox">
-                                            <label for="config-create" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="config-update" class="permission-checkbox">
-                                            <label for="config-update" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="config-delete" class="permission-checkbox">
-                                            <label for="config-delete" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="config-export" class="permission-checkbox">
-                                            <label for="config-export" class="checkbox-label"></label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Reports Permissions -->
-                            <div class="permission-category" data-category="reports">
-                                <div class="permission-table">
-                                    <div class="table-header">
-                                        <div class="module-col">Module</div>
-                                        <div class="action-col">Xem</div>
-                                        <div class="action-col">Thêm</div>
-                                        <div class="action-col">Sửa</div>
-                                        <div class="action-col">Xóa</div>
-                                        <div class="action-col">Xuất</div>
-                                    </div>
-
-                                    <div class="table-row">
-                                        <div class="module-name">
-                                            <i class="fas fa-chart-line"></i>
-                                            Báo cáo thống kê
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="report-read" class="permission-checkbox">
-                                            <label for="report-read" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="report-create" class="permission-checkbox">
-                                            <label for="report-create" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="report-update" class="permission-checkbox">
-                                            <label for="report-update" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="report-delete" class="permission-checkbox">
-                                            <label for="report-delete" class="checkbox-label"></label>
-                                        </div>
-                                        <div class="action-checkbox">
-                                            <input type="checkbox" id="report-export" class="permission-checkbox">
-                                            <label for="report-export" class="checkbox-label"></label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Quick Actions -->
-                        <div class="permission-actions">
-                            <button type="button" class="btn-action btn-select-all">
-                                <i class="fas fa-check-square"></i>
-                                Chọn tất cả
-                            </button>
-                            <button type="button" class="btn-action btn-deselect-all">
-                                <i class="fas fa-square"></i>
-                                Bỏ chọn tất cả
-                            </button>
-                            <button type="button" class="btn-action btn-select-read">
-                                <i class="fas fa-eye"></i>
-                                Chỉ chọn xem
-                            </button>
                         </div>
                     </div>
-                </div>
-            </form>
+
+                    <!-- Permissions Section -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-key"></i>
+                            Phân quyền truy cập
+                        </h3>
+
+                        @if (actions != null && actions.Any() && entities != null && entities.Any())
+                        {
+                            <div class="permissions-container">
+                                <!-- Permission Matrix -->
+                                <div class="permission-content">
+                                    <div class="permission-table">
+                                        <div class="table-header">
+                                            <div class="module-col">Entity / Action</div>
+                                            @foreach (var action in actions)
+                                            {
+                                                <div class="action-col">@action.ActionName</div>
+                                            }
+                                        </div>
+
+                                        @foreach (var entity in entities)
+                                        {
+                                            <div class="table-row">
+                                                <div class="module-name">
+                                                    <i class="fas fa-cube"></i>
+                                                    @entity.NameEntity
+                                                </div>
+                                                @foreach (var action in actions)
+                                                {
+                                                    <div class="action-checkbox">
+                                                        <input type="checkbox" id="@($"perm_{action.ActionId}_{entity.EntityId}")"
+                                                            class="permission-checkbox"
+                                                            checked="@IsPermissionSelected(action.ActionId, entity.EntityId)"
+                                                            @onchange="@((e) => TogglePermission(action.ActionId, entity.EntityId, (bool)e.Value))" />
+                                                        <label for="@($"perm_{action.ActionId}_{entity.EntityId}")"
+                                                            class="checkbox-label"></label>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+
+                                <!-- Quick Actions -->
+                                <div class="permission-actions">
+                                    <button type="button" class="btn-action btn-select-all" @onclick="SelectAllPermissions">
+                                        <i class="fas fa-check-square"></i>
+                                        Chọn tất cả
+                                    </button>
+                                    <button type="button" class="btn-action btn-deselect-all" @onclick="DeselectAllPermissions">
+                                        <i class="fas fa-square"></i>
+                                        Bỏ chọn tất cả
+                                    </button>
+                                </div>
+
+                                <!-- Selected Permissions Summary -->
+                                @if (selectedPermissions.Any())
+                                {
+                                    <div class="selected-permissions-summary">
+                                        <h6>Quyền đã chọn (@selectedPermissions.Count)</h6>
+                                        <div class="permissions-badges">
+                                            @foreach (var permission in selectedPermissions)
+                                            {
+                                                var action = actions?.FirstOrDefault(a => a.ActionId == permission.ActionId);
+                                                var entity = entities?.FirstOrDefault(e => e.EntityId == permission.EntityId);
+                                                <span class="badge bg-secondary me-1 mb-1">
+                                                    @action?.ActionName - @entity?.NameEntity
+                                                    <button type="button" class="btn-close btn-close-white ms-1" aria-label="Remove"
+                                                        @onclick="@(() => TogglePermission(permission.ActionId, permission.EntityId, false))"></button>
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> Đang tải dữ liệu phân quyền...
+                            </div>
+                        }
+                    </div>
+                </EditForm>
+            }
         </div>
 
         <!-- Footer Actions -->
         <div class="card-footer">
             <div class="action-buttons">
-                <button type="button" class="btn btn-cancel">
+                <button type="button" class="btn btn-cancel"
+                    @onclick="@(() => Navigation.NavigateTo("/accountAuthManage/roles"))">
                     <i class="fas fa-times"></i>
                     Hủy
                 </button>
-                <button type="button" class="btn btn-reset">
+                <button type="button" class="btn btn-reset" @onclick="ResetForm">
                     <i class="fas fa-undo"></i>
                     Đặt lại
                 </button>
-                <button type="submit" class="btn btn-primary">
+                <button type="button" class="btn btn-primary" @onclick="HandleSubmit" disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    }
                     <i class="fas fa-save"></i>
                     Lưu vai trò
                 </button>
@@ -377,6 +196,172 @@
     </div>
 </div>
 
-@code {
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger position-fixed top-0 end-0 m-3" style="z-index: 1050;">
+        <i class="fas fa-exclamation-triangle"></i> @errorMessage
+        <button type="button" class="btn-close" @onclick="@(() => errorMessage = string.Empty)"></button>
+    </div>
+}
 
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success position-fixed top-0 end-0 m-3" style="z-index: 1050;">
+        <i class="fas fa-check-circle"></i> @successMessage
+        <button type="button" class="btn-close" @onclick="@(() => successMessage = string.Empty)"></button>
+    </div>
+}
+
+@code {
+    private CreateRoleDto createRoleDto = new();
+    private List<ActionInfoDto> actions = new();
+    private List<EntityInfoDto> entities = new();
+    private List<PermissionSelection> selectedPermissions = new();
+    private bool isLoading = true;
+    private bool isSubmitting = false;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+
+            // Load actions and entities in parallel
+            var actionsTask = ActionEntityApiClient.GetActiveActionsAsync();
+            var entitiesTask = ActionEntityApiClient.GetEntitiesBySecurityLevelAsync(5); // Load entities with minimum security
+           
+
+            await Task.WhenAll(actionsTask, entitiesTask);
+
+            var actionsResponse = await actionsTask;
+            var entitiesResponse = await entitiesTask;
+
+            actions = actionsResponse?.Data ?? new List<ActionInfoDto>();
+            entities = entitiesResponse?.Data ?? new List<EntityInfoDto>();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Lỗi tải dữ liệu: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private bool IsPermissionSelected(string actionId, string entityId)
+    {
+        return selectedPermissions.Any(p => p.ActionId == actionId && p.EntityId == entityId);
+    }
+
+    private void TogglePermission(string actionId, string entityId, bool isSelected)
+    {
+        var existing = selectedPermissions.FirstOrDefault(p => p.ActionId == actionId && p.EntityId == entityId);
+
+        if (isSelected && existing == null)
+        {
+            selectedPermissions.Add(new PermissionSelection { ActionId = actionId, EntityId = entityId });
+        }
+        else if (!isSelected && existing != null)
+        {
+            selectedPermissions.Remove(existing);
+        }
+    }
+
+    private void SelectAllPermissions()
+    {
+        selectedPermissions.Clear();
+        foreach (var action in actions)
+        {
+            foreach (var entity in entities)
+            {
+                selectedPermissions.Add(new PermissionSelection { ActionId = action.ActionId, EntityId = entity.EntityId });
+            }
+        }
+    }
+
+    private void DeselectAllPermissions()
+    {
+        selectedPermissions.Clear();
+    }
+
+    private void ResetForm()
+    {
+        createRoleDto = new CreateRoleDto();
+        selectedPermissions.Clear();
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (isSubmitting) return;
+
+        try
+        {
+            isSubmitting = true;
+            errorMessage = string.Empty;
+
+            // Validate form
+            if (string.IsNullOrWhiteSpace(createRoleDto.RoleName))
+            {
+                errorMessage = "Vui lòng nhập tên vai trò";
+                return;
+            }
+
+            // Create role first
+            var roleResponse = await RoleApiClient.CreateRoleAsync(createRoleDto);
+            if (roleResponse?.Data == null)
+            {
+                errorMessage = "Không thể tạo vai trò";
+                return;
+            }
+
+            var createdRole = roleResponse.Data;
+
+            // Create permissions if any selected
+            if (selectedPermissions.Any())
+            {
+                foreach (var permission in selectedPermissions)
+                {
+                    var createPermissionDto = new CreatePermissionDto
+                    {
+                        RoleId = createdRole.RoleId,
+                        ActionId = permission.ActionId,
+                        EntityId = permission.EntityId,
+                        IsActive = true
+                    };
+
+                    await PermissionApiClient.CreatePermissionAsync(createPermissionDto);
+                }
+            }
+
+            successMessage = "Tạo vai trò thành công!";
+
+            // Navigate after a short delay to show success message
+            await Task.Delay(1500);
+            Navigation.NavigateTo("/accountAuthManage");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Lỗi tạo vai trò: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    public class PermissionSelection
+    {
+        public string ActionId { get; set; } = string.Empty;
+        public string EntityId { get; set; } = string.Empty;
+    }
 }

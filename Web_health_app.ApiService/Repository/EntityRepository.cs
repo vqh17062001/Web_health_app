@@ -115,7 +115,7 @@ namespace Web_health_app.ApiService.Repository
             try
             {
                 var entities = await _context.Entities
-                    .Where(e => e.LevelSecurity >= minSecurityLevel)
+                    .Where(e => e.LevelSecurity <= minSecurityLevel)
                     .Select(e => new Models.Models.EntityInfoDto
                     {
                         EntityId = e.EntityId,

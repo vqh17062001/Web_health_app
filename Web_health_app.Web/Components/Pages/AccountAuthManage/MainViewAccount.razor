@@ -383,7 +383,7 @@
             isLoading = true;
             StateHasChanged();
 
-            var response = await RoleApi.GetRolesWithUserCountAsync(pageNumber, 12, searchTerm, false);
+            var response = await RoleApi.GetRolesWithUserCountAsync(pageNumber, 12, searchTerm, true);
 
             if (response.IsSuccess && response.Data != null)
             {

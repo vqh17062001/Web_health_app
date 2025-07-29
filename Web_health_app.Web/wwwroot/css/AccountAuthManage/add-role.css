@@ -570,3 +570,92 @@ textarea.form-control {
 .card-body::-webkit-scrollbar-thumb:hover {
     background: var(--dark-purple);
 }
+
+/* Selected Permissions Summary */
+.selected-permissions-summary {
+    margin-top: 20px;
+    padding: 15px;
+    background: var(--purple-light-bg);
+    border: 1px solid var(--purple-border);
+    border-radius: 8px;
+}
+
+.selected-permissions-summary h6 {
+    color: var(--primary-purple);
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.permissions-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.permissions-badges .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 4px;
+    background-color: var(--gray-600) !important;
+    color: white;
+}
+
+.permissions-badges .badge .btn-close {
+    font-size: 10px;
+    padding: 0;
+    margin-left: 5px;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.permissions-badges .badge .btn-close:hover {
+    opacity: 1;
+}
+
+/* Loading and alert styles */
+.spinner-border {
+    width: 2rem;
+    height: 2rem;
+    border-width: 0.25em;
+    border-color: var(--primary-purple);
+    border-right-color: transparent;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.125em;
+}
+
+.alert {
+    border-radius: 8px;
+    border: none;
+    padding: 12px 16px;
+    font-size: 14px;
+}
+
+.alert-info {
+    background-color: var(--purple-light-bg);
+    color: var(--primary-purple);
+    border-left: 4px solid var(--primary-purple);
+}
+
+.alert-danger {
+    background-color: #FEF2F2;
+    color: var(--error-red);
+    border-left: 4px solid var(--error-red);
+}
+
+.alert-success {
+    background-color: #F0FDF4;
+    color: var(--success-green);
+    border-left: 4px solid var(--success-green);
+}

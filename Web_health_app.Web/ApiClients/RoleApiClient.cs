@@ -108,7 +108,7 @@ namespace Web_health_app.Web.ApiClients
         /// <param name="searchTerm">Search term for filtering</param>
         /// <param name="includeInactive">Include inactive roles</param>
         /// <returns>API response with roles with user count and pagination info</returns>
-        public async Task<ApiResponse<RolesWithUserCountApiResponse>> GetRolesWithUserCountAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null, bool includeInactive = false)
+        public async Task<ApiResponse<RolesWithUserCountApiResponse>> GetRolesWithUserCountAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null, bool includeInactive = true)
         {
             try
             {
