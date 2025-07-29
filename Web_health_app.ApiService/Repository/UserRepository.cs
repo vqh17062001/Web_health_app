@@ -20,8 +20,8 @@ namespace Web_health_app.ApiService.Repository
                 var query = _context.Users
                     .Include(u => u.Group)
                     .Include(u => u.ManageByNavigation)
-                    .Where(u => u.UserStatus != -2) // Exclude deleted users
                     .AsQueryable();
+
 
                 // Apply search filter
                 if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -43,8 +43,13 @@ namespace Web_health_app.ApiService.Repository
                             (u.Department != null && u.Department.Contains(searchTerm)));
                     }
                 }
+                else {
+                    query = query
+                   .Where(u => u.UserStatus != -2 && u.UserStatus != -1);// Exclude deleted users
+                   
+                }
 
-                var totalCount = await query.CountAsync();
+                    var totalCount = await query.CountAsync();
 
                 var users = await query
                     .OrderBy(u => u.CreateAt)
@@ -238,7 +243,7 @@ namespace Web_health_app.ApiService.Repository
                 }
 
                 // Soft delete by changing status
-                user.UserStatus = -2; // Deleted status
+                user.UserStatus = -1; // lock status
                 user.UpdateAt = DateTime.Now;
 
                 await _context.SaveChangesAsync();
