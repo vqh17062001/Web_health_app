@@ -432,10 +432,12 @@ namespace Web_health_app.ApiService.Repository
                     .Select(e => new EntityInfoDto
                     {
                         EntityId = e.EntityId,
-                        EntityName = e.NameEntity,
-                        IsActive = true // Since Entity model doesn't have IsActive property
+                        NameEntity = e.NameEntity,
+                        LevelSecurity = e.LevelSecurity,
+                        Type = e.Type,
+                        // Since Entity model doesn't have IsActive property
                     })
-                    .OrderBy(e => e.EntityName)
+                    .OrderBy(e => e.NameEntity)
                     .ToListAsync();
 
                 return entities;

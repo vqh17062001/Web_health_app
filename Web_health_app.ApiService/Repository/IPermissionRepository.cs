@@ -68,21 +68,21 @@ namespace Web_health_app.ApiService.Repository
     /// <summary>
     /// DTO for Action dropdown
     /// </summary>
-    public class ActionInfoDto
-    {
-        public string ActionId { get; set; } = string.Empty;
-        public string ActionName { get; set; } = string.Empty;
-        public string Code { get; set; } = string.Empty;
-        public bool IsActive { get; set; }
-    }
+    //public class ActionInfoDto
+    //{
+    //    public string ActionId { get; set; } = string.Empty;
+    //    public string ActionName { get; set; } = string.Empty;
+    //    public string Code { get; set; } = string.Empty;
+    //    public bool IsActive { get; set; }
+    //}
 
     /// <summary>
     /// DTO for Entity dropdown
     /// </summary>
-    public class EntityInfoDto
-    {
-        public string EntityId { get; set; } = string.Empty;
-        public string EntityName { get; set; } = string.Empty;
-        public bool IsActive { get; set; }
-    }
+    //public class EntityInfoDto
+    //{
+    //    public string EntityId { get; set; } = string.Empty;
+    //    public string EntityName { get; set; } = string.Empty;
+    //    public bool IsActive { get; set; }
+    //}
 }
