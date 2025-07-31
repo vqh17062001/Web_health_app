@@ -1,0 +1,404 @@
+@page "/accountAuthManage/role/{RoleId}/users"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Web_health_app.Web.Components.Layout
+@using Web_health_app.Web.ApiClients
+@using Models.Models
+@inject RoleApiClient RoleApiClient
+@inject RoleUserApiClient RoleUserApiClient
+@inject UserApiClient UserApiClient
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+@layout EmptyLayout
+@attribute [Authorize(Roles = "READ.ROLES,READ.USERS")]
+
+<link href="/css/AccountAuthManage/add-role.css" rel="stylesheet" />
+<link href="/css/AccountAuthManage/user-of-role.css" rel="stylesheet" />
+
+<div class="add-role-container">
+    <div class="add-role-card">
+        <!-- Header -->
+        <div class="card-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <button type="button" class="btn btn-outline-secondary btn-back" @onclick="GoBack">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div class="header-info">
+                        <h2 class="page-title">
+                            <i class="fas fa-users"></i>
+                            Người dùng của vai trò
+                        </h2>
+                        @if (currentRole != null)
+                        {
+                            <p class="role-info">
+                                <strong>Vai trò:</strong> @currentRole.RoleName (@currentRole.RoleId)
+                                <span class="badge @(currentRole.IsActive ? "bg-success" : "bg-danger") ms-2">
+                                    @(currentRole.IsActive ? "Hoạt động" : "Không hoạt động")
+                                </span>
+                            </p>
+                        }
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button type="button" class="btn btn-primary" @onclick="ShowAssignUsersModal" disabled="@isLoading">
+                        <i class="fas fa-user-plus"></i>
+                        Gán người dùng
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="card-body">
+            @if (isLoading)
+            {
+                <div class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                    <p class="loading-text">Đang tải danh sách người dùng...</p>
+                </div>
+            }
+            else
+            {
+                <!-- Search and Filter Section -->
+                <div class="search-filter-section">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="search-box">
+                                <input type="text" class="form-control" placeholder="Tìm kiếm theo tên, email..."
+                                       @bind="searchTerm" @onkeypress="@(async (e) => { if (e.Key == "Enter") await SearchUsers(); })" />
+                                <button type="button" class="btn btn-outline-primary" @onclick="SearchUsers">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <div class="results-info">
+                                <span class="total-count">
+                                    Tổng cộng: <strong>@totalUsers</strong> người dùng
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Table -->
+                <div class="table-section">
+                    @if (users.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th scope="col">
+                                            <input type="checkbox" class="form-check-input" 
+                                                   @onchange="ToggleSelectAll" 
+                                                   checked="@(selectedUserIds.Count == users.Count && users.Any())" />
+                                        </th>
+                                        <th scope="col">Tên người dùng</th>
+                                        <th scope="col">Trạng thái</th>
+                                        <th scope="col">Ngày tạo</th>
+                                        <th scope="col">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var user in users)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <input type="checkbox" class="form-check-input" 
+                                                       @onchange="@((e) => ToggleUserSelection(user.UserId, (bool)e.Value!))"
+                                                       checked="@selectedUserIds.Contains(user.UserId)" />
+                                            </td>
+                                            <td>
+                                                <div class="user-info">
+                                                    <i class="fas fa-user text-muted me-2"></i>
+                                                    @user.UserName
+                                                </div>
+                                            </td>
+                                            <td>
+                                               <span
+                                                    class="badge @GetStatusBadgeClass(user.UserStatus)">@user.UserStatusString</span>
+                                                <span></span>
+                                            </td>
+                                            <td>@user.CreateAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                            <td>
+                                               
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                            @onclick="@(() => RemoveUserFromRole(user.UserId))"
+                                                            title="Gỡ vai trò">
+                                                        <i class="fas fa-user-minus"></i>
+                                                    </button>
+                                               
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Bulk Actions -->
+                        @if (selectedUserIds.Any())
+                        {
+                            <div class="bulk-actions">
+                                <div class="selected-info">
+                                    <i class="fas fa-check-circle text-success"></i>
+                                    Đã chọn <strong>@selectedUserIds.Count</strong> người dùng
+                                </div>
+                                <div class="bulk-buttons">
+                                    <button type="button" class="btn btn-outline-danger" @onclick="RemoveSelectedUsersFromRole">
+                                        <i class="fas fa-user-minus"></i>
+                                        Gỡ vai trò khỏi người dùng đã chọn
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="no-data">
+                            <div class="no-data-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <h4>Không có người dùng nào</h4>
+                            <p>Vai trò này chưa được gán cho người dùng nào.</p>
+                            <button type="button" class="btn btn-primary" @onclick="ShowAssignUsersModal">
+                                <i class="fas fa-user-plus"></i>
+                                Gán người dùng đầu tiên
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Notification Messages -->
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger position-fixed top-0 end-0 m-3" style="z-index: 1050;">
+        <i class="fas fa-exclamation-triangle"></i> @errorMessage
+        <button type="button" class="btn-close" @onclick="@(() => errorMessage = string.Empty)"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success position-fixed top-0 end-0 m-3" style="z-index: 1050;">
+        <i class="fas fa-check-circle"></i> @successMessage
+        <button type="button" class="btn-close" @onclick="@(() => successMessage = string.Empty)"></button>
+    </div>
+}
+
+@code {
+    [Parameter] public string? RoleId { get; set; }
+
+    private RoleInfoDto? currentRole;
+    private List<UserInfoDto> users = new();
+    private List<Guid> selectedUserIds = new();
+    private string searchTerm = string.Empty;
+    private int totalUsers = 0;
+
+    private bool isLoading = true;
+    private bool isProcessing = false;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrEmpty(RoleId))
+        {
+            Navigation.NavigateTo("/accountAuthManage");
+            return;
+        }
+
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+
+            // Load role information
+            var roleResponse = await RoleApiClient.GetRoleByIdAsync(RoleId!);
+            if (roleResponse.IsSuccess && roleResponse.Data != null)
+            {
+                currentRole = roleResponse.Data;
+            }
+            else
+            {
+                errorMessage = "Không thể tải thông tin vai trò";
+                return;
+            }
+
+            // Load users of this role
+            await LoadUsersOfRole();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Lỗi khi tải dữ liệu: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadUsersOfRole()
+    {
+        try
+        {
+            var response = await RoleUserApiClient.GetRoleUsersAsync(RoleId!);
+            if (response.IsSuccess && response.Data != null)
+            {
+                users = response.Data;
+                totalUsers = users.Count;
+                selectedUserIds.Clear();
+            }
+            else
+            {
+                users = new List<UserInfoDto>();
+                totalUsers = 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Lỗi khi tải danh sách người dùng: {ex.Message}";
+            users = new List<UserInfoDto>();
+            totalUsers = 0;
+        }
+    }
+
+    private async Task SearchUsers()
+    {
+        await LoadUsersOfRole();
+        // TODO: Implement search functionality when API supports it
+    }
+
+    private void ToggleUserSelection(Guid userId, bool isSelected)
+    {
+        if (isSelected)
+        {
+            if (!selectedUserIds.Contains(userId))
+            {
+                selectedUserIds.Add(userId);
+            }
+        }
+        else
+        {
+            selectedUserIds.Remove(userId);
+        }
+        StateHasChanged();
+    }
+
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        var selectAll = (bool)e.Value!;
+        if (selectAll)
+        {
+            selectedUserIds = users.Select(u => u.UserId).ToList();
+        }
+        else
+        {
+            selectedUserIds.Clear();
+        }
+        StateHasChanged();
+    }
+    private string GetStatusBadgeClass(short userStatus)
+    {
+        return userStatus switch
+        {
+            0 => "bg-warning", // Cần đổi MK
+            1 => "bg-success", // Active
+            2 => "bg-secondary", // Tạm khóa
+            3 => "bg-info", // Cần reset MK
+            -1 => "bg-danger", // Khóa vĩnh viễn
+            -2 => "bg-dark", // Đã xóa
+            _ => "bg-light text-dark" // Không xác định
+        };
+    }
+
+    private async Task RemoveUserFromRole(Guid userId)
+    {
+        if (isProcessing) return;
+
+        try
+        {
+            isProcessing = true;
+            var response = await RoleUserApiClient.RemoveRolesFromUserAsync(userId, new List<string> { RoleId! });
+            
+            if (response.IsSuccess)
+            {
+                successMessage = "Đã gỡ vai trò khỏi người dùng thành công";
+                await LoadUsersOfRole();
+            }
+            else
+            {
+                errorMessage = response.Message ?? "Lỗi khi gỡ vai trò";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Lỗi khi gỡ vai trò: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RemoveSelectedUsersFromRole()
+    {
+        if (!selectedUserIds.Any() || isProcessing) return;
+
+        try
+        {
+            isProcessing = true;
+            var tasks = selectedUserIds.Select(userId => 
+                RoleUserApiClient.RemoveRolesFromUserAsync(userId, new List<string> { RoleId! })
+            );
+
+            var results = await Task.WhenAll(tasks);
+            
+            if (results.All(r => r.IsSuccess))
+            {
+                successMessage = $"Đã gỡ vai trò khỏi {selectedUserIds.Count} người dùng thành công";
+                await LoadUsersOfRole();
+            }
+            else
+            {
+                errorMessage = "Có lỗi xảy ra khi gỡ vai trò khỏi một số người dùng";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Lỗi khi gỡ vai trò: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowAssignUsersModal()
+    {
+        // TODO: Implement assign users modal
+        // This will be implemented later when you provide guidance
+        JSRuntime.InvokeVoidAsync("alert", "Chức năng gán người dùng sẽ được triển khai sau");
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/accountAuthManage");
+    }
+}

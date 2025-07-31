@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using Web_health_app.ApiService.Entities;
 using Web_health_app.Models.Models;
@@ -64,15 +64,20 @@ namespace Web_health_app.ApiService.Repository
         {
             try
             {
-                var roleUsers = await _context.RoleUsers
-                    .Where(ru => ru.UserId == userId && roleIds.Contains(ru.RoleId))
-                    .ToListAsync();
+                if (roleIds == null || !roleIds.Any())
+                    return false;
 
-                if (roleUsers.Any())
-                {
-                    _context.RoleUsers.RemoveRange(roleUsers);
-                    await _context.SaveChangesAsync();
-                }
+                // Tạo danh sách RoleId để truyền vào SQL IN (...)
+                var roleIdsParam = string.Join(",", roleIds.Select(id => $"'{id}'"));
+
+                var sql = $@"
+                             DELETE FROM ROLE_USERS
+                             WHERE user_ID = {{0}}
+                             AND role_ID IN ({roleIdsParam});
+                            ";
+
+                // Thực thi SQL
+                await _context.Database.ExecuteSqlRawAsync(sql, userId);
 
                 return true;
             }

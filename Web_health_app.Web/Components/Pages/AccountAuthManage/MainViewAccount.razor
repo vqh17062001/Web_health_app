@@ -616,8 +616,9 @@
 
     private async Task ViewUsersInRole(string roleId)
     {
-        // Navigate to users in role page or open modal    /accountAuthManage/editrole/{RoleId}
-        await JSRuntime.InvokeVoidAsync("console.log", $"View users in role: {roleId}");
+        // Navigate to users in role page or open modal    /accountAuthManage/role/{RoleId}/users
+        Navigation.NavigateTo($"/accountAuthManage/role/{roleId}/users");
+
     }
 
     private async Task DeleteRole(string roleId)

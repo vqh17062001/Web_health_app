@@ -186,12 +186,7 @@ namespace Web_health_app.ApiService.Controllers
             try
             {
                 var users = await _roleUserRepository.GetRoleUsersAsync(roleId);
-                return Ok(new
-                {
-                    roleId = roleId,
-                    users = users,
-                    totalUsers = users.Count
-                });
+                return Ok(users);
             }
             catch (Exception ex)
             {

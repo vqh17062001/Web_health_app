@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
@@ -301,6 +302,52 @@ namespace Web_health_app.Web.ApiClients
                 {
                     IsSuccess = false,
                     Message = $"Error removing all roles: {ex.Message}"
+                };
+            }
+        }
+
+        /// <summary>
+        /// Get all users assigned to a role
+        /// </summary>
+        /// <param name="roleId">Role ID</param>
+        /// <returns>API response with list of users assigned to the role</returns>
+        public async Task<ApiResponse<List<UserInfoDto>>> GetRoleUsersAsync(string roleId)
+        {
+            await SetAuthorizeHeader();
+            try
+            {
+                var response = await _httpClient.GetAsync($"api/roleuser/role/{roleId}/users");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<List<UserInfoDto>>();
+                    return new ApiResponse<List<UserInfoDto>> { 
+                        IsSuccess = true,
+                        Data = result,
+                        Message = "Users retrieved successfully"
+
+
+                    };
+
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    return new ApiResponse<List<UserInfoDto>>
+                    {
+                        IsSuccess = false,
+                        Message = $"Failed to retrieve users: {response.ReasonPhrase}",
+                        Data = new List<UserInfoDto>()
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<List<UserInfoDto>>
+                {
+                    IsSuccess = false,
+                    Message = $"Error retrieving users: {ex.Message}",
+                    Data = new List<UserInfoDto>()
                 };
             }
         }
