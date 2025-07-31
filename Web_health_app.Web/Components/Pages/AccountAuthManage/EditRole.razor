@@ -325,7 +325,7 @@
                     <i class="fas fa-times"></i>
                     Hủy
                 </button>
-                @if (currentRole != null)
+                @* @if (currentRole != null)
                 {
                     <button type="button" class="btn btn-danger" @onclick="DeleteRole" disabled="@isDeleting">
                         @if (isDeleting)
@@ -335,7 +335,7 @@
                         <i class="fas fa-trash"></i>
                         @(isDeleting ? "Đang xóa..." : "Xóa vai trò")
                     </button>
-                }
+                } *@
                 <button type="button" class="btn btn-reset" @onclick="ResetForm">
                     <i class="fas fa-undo"></i>
                     Khôi phục

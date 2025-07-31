@@ -3,6 +3,7 @@
 @using System.Net.Http
 @using System.Text.Json
 @using System.Text.Json.Serialization
+@using Microsoft.AspNetCore.Components.Authorization
 @using Web_health_app.Web.Components.Layout
 @using Web_health_app.Models.Models
 @using Web_health_app.Web.ApiClients
@@ -89,16 +90,19 @@
                                                     <i class="fas fa-ellipsis-v"></i>
                                                 </button>
                                                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton@(user.UserId)">
-                                                    <li><a class="dropdown-item" href="#"
-                                                            @onclick="() => ViewUserDetail(user.UserId)">Xem chi tiết</a></li>
+                                                    <AuthorizeView Roles="UPDATE.USERS">
                                                     <li><a class="dropdown-item" href="#"
                                                             @onclick="() => EditUser(user.UserId)">Chỉnh sửa</a></li>
+                                                    </AuthorizeView>
                                                     <li>
                                                         <hr class="dropdown-divider">
                                                     </li>
+                                                    <AuthorizeView Roles="DELETE.USERS">
                                                     <li><a class="dropdown-item text-danger" href="#"
                                                             @onclick="() => DeleteUser(user.UserId)"
                                                             @onclick:preventDefault="true">Xóa</a></li>
+                                                    </AuthorizeView>
+
                                                 </ul>
                                             </div>
                                         </div>
@@ -186,18 +190,24 @@
                                                     <i class="fas fa-ellipsis-v"></i>
                                                 </button>
                                                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton@(role.RoleId)">
-                                                    <li><a class="dropdown-item" href="#"
-                                                            @onclick="() => ViewRoleDetail(role.RoleId)">Xem chi tiết</a></li>
+                                                    <AuthorizeView Roles="UPDATE.ROLES">
                                                     <li><a class="dropdown-item" href="#"
                                                             @onclick="() => EditRoleLink(role.RoleId)">Chỉnh sửa</a></li>
+                                                    </AuthorizeView>
+                                                    <AuthorizeView Roles="READ.ROLES">
                                                     <li><a class="dropdown-item" href="#"
                                                             @onclick="() => ViewUsersInRole(role.RoleId)">Xem thành viên</a></li>
+                                                    </AuthorizeView>
+
                                                     <li>
                                                         <hr class="dropdown-divider">
                                                     </li>
+                                                    <AuthorizeView Roles="DELETE.ROLES">
                                                     <li><a class="dropdown-item text-danger" href="#"
                                                             @onclick="() => DeleteRole(role.RoleId)"
                                                             @onclick:preventDefault="true">Xóa</a></li>
+                                                    </AuthorizeView>
+
                                                 </ul>
                                             </div>
                                         </div>
