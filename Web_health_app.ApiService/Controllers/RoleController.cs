@@ -142,30 +142,30 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="id">Role ID</param>
         /// <param name="updateRoleDto">Updated role data</param>
         /// <returns>Updated role information</returns>
-        //[HttpPut("{id}")]
-        //[Authorize(Roles = "UPDATE.ROLES")]
-        //public async Task<ActionResult<RoleInfoDto>> UpdateRole(string id, [FromBody] UpdateRoleDto updateRoleDto)
-        //{
-        //    try
-        //    {
-        //        if (!ModelState.IsValid)
-        //        {
-        //            return BadRequest(ModelState);
-        //        }
+        [HttpPut("{id}")]
+        [Authorize(Roles = "UPDATE.ROLES")]
+        public async Task<ActionResult<RoleInfoDto>> UpdateRole(string id, [FromBody] UpdateRoleDto updateRoleDto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
 
-        //        var updatedRole = await _roleRepository.UpdateRoleAsync(id, updateRoleDto);
-        //        if (updatedRole == null)
-        //        {
-        //            return NotFound(new { message = "Role not found" });
-        //        }
+                var updatedRole = await _roleRepository.UpdateRoleAsync(id, updateRoleDto);
+                if (updatedRole == null)
+                {
+                    return NotFound(new { message = "Role not found" });
+                }
 
-        //        return Ok(updatedRole);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, new { message = "An error occurred while updating role", error = ex.Message });
-        //    }
-        //}
+                return Ok(updatedRole);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while updating role", error = ex.Message });
+            }
+        }
 
         /// <summary>
         /// Delete role (soft delete)

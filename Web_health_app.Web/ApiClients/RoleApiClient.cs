@@ -293,6 +293,58 @@ namespace Web_health_app.Web.ApiClients
         }
 
         /// <summary>
+        /// Update existing role
+        /// </summary>
+        /// <param name="roleId">Role ID</param>
+        /// <param name="updateRoleDto">Role update data</param>
+        /// <returns>API response with updated role information</returns>
+        public async Task<ApiResponse<RoleInfoDto>> UpdateRoleAsync(string roleId, UpdateRoleDto updateRoleDto)
+        {
+            try
+            {
+                await SetAuthorizeHeader();
+
+                var response = await _httpClient.PutAsJsonAsync($"api/role/{Uri.EscapeDataString(roleId)}", updateRoleDto);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<RoleInfoDto>();
+                    return new ApiResponse<RoleInfoDto>
+                    {
+                        IsSuccess = true,
+                        Message = "Role updated successfully",
+                        Data = result
+                    };
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return new ApiResponse<RoleInfoDto>
+                    {
+                        IsSuccess = false,
+                        Message = "Role not found"
+                    };
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    return new ApiResponse<RoleInfoDto>
+                    {
+                        IsSuccess = false,
+                        Message = $"Failed to update role: {response.ReasonPhrase}. {errorContent}"
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<RoleInfoDto>
+                {
+                    IsSuccess = false,
+                    Message = $"Error updating role: {ex.Message}"
+                };
+            }
+        }
+
+        /// <summary>
         /// Delete role (soft delete)
         /// </summary>
         /// <param name="roleId">Role ID</param>

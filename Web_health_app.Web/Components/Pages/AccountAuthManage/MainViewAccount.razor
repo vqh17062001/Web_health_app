@@ -189,7 +189,7 @@
                                                     <li><a class="dropdown-item" href="#"
                                                             @onclick="() => ViewRoleDetail(role.RoleId)">Xem chi tiết</a></li>
                                                     <li><a class="dropdown-item" href="#"
-                                                            @onclick="() => EditRole(role.RoleId)">Chỉnh sửa</a></li>
+                                                            @onclick="() => EditRoleLink(role.RoleId)">Chỉnh sửa</a></li>
                                                     <li><a class="dropdown-item" href="#"
                                                             @onclick="() => ViewUsersInRole(role.RoleId)">Xem thành viên</a></li>
                                                     <li>
@@ -597,15 +597,16 @@
         await JSRuntime.InvokeVoidAsync("console.log", $"View role detail: {roleId}");
     }
 
-    private async Task EditRole(string roleId)
+    private async Task EditRoleLink(string roleId)
     {
         // Navigate to edit role page or open modal
-        await JSRuntime.InvokeVoidAsync("console.log", $"Edit role: {roleId}");
+        Navigation.NavigateTo($"/accountAuthManage/editrole/{roleId}");
+
     }
 
     private async Task ViewUsersInRole(string roleId)
     {
-        // Navigate to users in role page or open modal
+        // Navigate to users in role page or open modal    /accountAuthManage/editrole/{RoleId}
         await JSRuntime.InvokeVoidAsync("console.log", $"View users in role: {roleId}");
     }
 

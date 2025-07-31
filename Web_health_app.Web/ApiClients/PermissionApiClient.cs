@@ -283,7 +283,7 @@ namespace Web_health_app.Web.ApiClients
             {
                 await SetAuthorizeHeader();
 
-                var response = await _httpClient.DeleteAsync($"api/permission/{permissionId}");
+                var response = await _httpClient.DeleteAsync($"api/permission/{permissionId}/hard");
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -337,19 +337,14 @@ namespace Web_health_app.Web.ApiClients
             {
                 await SetAuthorizeHeader();
 
-                var response = await _httpClient.GetAsync($"api/permission/role/{roleId}");
+                var response = await _httpClient.GetAsync($"api/permission/by-role/{roleId}");
 
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<List<PermissionInfoDto>>(content, _jsonOptions);
+                    var result = JsonSerializer.Deserialize<ApiResponse<List<PermissionInfoDto>>>(content, _jsonOptions);
 
-                    return new ApiResponse<List<PermissionInfoDto>>
-                    {
-                        IsSuccess = true,
-                        Message = "Role permissions retrieved successfully",
-                        Data = result ?? new List<PermissionInfoDto>()
-                    };
+                    return result;
                 }
                 else
                 {
