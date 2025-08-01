@@ -54,13 +54,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
     });
 
 builder.Services.AddAuthorization();
-//builder.Services.AddAuthorization(options =>
-//{
-//    options.AddPolicy("RequireAuthenticatedUser", policy =>
-//        policy.RequireAuthenticatedUser());
-//    options.AddPolicy("RequireAdminRole", policy =>
-//        policy.RequireRole("Admin"));
-//});
+
 
 
 builder.Services.AddControllers();
