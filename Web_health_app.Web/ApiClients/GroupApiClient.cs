@@ -799,5 +799,52 @@ namespace Web_health_app.Web.ApiClients
                 };
             }
         }
+        /// <summary>
+        /// Add roles to group
+        /// </summary>
+        /// <param name="groupId">Group ID</param>
+        /// <param name="roleIds">List of role IDs to add</param>
+        /// <param name="note">Optional note for the assignment</param>
+        /// <returns>API response indicating success or failure</returns>
+        public async Task<ApiResponse<object>> AddRolesToGroupAsync(string groupId, List<string> roleIds, string? note = null)
+        {
+            try
+            {
+                await SetAuthorizeHeader();
+                var assignmentDto = new GroupRoleAssignmentDto
+                {
+                    GroupId = groupId,
+                    RoleIds = roleIds,
+                    Note = note
+                };
+
+                var response = await _httpClient.PostAsJsonAsync($"api/group/{groupId}/roles", assignmentDto);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return new ApiResponse<object>
+                    {
+                        IsSuccess = true,
+                        Message = "Roles added to group successfully"
+                    };
+                }
+                else
+                {
+                    return new ApiResponse<object>
+                    {
+                        IsSuccess = false,
+                        Message = $"Failed to add roles to group: {response.ReasonPhrase}"
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<object>
+                {
+                    IsSuccess = false,
+                    Message = $"Error adding roles to group: {ex.Message}"
+                };
+            }
+        }
     }
 }

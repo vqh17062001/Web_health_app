@@ -171,6 +171,94 @@
                             }
                         </div>
                     </div>
+
+                    <!-- Roles Selection Section -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <h5>
+                                <i class="fas fa-user-tag"></i>
+                                Thêm Quyền cho Nhóm
+                            </h5>
+                            <small class="text-muted">Chọn các quyền sẽ được gán cho nhóm này</small>
+                        </div>
+
+                        <div class="selection-area">
+                            <!-- Search Roles -->
+                            <div class="search-box">
+                                <div class="search-input-wrapper">
+                                    <i class="fas fa-search search-icon"></i>
+                                    <input type="text" class="form-control search-input" 
+                                           placeholder="Tìm kiếm quyền..." 
+                                           @bind="roleSearchTerm" 
+                                           @oninput="@(() => FilterRoles())" />
+                                    @if (!string.IsNullOrEmpty(roleSearchTerm))
+                                    {
+                                        <button type="button" class="clear-search" @onclick="@(() => { roleSearchTerm = string.Empty; FilterRoles(); })">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    }
+                                </div>
+                                @if (availableRoles.Any())
+                                {
+                                    <div class="search-stats">
+                                        Hiển thị <strong>@filteredRoles.Count</strong> / <strong>@availableRoles.Count</strong> quyền
+                                    </div>
+                                }
+                            </div>
+
+                            @if (availableRoles.Any())
+                            {
+                                <div class="roles-grid">
+                                    @foreach (var role in filteredRoles)
+                                    {
+                                        <div class="role-item @(selectedRoleIds.Contains(role.RoleId) ? "selected" : "")">
+                                            <label class="role-checkbox">
+                                                <input type="checkbox" 
+                                                       @onchange="@((e) => ToggleRoleSelection(role.RoleId, (bool)e.Value!))"
+                                                       checked="@selectedRoleIds.Contains(role.RoleId)" />
+                                                <span class="checkmark"></span>
+                                                <div class="role-info">
+                                                    <div class="role-avatar">
+                                                        <i class="fas fa-user-tag"></i>
+                                                    </div>
+                                                    <div class="role-details">
+                                                        <h6 class="role-name">@role.RoleName</h6>
+                                                        
+                                                        <div class="role-meta">
+                                                           
+                                                            @if (role.IsActive)
+                                                            {
+                                                                <span class="badge bg-success">Hoạt động</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="badge bg-secondary">Không hoạt động</span>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    }
+                                </div>
+                                
+                                @if (selectedRoleIds.Any())
+                                {
+                                    <div class="selected-info">
+                                        <i class="fas fa-check-circle text-success"></i>
+                                        Đã chọn <strong>@selectedRoleIds.Count</strong> quyền
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="no-data">
+                                    <i class="fas fa-user-tag"></i>
+                                    <p>Không có quyền nào để chọn</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
                 </form>
             }
         </div>
@@ -207,10 +295,14 @@
     private CreateGroupDto createGroupDto = new();
     private List<UserInfoDto> availableUsers = new();
     private List<UserInfoDto> filteredUsers = new();
+    private List<RoleInfoDto> availableRoles = new();
+    private List<RoleInfoDto> filteredRoles = new();
     
     private HashSet<Guid> selectedUserIds = new();
+    private HashSet<string> selectedRoleIds = new();
     
     private string userSearchTerm = string.Empty;
+    private string roleSearchTerm = string.Empty;
     
     private bool isLoading = true;
     private bool isSubmitting = false;
@@ -236,6 +328,14 @@
             {
                 availableUsers = usersResult.Data.Users.ToList();
                 filteredUsers = availableUsers.ToList();
+            }
+
+            // Load all roles
+            var rolesResult = await RoleApiClient.GetAllRolesAsync(1, 1000);
+            if (rolesResult.IsSuccess && rolesResult.Data != null)
+            {
+                availableRoles = rolesResult.Data.Roles.ToList();
+                filteredRoles = availableRoles.ToList();
             }
 
             // Initialize DTO with default values
@@ -270,6 +370,23 @@
         StateHasChanged();
     }
 
+    private void FilterRoles()
+    {
+        if (string.IsNullOrWhiteSpace(roleSearchTerm))
+        {
+            filteredRoles = availableRoles.ToList();
+        }
+        else
+        {
+            var searchTerm = roleSearchTerm.ToLower();
+            filteredRoles = availableRoles
+                .Where(r => r.RoleName.ToLower().Contains(searchTerm) || 
+                           (!string.IsNullOrEmpty(r.RoleName) && r.RoleName.ToLower().Contains(searchTerm)))
+                .ToList();
+        }
+        StateHasChanged();
+    }
+
     private void ToggleUserSelection(Guid userId, bool isSelected)
     {
         if (isSelected)
@@ -283,6 +400,19 @@
         StateHasChanged();
     }
 
+    private void ToggleRoleSelection(string roleId, bool isSelected)
+    {
+        if (isSelected)
+        {
+            selectedRoleIds.Add(roleId);
+        }
+        else
+        {
+            selectedRoleIds.Remove(roleId);
+        }
+        StateHasChanged();
+    }
+
     private string GetStatusBadgeClass(short userStatus)
     {
         return userStatus switch
@@ -292,6 +422,17 @@
             2 => "bg-warning",      // Pending
             3 => "bg-secondary",    // Suspended
             _ => "bg-light"
+        };
+    }
+
+    private string GetRoleTypeBadgeClass(bool isActive)
+    {
+        return isActive switch
+        {
+            false => "bg-warning",      // System
+            true  => "bg-success"         // Admin
+
+           
         };
     }
 
@@ -343,9 +484,23 @@
                 }
             }
 
+            // Add roles to group if any selected
+            if (selectedRoleIds.Any())
+            {
+                var addRolesResult = await GroupApiClient.AddRolesToGroupAsync(createdGroupId, selectedRoleIds.ToList());
+                if (addRolesResult.IsSuccess)
+                {
+                    await ShowToast($"Đã thêm {selectedRoleIds.Count} quyền vào nhóm", "success");
+                }
+                else
+                {
+                    await ShowToast($"Cảnh báo: Tạo nhóm thành công nhưng lỗi khi thêm quyền: {addRolesResult.Message}", "warning");
+                }
+            }
+
             // Navigate back to group management
             await Task.Delay(1500); // Show success message
-            Navigation.NavigateTo("/account-auth-manage");
+            Navigation.NavigateTo("/accountAuthManage");
         }
         catch (Exception ex)
         {
@@ -378,11 +533,14 @@
     {
         createGroupDto = new CreateGroupDto { IsActive = true };
         selectedUserIds.Clear();
+        selectedRoleIds.Clear();
         userSearchTerm = string.Empty;
+        roleSearchTerm = string.Empty;
         validationErrors.Clear();
         createdGroupId = null;
         
         FilterUsers();
+        FilterRoles();
         
         await ShowToast("Đã làm mới form", "info");
     }

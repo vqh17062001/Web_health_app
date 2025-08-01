@@ -1,3 +1,4 @@
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Web_health_app.ApiService.Entities;
 using Web_health_app.Models.Models;
@@ -606,15 +607,27 @@ namespace Web_health_app.ApiService.Repository
 
                 foreach (var roleId in newRoleIds)
                 {
-                    _context.GroupRoles.Add(new GroupRole
-                    {
-                        GroupId = groupId,
-                        RoleId = roleId,
-                        Note = note
-                    });
+
+                    var sql = @"
+                            INSERT INTO GROUP_ROLES (group_ID, role_ID, note)
+                            VALUES (@groupId, @roleId, @note);
+                            ";
+
+                    await _context.Database.ExecuteSqlRawAsync(sql,
+                        new SqlParameter("@groupId", groupId),
+                        new SqlParameter("@roleId", roleId),
+                        new SqlParameter("@note", string.IsNullOrEmpty(note) ? (object)DBNull.Value : note)
+                    );
+
+                    //_context.GroupRoles.Add(new GroupRole
+                    //{
+                    //    GroupId = groupId,
+                    //    RoleId = roleId,
+                    //    Note = note
+                    //});
                 }
 
-                await _context.SaveChangesAsync();
+                //await _context.SaveChangesAsync();
                 return true;
             }
             catch (Exception ex)
