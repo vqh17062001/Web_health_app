@@ -184,20 +184,20 @@
 
                         <div class="selection-area">
                             <!-- Search Roles -->
-                            <div class="search-box">
+                            <div class="search-box mb-3">
                                 <div class="search-input-wrapper">
-                                    <i class="fas fa-search search-icon"></i>
-                                    <input type="text" class="form-control search-input" 
+                                    
+                                    <input type="text" class="form-control" 
                                            placeholder="Tìm kiếm quyền..." 
-                                           @bind="roleSearchTerm" 
-                                           @oninput="@(() => FilterRoles())" />
-                                    @if (!string.IsNullOrEmpty(roleSearchTerm))
-                                    {
-                                        <button type="button" class="clear-search" @onclick="@(() => { roleSearchTerm = string.Empty; FilterRoles(); })">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    }
+                                           @bind="roleSearchTerm" @oninput="@(() => FilterRoles())" />
+                                    <i class="fas fa-search search-icon"></i>
+
+                                  
                                 </div>
+                              
+                            </div>
+                            <div>
+
                                 @if (availableRoles.Any())
                                 {
                                     <div class="search-stats">
@@ -205,7 +205,6 @@
                                     </div>
                                 }
                             </div>
-
                             @if (availableRoles.Any())
                             {
                                 <div class="roles-grid">
@@ -353,8 +352,8 @@
     }
 
     private void FilterUsers()
-    {
-        if (string.IsNullOrWhiteSpace(userSearchTerm))
+   {
+      if (string.IsNullOrWhiteSpace(userSearchTerm))
         {
             filteredUsers = availableUsers.ToList();
         }
@@ -381,7 +380,8 @@
             var searchTerm = roleSearchTerm.ToLower();
             filteredRoles = availableRoles
                 .Where(r => r.RoleName.ToLower().Contains(searchTerm) || 
-                           (!string.IsNullOrEmpty(r.RoleName) && r.RoleName.ToLower().Contains(searchTerm)))
+                           (!string.IsNullOrEmpty(r.RoleName) && r.RoleName.ToLower().Contains(searchTerm))
+                || r.RoleId.ToLower().Contains(searchTerm))
                 .ToList();
         }
         StateHasChanged();
