@@ -846,5 +846,51 @@ namespace Web_health_app.Web.ApiClients
                 };
             }
         }
+
+        /// <summary>
+        /// Remove roles from group
+        /// </summary>
+        /// <param name="groupId">Group ID</param>
+        /// <param name="roleIds">List of role IDs to remove</param>
+        /// <returns>API response indicating success or failure</returns>
+        public async Task<ApiResponse<object>> RemoveRolesFromGroupAsync(string groupId, List<string> roleIds)
+        {
+            try
+            {
+                await SetAuthorizeHeader();
+
+                var request = new HttpRequestMessage(HttpMethod.Delete, $"api/group/{groupId}/roles")
+                {
+                    Content = JsonContent.Create(roleIds)
+                };
+
+                var response = await _httpClient.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return new ApiResponse<object>
+                    {
+                        IsSuccess = true,
+                        Message = "Roles removed from group successfully"
+                    };
+                }
+                else
+                {
+                    return new ApiResponse<object>
+                    {
+                        IsSuccess = false,
+                        Message = $"Failed to remove roles from group: {response.ReasonPhrase}"
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<object>
+                {
+                    IsSuccess = false,
+                    Message = $"Error removing roles from group: {ex.Message}"
+                };
+            }
+        }
     }
 }

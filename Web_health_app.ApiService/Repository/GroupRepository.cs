@@ -640,15 +640,14 @@ namespace Web_health_app.ApiService.Repository
         {
             try
             {
-                var groupRoles = await _context.GroupRoles
-                    .Where(gr => gr.GroupId == groupId && roleIds.Contains(gr.RoleId))
-                    .ToListAsync();
+                var roleIdList = string.Join("','", roleIds);
+                var sqlDelete = $@"
+                                 DELETE FROM GROUP_ROLES
+                                 WHERE group_ID = '{groupId}'
+                                 AND role_ID IN ('{roleIdList}');
+                                 ";
 
-                if (groupRoles.Any())
-                {
-                    _context.GroupRoles.RemoveRange(groupRoles);
-                    await _context.SaveChangesAsync();
-                }
+                await _context.Database.ExecuteSqlRawAsync(sqlDelete);
 
                 return true;
             }
