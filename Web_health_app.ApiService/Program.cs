@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using System.Reflection;
 using Web_health_app.ApiService.Entities;
 using Web_health_app.ApiService.Repository;
 
@@ -12,14 +13,29 @@ builder.AddServiceDefaults();
 builder.Services.AddDbContext<HealthDbContext>();
 
 // Register repositories
-builder.Services.AddScoped<IAuthRepository, AuthRepository>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IRoleRepository, RoleRepository>();
-builder.Services.AddScoped<IRoleUserRepository, RoleUserRepository>();
-builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
-builder.Services.AddScoped<IActionRepository, ActionRepository>();
-builder.Services.AddScoped<IEntityRepository, EntityRepository>();
+//builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+//builder.Services.AddScoped<IUserRepository, UserRepository>();
+//builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+//builder.Services.AddScoped<IRoleUserRepository, RoleUserRepository>();
+//builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
+//builder.Services.AddScoped<IActionRepository, ActionRepository>();
+//builder.Services.AddScoped<IEntityRepository, EntityRepository>();
+//builder.Services.AddScoped<IGroupRepository, GroupRepository>();
+// Tự động quét và đăng ký repository
+var repositoryTypes = Assembly.GetExecutingAssembly()
+    .GetTypes()
+    .Where(t => t.IsClass && !t.IsAbstract && t.Name.EndsWith("Repository"));
 
+foreach (var implementationType in repositoryTypes)
+{
+    var interfaceType = implementationType.GetInterfaces()
+        .FirstOrDefault(i => i.Name == "I" + implementationType.Name);
+
+    if (interfaceType != null)
+    {
+        builder.Services.AddScoped(interfaceType, implementationType);
+    }
+}
 
 // Add services to the container.
 builder.Services.AddProblemDetails();
