@@ -14,6 +14,7 @@
 @attribute [Authorize(Roles = "ACCESS.MainViewAccount")]
 @inject UserApiClient UserApi
 @inject RoleApiClient RoleApi
+@inject GroupApiClient GroupApi
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @implements IDisposable
@@ -277,9 +278,117 @@
                             </div>
                         }
                     }
+                    else if (currentView == "usergroups")
+                    {
+                        @if (groups?.Any() == true)
+                        {
+                            @foreach (var group in groups)
+                            {
+                                <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                                    <div class="card h-100 shadow-sm">
+                                        <div
+                                            class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">Nhóm người dùng</h6>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-dark dropdown-toggle" type="button"
+                                                    id="dropdownMenuButton@(group.GroupId)" data-bs-toggle="dropdown"
+                                                    aria-expanded="false">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton@(group.GroupId)">
+                                                    <AuthorizeView Roles="UPDATE.GROUPS">
+                                                    <li><a class="dropdown-item" href="#"
+                                                            @onclick="() => EditGroup(group.GroupId)">Chỉnh sửa</a></li>
+                                                    </AuthorizeView>
+                                                    <AuthorizeView Roles="READ.GROUPS">
+                                                    <li><a class="dropdown-item" href="#"
+                                                            @onclick="() => ViewGroupDetail(group.GroupId)">Xem chi tiết</a></li>
+                                                    </AuthorizeView>
+                                                    <AuthorizeView Roles="READ.GROUPS,READ.USERS">
+                                                    <li><a class="dropdown-item" href="#"
+                                                            @onclick="() => ViewUsersInGroup(group.GroupId)">Xem thành viên</a></li>
+                                                    </AuthorizeView>
+                                                    <li>
+                                                        <hr class="dropdown-divider">
+                                                    </li>
+                                                    <AuthorizeView Roles="DELETE.GROUPS">
+                                                    <li><a class="dropdown-item text-danger" href="#"
+                                                            @onclick="() => DeleteGroup(group.GroupId)"
+                                                            @onclick:preventDefault="true">Xóa</a></li>
+                                                    </AuthorizeView>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="avatar-circle bg-warning text-dark me-3">
+                                                    <i class="fas fa-users"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1">@group.GroupName</h6>
+                                                    <small class="text-muted">@group.GroupId</small>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <span class="badge @(group.IsActive ? "bg-success" : "bg-danger")">
+                                                    @(group.IsActive ? "Hoạt động" : "Không hoạt động")
+                                                </span>
+                                            </div>
+                                            <div class="row text-center">
+                                                <div class="col-6">
+                                                    <div class="border-end">
+                                                        <div class="h5 mb-0 text-primary">@group.UserCount</div>
+                                                        <small class="text-muted">Thành viên</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div class="h5 mb-0 text-info">@group.RoleCount</div>
+                                                    <small class="text-muted">Vai trò</small>
+                                                </div>
+                                            </div>
+                                            @if (!string.IsNullOrEmpty(group.TimeActiveId))
+                                            {
+                                                <div class="mt-3">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-clock me-1"></i>
+                                                        Time Active: @group.TimeActiveId
+                                                    </small>
+                                                </div>
+                                            }
+                                        </div>
+                                        <div class="card-footer bg-light">
+                                            <small class="text-muted">
+                                                @if (group.UpdatedAt.HasValue)
+                                                {
+                                                    <span>Cập nhật: @group.UpdatedAt.Value.ToString("dd/MM/yyyy")</span>
+                                                }
+                                                else if (group.CreatedAt.HasValue)
+                                                {
+                                                    <span>Tạo: @group.CreatedAt.Value.ToString("dd/MM/yyyy")</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>ID: @group.GroupId</span>
+                                                }
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="col-12">
+                                <div class="alert alert-info text-center">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Không tìm thấy nhóm người dùng nào.
+                                </div>
+                            </div>
+                        }
+                    }
                     else
                     {
-                        <!-- Placeholder for other views (usergroups) -->
+                        <!-- Placeholder for other views -->
                         <div class="col-12">
                             <div class="alert alert-warning text-center">
                                 <i class="fas fa-construction me-2"></i>
@@ -292,7 +401,7 @@
         </div>
 
         <!-- Pagination -->
-        @if ((currentView == "users" || currentView == "roles") && pagination != null && pagination.TotalPages > 1)
+        @if ((currentView == "users" || currentView == "roles" || currentView == "usergroups") && pagination != null && pagination.TotalPages > 1)
         {
             <div class="row mt-4">
                 <div class="col-12">
@@ -335,11 +444,13 @@
     // Properties for data binding
     private List<UserInfoDto>? users = new();
     private List<RoleInfoDto>? roles = new();
+    private List<GroupInfoDto>? groups = new();
     private string currentView = "users";
     private string searchTerm = "";
     private bool isLoading = false;
     private UsersPaginationInfo? pagination;
     private RolesPaginationInfo? rolesPagination;
+    private GroupsPaginationInfo? groupsPagination;
     private Timer? searchTimer;
 
     protected override async Task OnInitializedAsync()
@@ -440,6 +551,63 @@
         }
     }
 
+    private async Task LoadGroups(int pageNumber = 1, string? searchTerm = null)
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            var response = await GroupApi.GetGroupsWithUserCountAsync(pageNumber, 12, searchTerm, true);
+
+            if (response.IsSuccess && response.Data != null)
+            {
+                // Map GroupWithUserCountDto to GroupInfoDto
+                groups = response.Data.Groups.Select(g => new GroupInfoDto
+                {
+                    GroupId = g.GroupId,
+                    GroupName = g.GroupName,
+                    TimeActiveId = g.TimeActiveId,
+                    IsActive = g.IsActive,
+                    UserCount = g.UserCount,
+                    RoleCount = g.RoleCount,
+                    CreatedAt = g.CreatedAt,
+                    UpdatedAt = g.UpdatedAt
+                }).ToList();
+
+                groupsPagination = response.Data.Pagination;
+                pagination = new UsersPaginationInfo
+                {
+                    CurrentPage = groupsPagination.CurrentPage,
+                    PageSize = groupsPagination.PageSize,
+                    TotalCount = groupsPagination.TotalCount,
+                    TotalPages = groupsPagination.TotalPages,
+                    HasNextPage = groupsPagination.HasNextPage,
+                    HasPreviousPage = groupsPagination.HasPreviousPage
+                };
+            }
+            else
+            {
+                // Handle error
+                Console.WriteLine($"Error loading groups: {response.Message}");
+                groups = new List<GroupInfoDto>();
+                await JSRuntime.InvokeVoidAsync("console.error", $"Failed to load groups: {response.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle error
+            Console.WriteLine($"Exception loading groups: {ex.Message}");
+            groups = new List<GroupInfoDto>();
+            await JSRuntime.InvokeVoidAsync("console.error", $"Exception loading groups: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
     private async Task OnFilterChanged(ChangeEventArgs e)
     {
         currentView = e.Value?.ToString() ?? "users";
@@ -452,13 +620,19 @@
         {
             await LoadRoles();
         }
+        else if (currentView == "usergroups")
+        {
+            await LoadGroups();
+        }
         else
         {
             // Clear data when switching to other views
             users = new List<UserInfoDto>();
             roles = new List<RoleInfoDto>();
+            groups = new List<GroupInfoDto>();
             pagination = null;
             rolesPagination = null;
+            groupsPagination = null;
         }
 
         StateHasChanged();
@@ -480,6 +654,10 @@
             {
                 await InvokeAsync(async () => await LoadRoles(1, searchTerm));
             }
+            else if (currentView == "usergroups")
+            {
+                await InvokeAsync(async () => await LoadGroups(1, searchTerm));
+            }
         }, null, 500, Timeout.Infinite);
     }
 
@@ -495,6 +673,10 @@
         else if (currentView == "roles")
         {
             await LoadRoles(pageNumber, searchTerm);
+        }
+        else if (currentView == "usergroups")
+        {
+            await LoadGroups(pageNumber, searchTerm);
         }
     }
 
@@ -640,6 +822,53 @@
                 else
                 {
                     await JSRuntime.InvokeVoidAsync("alert", $"Có lỗi xảy ra khi xóa vai trò: {response.Message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Lỗi: {ex.Message}");
+            }
+        }
+    }
+
+    // Group-related methods
+    private async Task ViewGroupDetail(string groupId)
+    {
+        // Navigate to group detail page or open modal
+        await JSRuntime.InvokeVoidAsync("console.log", $"View group detail: {groupId}");
+    }
+
+    private void EditGroup(string groupId)
+    {
+        // Navigate to edit group page
+        Navigation.NavigateTo($"/accountAuthManage/editgroup/{groupId}");
+    }
+
+    private async Task ViewUsersInGroup(string groupId)
+    {
+        // Navigate to users in group page
+        Navigation.NavigateTo($"/accountAuthManage/group/{groupId}/users");
+    }
+
+    private async Task DeleteGroup(string groupId)
+    {
+        // Show confirmation dialog and delete group
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Bạn có chắc chắn muốn xóa nhóm người dùng này?");
+
+        if (confirmed)
+        {
+            try
+            {
+                var response = await GroupApi.DeleteGroupAsync(groupId);
+                if (response.IsSuccess)
+                {
+                    // Reload current page
+                    await LoadGroups(groupsPagination?.CurrentPage ?? 1, searchTerm);
+                    await JSRuntime.InvokeVoidAsync("alert", "Xóa nhóm người dùng thành công!");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", $"Có lỗi xảy ra khi xóa nhóm người dùng: {response.Message}");
                 }
             }
             catch (Exception ex)
