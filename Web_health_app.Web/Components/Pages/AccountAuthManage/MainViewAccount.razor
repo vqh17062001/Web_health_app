@@ -300,10 +300,7 @@
                                                     <li><a class="dropdown-item" href="#"
                                                             @onclick="() => EditGroup(group.GroupId)">Chỉnh sửa</a></li>
                                                     </AuthorizeView>
-                                                    <AuthorizeView Roles="READ.GROUPS">
-                                                    <li><a class="dropdown-item" href="#"
-                                                            @onclick="() => ViewGroupDetail(group.GroupId)">Xem chi tiết</a></li>
-                                                    </AuthorizeView>
+                                                  
                                                     <AuthorizeView Roles="READ.GROUPS,READ.USERS">
                                                     <li><a class="dropdown-item" href="#"
                                                             @onclick="() => ViewUsersInGroup(group.GroupId)">Xem thành viên</a></li>

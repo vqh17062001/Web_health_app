@@ -97,18 +97,40 @@
                             @bind="createUserDto.PhoneNumber" />
                     </div>
                     <div class="form-group">
-                        <label for="department" class="form-label">
-                            <i class="fas fa-building"></i>
-                            Phòng ban
+                        <label for="groupId" class="form-label">
+                            <i class="fas fa-users"></i>
+                            Nhóm người dùng
                         </label>
-                        <select id="department" class="form-select" @bind="createUserDto.Department">
-                            <option value="">Chọn phòng ban</option>
-                            <option value="it">Công nghệ thông tin</option>
-                            <option value="hr">Nhân sự</option>
-                            <option value="finance">Tài chính</option>
-                            <option value="marketing">Marketing</option>
-                            <option value="operations">Vận hành</option>
+                        <select id="groupId" class="form-select" @bind="selectedGroupId" disabled="@isLoadingGroups">
+                            <option value="">Chọn nhóm (tùy chọn)</option>
+                            @if (isLoadingGroups)
+                            {
+                                <option value="">Đang tải nhóm...</option>
+                            }
+                            else
+                            {
+                                @foreach (var group in availableGroups)
+                                {
+                                    <option value="@group.GroupId">@group.GroupName (@group.UserCount thành viên)</option>
+                                }
+                            }
                         </select>
+                        @if (isLoadingGroups)
+                        {
+                            <small class="form-text text-muted">
+                                <i class="fas fa-spinner fa-spin"></i> Đang tải danh sách nhóm...
+                            </small>
+                        }
+                        else if (!availableGroups.Any())
+                        {
+                            <small class="form-text text-warning">
+                                <i class="fas fa-exclamation-triangle"></i> Không có nhóm nào khả dụng
+                            </small>
+                        }
+                        else
+                        {
+                            <small class="form-text text-muted">Chọn nhóm để gán người dùng vào (không bắt buộc)</small>
+                        }
                     </div>
                 </div>
 
@@ -122,19 +144,6 @@
                             <option value="0">Tạo mới cần đổi MK</option>
                             <option value="1">Hoạt động</option>
                             <option value="2">Tạm khóa</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="groupId" class="form-label">
-                            <i class="fas fa-users"></i>
-                            Nhóm người dùng
-                        </label>
-                        <select id="groupId" class="form-select" @bind="createUserDto.GroupId">
-                            <option value="">Chọn nhóm người dùng</option>
-                            <option value="1">IT Department</option>
-                            <option value="2">HR Department</option>
-                            <option value="3">Finance Team</option>
-                            <option value="4">Management</option>
                         </select>
                     </div>
                 </div>
@@ -220,62 +229,161 @@
 
                 <!-- Role Assignment Section -->
                 <div class="form-section">
-                    <h4 class="section-title">
-                        <i class="fas fa-user-shield"></i>
-                        Phân quyền
-                    </h4>
-                    <p class="section-description">
-                        Chọn các vai trò để gán cho người dùng này
-                    </p>
+                    <div class="section-header">
+                        <h4 class="section-title">
+                            <i class="fas fa-user-shield"></i>
+                            Phân quyền
+                        </h4>
+                        <p class="section-description">
+                            Chọn các vai trò để gán cho người dùng này
+                        </p>
+                    </div>
 
                     <div class="roles-container">
                         @if (isLoadingRoles)
                         {
-                            <div class="text-center">
-                                <div class="spinner-border spinner-border-sm" role="status">
-                                    <span class="visually-hidden">Đang tải...</span>
+                            <div class="loading-state">
+                                <div class="spinner-wrapper">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Đang tải...</span>
+                                    </div>
                                 </div>
-                                <span class="ms-2">Đang tải danh sách vai trò...</span>
+                                <p class="loading-text">Đang tải danh sách vai trò...</p>
                             </div>
                         }
                         else if (availableRoles?.Any() == true)
                         {
+                            <div class="roles-summary">
+                                <div class="summary-item">
+                                    <i class="fas fa-list"></i>
+                                    <span>Tổng số: <strong>@availableRoles.Count</strong> vai trò</span>
+                                </div>
+                                <div class="summary-item">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>Đã chọn: <strong>@selectedRoles.Count(r => r.Value)</strong> vai trò</span>
+                                </div>
+                            </div>
+
                             <div class="roles-grid">
                                 @foreach (var role in availableRoles)
                                 {
-                                    <div class="role-item">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="role_@role.RoleId"
-                                                checked="@selectedRoles[role.RoleId]"
-                                                @onchange="@(() => OnRoleSelectionChanged(role.RoleId))" />
-                                            <label class="form-check-label" for="role_@role.RoleId">
-                                                <div class="role-info">
-                                                    <div class="role-name">@role.RoleName</div>
-                                                    <div class="role-details">
-                                                        <small class="text-muted">
-                                                            <i class="fas fa-key"></i> @role.PermissionCount quyền
-                                                            <span class="mx-1">|</span>
-                                                            <i class="fas fa-users"></i> @role.UserCount người dùng
-                                                        </small>
+                                    <div class="role-card @(selectedRoles[role.RoleId] ? "selected" : "")">
+                                        <div class="role-card-header">
+                                            <div class="role-selection">
+                                                <input class="role-checkbox" type="checkbox" id="role_@role.RoleId"
+                                                    checked="@selectedRoles[role.RoleId]"
+                                                    @onchange="@(() => OnRoleSelectionChanged(role.RoleId))" />
+                                                <label class="checkbox-label" for="role_@role.RoleId">
+                                                    <div class="checkbox-custom">
+                                                        <i class="fas fa-check"></i>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                            <div class="role-status-indicator @(role.IsActive ? "active" : "inactive")">
+                                                <i class="fas @(role.IsActive ? "fa-check-circle" : "fa-pause-circle")"></i>
+                                            </div>
+                                        </div>
+
+                                        <div class="role-card-body">
+                                            <div class="role-icon-wrapper">
+                                                <i class="fas fa-user-shield role-icon"></i>
+                                            </div>
+                                            <div class="role-details">
+                                                <h5 class="role-name">@role.RoleName</h5>
+                                                <div class="role-status-text">
+                                                    @(role.IsActive ? "Đang hoạt động" : "Tạm dừng")
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="role-card-footer">
+                                            <div class="role-stats-grid">
+                                                <div class="stat-box">
+                                                    <div class="stat-icon">
+                                                        <i class="fas fa-key"></i>
+                                                    </div>
+                                                    <div class="stat-content">
+                                                        <div class="stat-number">@role.PermissionCount</div>
+                                                        <div class="stat-label">Quyền hạn</div>
                                                     </div>
                                                 </div>
-                                            </label>
+                                                <div class="stat-box">
+                                                    <div class="stat-icon">
+                                                        <i class="fas fa-users"></i>
+                                                    </div>
+                                                    <div class="stat-content">
+                                                        <div class="stat-number">@role.UserCount</div>
+                                                        <div class="stat-label">Người dùng</div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        @if (!role.IsActive)
+
+                                        @if (selectedRoles[role.RoleId])
                                         {
-                                            <span class="badge bg-warning">Không hoạt động</span>
+                                            <div class="selected-overlay">
+                                                <div class="selected-badge">
+                                                    <i class="fas fa-check-circle"></i>
+                                                    <span>Đã chọn</span>
+                                                </div>
+                                            </div>
                                         }
                                     </div>
                                 }
                             </div>
 
-
+                            @if (selectedRoles.Any(r => r.Value))
+                            {
+                                <div class="selected-roles-summary">
+                                    <div class="summary-header">
+                                        <div class="summary-title">
+                                            <i class="fas fa-clipboard-check"></i>
+                                            <h6>Vai trò đã chọn (@selectedRoles.Count(r => r.Value))</h6>
+                                        </div>
+                                        <button type="button" class="btn-clear-all" @onclick="ClearAllRoles">
+                                            <i class="fas fa-trash-alt"></i>
+                                            Xóa tất cả
+                                        </button>
+                                    </div>
+                                    <div class="selected-roles-list">
+                                        @foreach (var role in availableRoles.Where(r => selectedRoles[r.RoleId]))
+                                        {
+                                            <div class="selected-role-item">
+                                                <div class="role-tag">
+                                                    <div class="role-tag-icon">
+                                                        <i class="fas fa-user-shield"></i>
+                                                    </div>
+                                                    <div class="role-tag-content">
+                                                        <span class="role-tag-name">@role.RoleName</span>
+                                                        <span class="role-tag-info">@role.PermissionCount quyền</span>
+                                                    </div>
+                                                </div>
+                                                <button type="button" class="btn-remove-role"
+                                                    @onclick="@(() => RemoveRole(role.RoleId))" title="Bỏ chọn vai trò này">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
                         }
                         else
                         {
-                            <div class="alert alert-warning">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                Không có vai trò nào để gán. Vui lòng tạo vai trò trước khi thêm người dùng.
+                            <div class="empty-state">
+                                <div class="empty-icon">
+                                    <i class="fas fa-user-shield"></i>
+                                </div>
+                                <h5 class="empty-title">Không có vai trò nào</h5>
+                                <p class="empty-description">
+                                    Hiện tại chưa có vai trò nào để gán cho người dùng.
+                                    Vui lòng tạo vai trò trước khi thêm người dùng.
+                                </p>
+                                <button type="button" class="btn btn-outline-primary"
+                                    @onclick="@(() => Navigation.NavigateTo("/accountAuthManage/addRole"))">
+                                    <i class="fas fa-plus"></i>
+                                    Tạo vai trò mới
+                                </button>
                             </div>
                         }
                     </div>
@@ -319,12 +427,14 @@
     </div>
 </div>
 
+
 @using Web_health_app.Models.Models
 @using Web_health_app.Web.ApiClients
 @using Microsoft.AspNetCore.Components
 @inject UserApiClient UserApi
 @inject RoleApiClient RoleApi
 @inject RoleUserApiClient RoleUserApi
+@inject GroupApiClient GroupApi
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
@@ -338,12 +448,17 @@
     private Dictionary<string, bool> selectedRoles = new Dictionary<string, bool>();
     private List<string> selectedRolesList => selectedRoles.Where(sr => sr.Value).Select(sr => sr.Key).ToList();
 
+    // Group management
+    private List<GroupInfoDto> availableGroups = new List<GroupInfoDto>();
+    private string selectedGroupId = string.Empty;
+
     // Manager management
     private List<UserInfoDto> availableManagers = new List<UserInfoDto>();
 
     // Loading states
     private bool isLoading = false;
     private bool isLoadingRoles = false;
+    private bool isLoadingGroups = false;
     private bool isLoadingManagers = false;
     private bool isSaving = false;
 
@@ -355,7 +470,7 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadAvailableRoles();
-
+        await LoadAvailableGroups();
     }
 
     private async Task LoadAvailableRoles()
@@ -389,6 +504,35 @@
         finally
         {
             isLoadingRoles = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadAvailableGroups()
+    {
+        try
+        {
+            isLoadingGroups = true;
+            StateHasChanged();
+
+            // Get all active groups with a larger page size to get all available groups
+            var response = await GroupApi.GetAllGroupsAsync(pageNumber: 1, pageSize: 100, includeInactive: false);
+            if (response.IsSuccess && response.Data != null && response.Data.Groups != null)
+            {
+                availableGroups = response.Data.Groups;
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("console.error", $"Failed to load groups: {response.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"Exception loading groups: {ex.Message}");
+        }
+        finally
+        {
+            isLoadingGroups = false;
             StateHasChanged();
         }
     }
@@ -488,6 +632,18 @@
                 }
             }
 
+            // Step 3: Assign group if selected
+            if (!string.IsNullOrEmpty(selectedGroupId))
+            {
+                var groupAssignResponse = await GroupApi.AddUsersToGroupAsync(selectedGroupId, new List<Guid> { createdUser.UserId });
+                if (!groupAssignResponse.IsSuccess)
+                {
+                    // User created but group assignment failed - show warning
+                    await JSRuntime.InvokeVoidAsync("alert",
+                    $"Người dùng đã được tạo thành công nhưng có lỗi khi gán nhóm: {groupAssignResponse.Message}");
+                }
+            }
+
             // Success
             await JSRuntime.InvokeVoidAsync("alert", "Thêm người dùng thành công!");
 
@@ -509,6 +665,7 @@
     {
         createUserDto = new CreateUserDto();
         confirmPassword = string.Empty;
+        selectedGroupId = string.Empty;
 
         // Reset role selections
         foreach (var key in selectedRoles.Keys.ToList())
@@ -524,6 +681,15 @@
     {
         Navigation.NavigateTo("/accountAuthManage");
     }
+    private async Task LoadAvailableManagers()
+    {
+        // Default behavior if no level is specified
+        if (createUserDto.LevelSecurity > 0)
+        {
+            await LoadAvailableManagers((int)createUserDto.LevelSecurity);
+        }
+    }
+
     private async Task LoadAvailableManagers(int levelSecurity)
     {
         try
@@ -558,16 +724,29 @@
             StateHasChanged();
         }
     }
-
-    // Overload method for compatibility with the existing call
-    private async Task LoadAvailableManagers()
+    private void ClearAllRoles()
     {
-        if (createUserDto.LevelSecurity > 0)
-        {
-            await LoadAvailableManagers((int)createUserDto.LevelSecurity);
-        }
+        selectedRolesList.Clear();
+    }
+
+    // Helper methods for role statistics
+    private int GetRolePermissionCount(RoleInfoDto role)
+    {
+        return role.PermissionCount;
+    }
+
+    private int GetRoleUserCount(RoleInfoDto role)
+    {
+        return role.UserCount;
+    }
+
+    private string GetRoleStatusClass(RoleInfoDto role)
+    {
+        return role.IsActive ? "status-active" : "status-inactive";
+    }
+
+    private string GetRoleStatusText(RoleInfoDto role)
+    {
+        return role.IsActive ? "Hoạt động" : "Không hoạt động";
     }
 }
-
-
-                                                                                   

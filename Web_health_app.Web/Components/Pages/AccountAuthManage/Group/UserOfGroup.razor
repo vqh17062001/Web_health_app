@@ -1,17 +1,16 @@
-@page "/accountAuthManage/role/{RoleId}/users"
-@rendermode InteractiveServer
+@page "/accountAuthManage/group/{GroupId}/users"
+
 @using Microsoft.AspNetCore.Authorization
 @using Web_health_app.Web.Components.Layout
 @using Web_health_app.Web.ApiClients
-@using Models.Models
-@inject RoleApiClient RoleApiClient
-@inject RoleUserApiClient RoleUserApiClient
+@using Web_health_app.Models.Models
+@inject GroupApiClient GroupApiClient
 @inject UserApiClient UserApiClient
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
 @layout EmptyLayout
-@attribute [Authorize(Roles = "READ.ROLES,READ.USERS")]
+@attribute [Authorize(Roles = "READ.GROUPS,READ.USERS")]
 
 <link href="/css/AccountAuthManage/add-role.css" rel="stylesheet" />
 <link href="/css/AccountAuthManage/user-of-role.css" rel="stylesheet" />
@@ -28,14 +27,14 @@
                     <div class="header-info">
                         <h2 class="page-title">
                             <i class="fas fa-users"></i>
-                            Người dùng của vai trò
+                            Người dùng trong nhóm
                         </h2>
-                        @if (currentRole != null)
+                        @if (currentGroup != null)
                         {
-                            <p class="role-info">
-                                <strong>Vai trò:</strong> @currentRole.RoleName (@currentRole.RoleId)
-                                <span class="badge @(currentRole.IsActive ? "bg-success" : "bg-danger") ms-2">
-                                    @(currentRole.IsActive ? "Hoạt động" : "Không hoạt động")
+                            <p class="group-info">
+                                <strong>Nhóm:</strong> @currentGroup.GroupName (@currentGroup.GroupId)
+                                <span class="badge @(currentGroup.IsActive ? "bg-success" : "bg-danger") ms-2">
+                                    @(currentGroup.IsActive ? "Hoạt động" : "Không hoạt động")
                                 </span>
                             </p>
                         }
@@ -44,7 +43,7 @@
                 <div class="header-right">
                     <button type="button" class="btn btn-primary" @onclick="ShowAssignUsersModal" disabled="@isLoading">
                         <i class="fas fa-user-plus"></i>
-                        Gán người dùng
+                        Thêm người dùng
                     </button>
                 </div>
             </div>
@@ -69,7 +68,8 @@
                         <div class="col-md-6">
                             <div class="search-box">
                                 <input type="text" class="form-control" placeholder="Tìm kiếm theo tên, email..."
-                                       @bind="searchTerm" @onkeypress="@(async (e) => { if (e.Key == "Enter") await SearchUsers(); })" />
+                                    @bind="searchTerm"
+                                    @onkeypress="@(async (e) => { if (e.Key == "Enter") await SearchUsers(); })" />
                                 <button type="button" class="btn btn-outline-primary" @onclick="SearchUsers">
                                     <i class="fas fa-search"></i>
                                 </button>
@@ -94,9 +94,8 @@
                                 <thead class="table-dark">
                                     <tr>
                                         <th scope="col">
-                                            <input type="checkbox" class="form-check-input" 
-                                                   @onchange="ToggleSelectAll" 
-                                                   checked="@(selectedUserIds.Count == users.Count && users.Any())" />
+                                            <input type="checkbox" class="form-check-input" @onchange="ToggleSelectAll"
+                                                checked="@(selectedUserIds.Count == users.Count && users.Any())" />
                                         </th>
                                         <th scope="col">Tên người dùng</th>
                                         <th scope="col">Tên đăng nhập</th>
@@ -110,9 +109,9 @@
                                     {
                                         <tr>
                                             <td>
-                                                <input type="checkbox" class="form-check-input" 
-                                                       @onchange="@((e) => ToggleUserSelection(user.UserId, (bool)e.Value!))"
-                                                       checked="@selectedUserIds.Contains(user.UserId)" />
+                                                <input type="checkbox" class="form-check-input"
+                                                    @onchange="@((e) => ToggleUserSelection(user.UserId, (bool)e.Value!))"
+                                                    checked="@selectedUserIds.Contains(user.UserId)" />
                                             </td>
                                             <td>
                                                 <div class="user-info">
@@ -127,19 +126,16 @@
                                                 </div>
                                             </td>
                                             <td>
-                                               <span
+                                                <span
                                                     class="badge @GetStatusBadgeClass(user.UserStatus)">@user.UserStatusString</span>
                                                 <span></span>
                                             </td>
                                             <td>@user.CreateAt.ToString("dd/MM/yyyy HH:mm")</td>
                                             <td>
-                                               
-                                                    <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                            @onclick="@(() => RemoveUserFromRole(user.UserId))"
-                                                            title="Gỡ vai trò">
-                                                        <i class="fas fa-user-minus"></i>
-                                                    </button>
-                                               
+                                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                                    @onclick="@(() => RemoveUserFromGroup(user.UserId))" title="Xóa khỏi nhóm">
+                                                    <i class="fas fa-user-minus"></i>
+                                                </button>
                                             </td>
                                         </tr>
                                     }
@@ -156,9 +152,9 @@
                                     Đã chọn <strong>@selectedUserIds.Count</strong> người dùng
                                 </div>
                                 <div class="bulk-buttons">
-                                    <button type="button" class="btn btn-outline-danger" @onclick="RemoveSelectedUsersFromRole">
+                                    <button type="button" class="btn btn-outline-danger" @onclick="RemoveSelectedUsersFromGroup">
                                         <i class="fas fa-user-minus"></i>
-                                        Gỡ vai trò khỏi người dùng đã chọn
+                                        Xóa người dùng đã chọn khỏi nhóm
                                     </button>
                                 </div>
                             </div>
@@ -171,10 +167,10 @@
                                 <i class="fas fa-users"></i>
                             </div>
                             <h4>Không có người dùng nào</h4>
-                            <p>Vai trò này chưa được gán cho người dùng nào.</p>
+                            <p>Nhóm này chưa có người dùng nào.</p>
                             <button type="button" class="btn btn-primary" @onclick="ShowAssignUsersModal">
                                 <i class="fas fa-user-plus"></i>
-                                Gán người dùng đầu tiên
+                                Thêm người dùng đầu tiên
                             </button>
                         </div>
                     }
@@ -202,9 +198,9 @@
 }
 
 @code {
-    [Parameter] public string? RoleId { get; set; }
+    [Parameter] public string? GroupId { get; set; }
 
-    private RoleInfoDto? currentRole;
+    private GroupInfoDto? currentGroup;
     private List<UserInfoDto> users = new();
     private List<Guid> selectedUserIds = new();
     private string searchTerm = string.Empty;
@@ -217,7 +213,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (string.IsNullOrEmpty(RoleId))
+        if (string.IsNullOrEmpty(GroupId))
         {
             Navigation.NavigateTo("/accountAuthManage");
             return;
@@ -233,20 +229,20 @@
             isLoading = true;
             errorMessage = string.Empty;
 
-            // Load role information
-            var roleResponse = await RoleApiClient.GetRoleByIdAsync(RoleId!);
-            if (roleResponse.IsSuccess && roleResponse.Data != null)
+            // Load group information
+            var groupResponse = await GroupApiClient.GetGroupByIdAsync(GroupId!);
+            if (groupResponse.IsSuccess && groupResponse.Data != null)
             {
-                currentRole = roleResponse.Data;
+                currentGroup = groupResponse.Data;
             }
             else
             {
-                errorMessage = "Không thể tải thông tin vai trò";
+                errorMessage = "Không thể tải thông tin nhóm";
                 return;
             }
 
-            // Load users of this role
-            await LoadUsersOfRole();
+            // Load users of this group
+            await LoadUsersOfGroup();
         }
         catch (Exception ex)
         {
@@ -259,15 +255,16 @@
         }
     }
 
-    private async Task LoadUsersOfRole()
+    private async Task LoadUsersOfGroup()
     {
         try
         {
-            var response = await RoleUserApiClient.GetRoleUsersAsync(RoleId!);
+            var response = await GroupApiClient.GetGroupUsersAsync(GroupId!);
             if (response.IsSuccess && response.Data != null)
             {
-                users = response.Data.Where(u => u.FullName.ToLower().Contains(searchTerm.ToLower()) || u.UserName.ToLower().Contains(searchTerm.ToLower())).ToList();
-
+                users = response.Data.Where(u =>
+                (u.FullName?.ToLower().Contains(searchTerm.ToLower()) ?? false) ||
+                (u.UserName?.ToLower().Contains(searchTerm.ToLower()) ?? false)).ToList();
                 totalUsers = users.Count;
                 selectedUserIds.Clear();
             }
@@ -279,7 +276,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Lỗi khi tải danh sách người dùng: {ex.Message}";
+            errorMessage = $"Lỗi khi tải danh sách thành viên: {ex.Message}";
             users = new List<UserInfoDto>();
             totalUsers = 0;
         }
@@ -287,7 +284,7 @@
 
     private async Task SearchUsers()
     {
-        await LoadUsersOfRole();
+        await LoadUsersOfGroup();
         // TODO: Implement search functionality when API supports it
     }
 
@@ -320,6 +317,7 @@
         }
         StateHasChanged();
     }
+
     private string GetStatusBadgeClass(short userStatus)
     {
         return userStatus switch
@@ -334,28 +332,28 @@
         };
     }
 
-    private async Task RemoveUserFromRole(Guid userId)
+    private async Task RemoveUserFromGroup(Guid userId)
     {
         if (isProcessing) return;
 
         try
         {
             isProcessing = true;
-            var response = await RoleUserApiClient.RemoveRolesFromUserAsync(userId, new List<string> { RoleId! });
-            
+            var response = await GroupApiClient.RemoveUsersFromSpecificGroupAsync(GroupId!, new List<Guid> { userId });
+
             if (response.IsSuccess)
             {
-                successMessage = "Đã gỡ vai trò khỏi người dùng thành công";
-                await LoadUsersOfRole();
+                successMessage = "Đã gỡ thành viên khỏi nhóm thành công";
+                await LoadUsersOfGroup();
             }
             else
             {
-                errorMessage = response.Message ?? "Lỗi khi gỡ vai trò";
+                errorMessage = response.Message ?? "Lỗi khi gỡ thành viên";
             }
         }
         catch (Exception ex)
         {
-            errorMessage = $"Lỗi khi gỡ vai trò: {ex.Message}";
+            errorMessage = $"Lỗi khi gỡ thành viên: {ex.Message}";
         }
         finally
         {
@@ -364,32 +362,28 @@
         }
     }
 
-    private async Task RemoveSelectedUsersFromRole()
+    private async Task RemoveSelectedUsersFromGroup()
     {
         if (!selectedUserIds.Any() || isProcessing) return;
 
         try
         {
             isProcessing = true;
-            var tasks = selectedUserIds.Select(userId => 
-                RoleUserApiClient.RemoveRolesFromUserAsync(userId, new List<string> { RoleId! })
-            );
+            var response = await GroupApiClient.RemoveUsersFromSpecificGroupAsync(GroupId!, selectedUserIds);
 
-            var results = await Task.WhenAll(tasks);
-            
-            if (results.All(r => r.IsSuccess))
+            if (response.IsSuccess)
             {
-                successMessage = $"Đã gỡ vai trò khỏi {selectedUserIds.Count} người dùng thành công";
-                await LoadUsersOfRole();
+                successMessage = $"Đã gỡ {selectedUserIds.Count} thành viên khỏi nhóm thành công";
+                await LoadUsersOfGroup();
             }
             else
             {
-                errorMessage = "Có lỗi xảy ra khi gỡ vai trò khỏi một số người dùng";
+                errorMessage = response.Message ?? "Có lỗi xảy ra khi gỡ thành viên khỏi nhóm";
             }
         }
         catch (Exception ex)
         {
-            errorMessage = $"Lỗi khi gỡ vai trò: {ex.Message}";
+            errorMessage = $"Lỗi khi gỡ thành viên: {ex.Message}";
         }
         finally
         {
