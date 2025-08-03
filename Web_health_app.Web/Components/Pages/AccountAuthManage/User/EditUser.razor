@@ -11,6 +11,7 @@
 @inject UserApiClient UserApi
 @inject RoleApiClient RoleApi
 @inject RoleUserApiClient RoleUserApi
+@inject GroupApiClient GroupApi
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @implements IDisposable
@@ -236,12 +237,19 @@
                                     <i class="fas fa-users"></i>
                                     Nhóm người dùng
                                 </label>
-                                <select id="groupId" class="form-select" @bind="updateUserDto.GroupId">
-                                    <option value="">Chọn nhóm người dùng</option>
-                                    <option value="1">IT Department</option>
-                                    <option value="2">HR Department</option>
-                                    <option value="3">Finance Team</option>
-                                    <option value="4">Management</option>
+                                <select id="groupId" class="form-select" @bind="updateUserDto.GroupId" disabled="@isLoadingGroups">
+                                    <option value="">@(isLoadingGroups ? "Đang tải danh sách nhóm..." : "Chọn nhóm người dùng")</option>
+                                    @if (!isLoadingGroups && availableGroups != null)
+                                    {
+                                        @foreach (var group in availableGroups)
+                                        {
+                                            <option value="@group.GroupId">@group.GroupName</option>
+                                        }
+                                    }
+                                    else if (isLoadingGroups)
+                                    {
+                                        <option value="" disabled>Đang tải danh sách nhóm...</option>
+                                    }
                                 </select>
                             </div>
                         </div>
@@ -338,12 +346,16 @@
     private Dictionary<string, bool> selectedRoles = new Dictionary<string, bool>();
     private List<string> currentUserRoles = new List<string>();
     
+    // Group management
+    private List<GroupInfoDto> availableGroups = new List<GroupInfoDto>();
+    
     // Manager management
     private List<UserInfoDto> availableManagers = new List<UserInfoDto>();
 
     // Loading states
     private bool isLoading = true;
     private bool isLoadingRoles = false;
+    private bool isLoadingGroups = false;
     private bool isLoadingManagers = false;
     private bool isSaving = false;
 
@@ -361,6 +373,7 @@
 
         await LoadUserData(userGuid);
         await LoadAvailableRoles();
+        await LoadAvailableGroups();
         await LoadCurrentUserRoles(userGuid);
     }
 
@@ -443,6 +456,36 @@
         finally
         {
             isLoadingRoles = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadAvailableGroups()
+    {
+        try
+        {
+            isLoadingGroups = true;
+            StateHasChanged();
+
+            var response = await GroupApi.GetActiveGroupsAsync();
+            if (response.IsSuccess && response.Data != null)
+            {
+                availableGroups = response.Data;
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("console.error", $"Failed to load groups: {response.Message}");
+                availableGroups = new List<GroupInfoDto>();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"Error loading groups: {ex.Message}");
+            availableGroups = new List<GroupInfoDto>();
+        }
+        finally
+        {
+            isLoadingGroups = false;
             StateHasChanged();
         }
     }
