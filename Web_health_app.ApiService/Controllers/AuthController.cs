@@ -18,11 +18,13 @@ namespace Web_health_app.ApiService.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly IAuthRepository _authRepository;
+        private readonly IUserRepository _userRepository;
 
-        public AuthController(IConfiguration configuration, IAuthRepository authRepository)
+        public AuthController(IConfiguration configuration, IAuthRepository authRepository, IUserRepository userRepository)
         {
             _configuration = configuration;
             _authRepository = authRepository;
+            _userRepository = userRepository;
         }
 
 
@@ -33,6 +35,21 @@ namespace Web_health_app.ApiService.Controllers
             {
                 // Get client IP address
                 var ipAddress = GetClientIpAddress();
+
+                var userStatus = await _userRepository.GetUserByUsernameAsync(request.Username);
+                if (userStatus.UserStatus == 0)
+                {
+
+                    return Ok(new LoginResponseModel { 
+                        
+                        FullName = userStatus.FullName,
+                        UserName =userStatus.UserName,
+                        UserStatus = userStatus.UserStatus,
+
+                    });
+
+                }
+
 
                 // Validate user credentials using repository
                 if (await _authRepository.ValidateUserCredentialsAsync(request))
@@ -54,6 +71,8 @@ namespace Web_health_app.ApiService.Controllers
 
                     return Ok(new LoginResponseModel { Token = token, 
                         FullName = user?.FullName ?? "Unknown User",
+                        UserName = userStatus.UserName,
+                        UserStatus = userStatus.UserStatus,
 
                     });
                 }

@@ -55,6 +55,11 @@ namespace Web_health_app.Web.ApiClients
                 {
                     var result = await response.Content.ReadFromJsonAsync<LoginResponseModel>();
 
+                    if ( result.UserStatus == 0)
+                    {
+                        return new ApiResponse<LoginResponseModel> { IsSuccess = true, Message = "ChangePassword!", Data = result };
+                    }
+
                     if (result?.Token != null)
                     {
                         // Store token với error handling
@@ -72,8 +77,9 @@ namespace Web_health_app.Web.ApiClients
                             // Token vẫn được store trong session như fallback
                         }
                     }
+                    
 
-                    return new ApiResponse<LoginResponseModel> { IsSuccess = true, Message = "------------", Data = result };
+                    return new ApiResponse<LoginResponseModel> { IsSuccess = true, Message = "Authorization!", Data = result };
                 }
                 else
                 {

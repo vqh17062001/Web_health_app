@@ -94,7 +94,7 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="username">Username</param>
         /// <returns>User information</returns>
         [HttpGet("username/{username}")]
-        [Authorize(Roles = "READ.USERS")]
+        [AllowAnonymous]
 
         public async Task<ActionResult<UserInfoDto>> GetUserByUsername(string username)
         {

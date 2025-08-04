@@ -131,7 +131,7 @@
 
             var response = await LoginClient.LoginAsync(loginModel);
 
-            if (response.IsSuccess && response.Data != null)
+            if (response.IsSuccess && response.Data != null && response.Data.UserStatus != 0)
             {
                 // Wait a bit to ensure token has been stored
                 await Task.Delay(200);
@@ -146,6 +146,23 @@
                     shouldNavigate = true;
                     StateHasChanged();
                 }
+            }
+            else if (response.IsSuccess && response.Data != null && response.Data.UserStatus==0)
+            {
+                
+                try
+                {
+                    NavigationManager.NavigateTo($"/changepassword?userName={response.Data.UserName}");
+                }
+                catch (NavigationException)
+                {
+                    // If still fails, set flag to navigate in OnAfterRenderAsync
+                    shouldNavigate = true;
+                    StateHasChanged();
+                }
+            
+            
+            
             }
             else
             {
