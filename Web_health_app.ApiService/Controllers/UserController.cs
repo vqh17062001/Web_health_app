@@ -114,6 +114,36 @@ namespace Web_health_app.ApiService.Controllers
             }
         }
 
+        [HttpPost("changepassword")]
+        [AllowAnonymous]
+        public async Task<ActionResult<bool>> ChangePassWordUser([FromBody] FirstChangePasswordModel changePasswordModel) {
+
+            try {
+
+
+
+                var result = await _userRepository.FirstChangePasswordAsync(changePasswordModel);
+
+
+                return result;
+
+            }
+            catch (Exception ex) { 
+            
+                return StatusCode(500, new { message = "An error occurred while retrieving user", error = ex.Message });
+
+
+            }
+
+
+
+
+
+        }
+
+
+
+
         /// <summary>
         /// Create new user
         /// </summary>

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -520,6 +521,39 @@ namespace Web_health_app.Web.ApiClients
                     Message = $"Error getting users by security level: {ex.Message}"
                 };
             }
+        }
+
+
+        public async Task<ActionResult<bool>> ChangePassword(FirstChangePasswordModel changePasswordModel) {
+
+
+            await SetAuthorizeHeader();
+
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/user/changepassword", changePasswordModel);
+                if (response.IsSuccessStatusCode)
+                {
+                    return true; // Password changed successfully
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Failed to change password: {response.ReasonPhrase}. {errorContent}");
+                    return false; // Failed to change password
+                }
+
+
+
+            }
+            catch(Exception ex) { 
+
+                return false; // Error occurred while changing password
+
+            }
+        
+        
+        
         }
     }
 

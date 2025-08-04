@@ -80,9 +80,10 @@ namespace Web_health_app.ApiService.Repository
         Task<bool> ChangePasswordAsync(Guid userId, string newPassword);
 
 
+        Task<bool> FirstChangePasswordAsync(FirstChangePasswordModel changePasswordModel);
 
         /// <summary>
-        
+
         Task<List<UserInfoDto>> GetUserWithCompareSecurityLevel(int level, bool lessThen = true);
     }
 }

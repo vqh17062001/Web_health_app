@@ -411,7 +411,7 @@ namespace Web_health_app.ApiService.Repository
                     return false;
                 }
 
-                user.PasswordHash = newPassword; // Note: Should hash password in production
+                user.PasswordHash = PasswordHasher.HashPassword(newPassword); // Note: Should hash password in production
                 user.UpdateAt = DateTime.Now;
 
                 await _context.SaveChangesAsync();
@@ -422,5 +422,30 @@ namespace Web_health_app.ApiService.Repository
                 throw new Exception("Error changing user password", ex);
             }
         }
+
+
+        public async Task<bool> FirstChangePasswordAsync(FirstChangePasswordModel changePasswordModel) {
+
+            try
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == changePasswordModel.Username && u.PasswordHash  == changePasswordModel.CurrentPassword );
+                if (user == null)
+                {
+                    return false;
+                }
+
+                user.PasswordHash = PasswordHasher.HashPassword(changePasswordModel.NewPassword); // Note: Should hash password in production
+                user.UpdateAt = DateTime.Now;
+                user.UserStatus = 1;
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error changing user password", ex);
+            }
+
+        }
+
     }
 }

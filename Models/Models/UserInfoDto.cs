@@ -65,7 +65,7 @@ namespace Web_health_app.Models.Models
         [StringLength(100, ErrorMessage = "Department cannot exceed 100 characters")]
         public string? Department { get; set; }
 
-        public short UserStatus { get; set; } = 1; // Default to Active
+        public short UserStatus { get; set; }  // Default to Active
 
         public Guid? ManageBy { get; set; }
 

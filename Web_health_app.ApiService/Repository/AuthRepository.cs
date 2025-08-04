@@ -1,6 +1,6 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Web_health_app.ApiService.Entities;
-
+using BCrypt.Net;
 using Web_health_app.Models.Models;
 
 namespace Web_health_app.ApiService.Repository
@@ -19,9 +19,20 @@ namespace Web_health_app.ApiService.Repository
             try
             {
                 var user = await _context.Users.Where(u => u.UserStatus != -1 && u.UserStatus!=-2 && u.UserStatus != 2)
-                    .FirstOrDefaultAsync(u => u.UserName == request.Username && u.PasswordHash == request.Password);
+                    .FirstOrDefaultAsync(u => u.UserName == request.Username);
+                if (user.UserStatus != 0)
+                {
+                   return PasswordHasher.VerifyPassword(request.Password,user.PasswordHash);
+                }
+                else { 
 
-                return user != null;
+                    return user != null;
+
+
+                }
+
+
+               
             }
             catch (Exception ex)
             {
@@ -126,6 +137,22 @@ namespace Web_health_app.ApiService.Repository
                 // Log exception here if you have logging configured
                 throw new Exception("Error getting user effective permissions by username", ex);
             }
+        }
+    }
+
+
+    public class PasswordHasher
+    {
+        // Băm mật khẩu
+        public static string HashPassword(string password)
+        {
+            return BCrypt.Net.BCrypt.HashPassword(password, 12); // 12 là work factor
+        }
+
+        // Xác minh mật khẩu
+        public static bool VerifyPassword(string password, string hash)
+        {
+            return BCrypt.Net.BCrypt.Verify(password, hash);
         }
     }
 }
