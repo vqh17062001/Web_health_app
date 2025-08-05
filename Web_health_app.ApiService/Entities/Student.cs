@@ -54,7 +54,7 @@ public partial class Student
             1 => "Có dữ liệu đồng bộ với Atlas",
             10 => "offline",
             11 => "online",
-            -1 => "Do user tạo ra",
+            0 => "Do user tạo ra",
             _ => "Không xác định"
         };
     }

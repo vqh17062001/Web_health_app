@@ -78,7 +78,9 @@ namespace Web_health_app.Models.Models
         [StringLength(100, ErrorMessage = "Email cannot exceed 100 characters")]
         public string? Email { get; set; }
 
-        public short Status { get; set; } = 1; // Default to active
+        public short Status { get; set; } = 1; 
+
+        public Guid CreatedBy { get; set; }
 
         public Guid? ManageBy { get; set; }
 
