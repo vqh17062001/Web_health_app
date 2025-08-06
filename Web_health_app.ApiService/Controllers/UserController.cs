@@ -114,9 +114,9 @@ namespace Web_health_app.ApiService.Controllers
             }
         }
 
-        [HttpPost("changepassword")]
+        [HttpPost("firstchangepassword")]
         [AllowAnonymous]
-        public async Task<ActionResult<bool>> ChangePassWordUser([FromBody] FirstChangePasswordModel changePasswordModel) {
+        public async Task<ActionResult<bool>> ChangePasswordUser([FromBody] ChangePasswordModel changePasswordModel) {
 
             try {
 
@@ -136,9 +136,37 @@ namespace Web_health_app.ApiService.Controllers
             }
 
 
+        }
+        /// <summary>
+        /// Change user password
+        /// </summary>
+        /// <param name="id">User ID</param>
+        /// <param name="changePasswordDto">Password change data</param>
+        /// <returns>Success message</returns>
+        [HttpPost("changepassword")]
+        [Authorize(Roles = "UPDATE.USERS")]
 
+        public async Task<ActionResult> ChangePassword(ChangePasswordModel changePasswordModel)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
 
+                var result = await _userRepository.ChangePasswordAsync(changePasswordModel);
+                if (!result)
+                {
+                    return NotFound(new { message = "User not found" });
+                }
 
+                return Ok(new { message = "Password changed successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while changing password", error = ex.Message });
+            }
         }
 
 
@@ -322,37 +350,8 @@ namespace Web_health_app.ApiService.Controllers
 
 
 
-        /// <summary>
-        /// Change user password
-        /// </summary>
-        /// <param name="id">User ID</param>
-        /// <param name="changePasswordDto">Password change data</param>
-        /// <returns>Success message</returns>
-        [HttpPatch("{id}/change-password")]
-        [Authorize(Roles = "UPDATE.USERS")]
 
-        public async Task<ActionResult> ChangePassword(Guid id, [FromBody] ChangePasswordDto changePasswordDto)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                var result = await _userRepository.ChangePasswordAsync(id, changePasswordDto.NewPassword);
-                if (!result)
-                {
-                    return NotFound(new { message = "User not found" });
-                }
-
-                return Ok(new { message = "Password changed successfully" });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while changing password", error = ex.Message });
-            }
-        }
+        
 
         /// <summary>
         /// Get current user information from JWT token
@@ -387,10 +386,5 @@ namespace Web_health_app.ApiService.Controllers
     /// <summary>
     /// DTO for changing password
     /// </summary>
-    public class ChangePasswordDto
-    {
-        [Required(ErrorMessage = "New password is required")]
-        [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be between 6 and 100 characters")]
-        public string NewPassword { get; set; } = string.Empty;
-    }
+   
 }

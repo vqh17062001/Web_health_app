@@ -9,7 +9,7 @@ namespace Web_health_app.Models.Models
         [Required]
         public string Password { get; set; }
     }
-    public class FirstChangePasswordModel
+    public class ChangePasswordModel
     {
         [Required(ErrorMessage = "Current Username is required")]
         public string Username { get; set; } = string.Empty;

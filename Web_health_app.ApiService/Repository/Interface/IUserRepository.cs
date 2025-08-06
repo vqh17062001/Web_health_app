@@ -77,10 +77,10 @@ namespace Web_health_app.ApiService.Repository
         /// <param name="userId">User ID</param>
         /// <param name="newPassword">New password</param>
         /// <returns>True if password changed successfully, false if user not found</returns>
-        Task<bool> ChangePasswordAsync(Guid userId, string newPassword);
+        Task<bool> ChangePasswordAsync(ChangePasswordModel changePasswordModel);
 
 
-        Task<bool> FirstChangePasswordAsync(FirstChangePasswordModel changePasswordModel);
+        Task<bool> FirstChangePasswordAsync(ChangePasswordModel changePasswordModel);
 
         /// <summary>
 

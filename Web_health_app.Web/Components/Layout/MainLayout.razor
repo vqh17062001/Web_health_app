@@ -52,7 +52,7 @@
                                 </li>
                                 <li>
                                     <a class="dropdown-item"
-                                        href="/changepassword?UserName=@context.User.FindFirst("username")?.Value">
+                                       href="/changepassword?UserName=@context.User.Identity.Name">
                                         <i class="fas fa-key"></i>
                                         <span>Đổi mật khẩu</span>
                                     </a>

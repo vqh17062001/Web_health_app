@@ -401,19 +401,23 @@ namespace Web_health_app.ApiService.Repository
 
         }
 
-        public async Task<bool> ChangePasswordAsync(Guid userId, string newPassword)
+        public async Task<bool> ChangePasswordAsync(ChangePasswordModel changePasswordModel)
         {
             try
             {
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId && u.UserStatus != -2);
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == changePasswordModel.Username );
                 if (user == null)
                 {
                     return false;
                 }
+                if (!PasswordHasher.VerifyPassword(changePasswordModel.CurrentPassword, user.PasswordHash)) { 
+                
+                return false; // Verify current password
+                }
 
-                user.PasswordHash = PasswordHasher.HashPassword(newPassword); // Note: Should hash password in production
+                user.PasswordHash = PasswordHasher.HashPassword(changePasswordModel.NewPassword); // Note: Should hash password in production
                 user.UpdateAt = DateTime.Now;
-
+                user.UserStatus = 1;
                 await _context.SaveChangesAsync();
                 return true;
             }
@@ -424,7 +428,7 @@ namespace Web_health_app.ApiService.Repository
         }
 
 
-        public async Task<bool> FirstChangePasswordAsync(FirstChangePasswordModel changePasswordModel) {
+        public async Task<bool> FirstChangePasswordAsync(ChangePasswordModel changePasswordModel) {
 
             try
             {

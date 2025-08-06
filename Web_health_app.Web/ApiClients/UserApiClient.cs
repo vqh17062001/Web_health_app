@@ -524,14 +524,15 @@ namespace Web_health_app.Web.ApiClients
         }
 
 
-        public async Task<ActionResult<bool>> ChangePassword(FirstChangePasswordModel changePasswordModel) {
+        public async Task<ActionResult<bool>> FirstChangePassword(ChangePasswordModel changePasswordModel) {
 
 
             await SetAuthorizeHeader();
 
             try
             {
-                var response = await _httpClient.PostAsJsonAsync("api/user/changepassword", changePasswordModel);
+
+                var response = await _httpClient.PostAsJsonAsync("api/user/firstchangepassword", changePasswordModel);
                 if (response.IsSuccessStatusCode)
                 {
                     return true; // Password changed successfully
@@ -554,6 +555,40 @@ namespace Web_health_app.Web.ApiClients
         
         
         
+        }
+
+
+        public async Task<ActionResult<bool>> ChangePassword(ChangePasswordModel changePasswordModel)
+        {
+
+
+            await SetAuthorizeHeader();
+
+            try
+            {
+
+                var response = await _httpClient.PostAsJsonAsync("api/user/changepassword", changePasswordModel);
+                if (response.IsSuccessStatusCode)
+                {
+                    return true; // Password changed successfully
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Failed to change password: {response.ReasonPhrase}. {errorContent}");
+                    return false; // Failed to change password
+                }
+
+            }
+            catch (Exception ex)
+            {
+
+                return false; // Error occurred while changing password
+
+            }
+
+
+
         }
     }
 
