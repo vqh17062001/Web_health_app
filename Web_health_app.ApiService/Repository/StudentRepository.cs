@@ -57,7 +57,7 @@ namespace Web_health_app.ApiService.Repository
                         Phone = s.Phone,
                         Email = s.Email,
                         Status = s.Status,
-                        StatusString = GetStatusString(s.Status),
+                        StatusString = s.GetStudentStatusString(),
                         CreatedAt = s.CreatedAt,
                         UpdateAt = s.UpdateAt,
                         CreatedBy = s.CreatedBy,
@@ -147,7 +147,7 @@ namespace Web_health_app.ApiService.Repository
                     Phone = s.Phone,
                     Email = s.Email,
                     Status = s.Status,
-                    StatusString = GetStatusString(s.Status),
+                    StatusString = s.GetStudentStatusString(),
                     CreatedAt = s.CreatedAt,
                     UpdateAt = s.UpdateAt,
                     CreatedBy = s.CreatedBy,
@@ -192,7 +192,7 @@ namespace Web_health_app.ApiService.Repository
                     Phone = student.Phone,
                     Email = student.Email,
                     Status = student.Status,
-                    StatusString = GetStatusString(student.Status),
+                    StatusString = student.GetStudentStatusString(),
                     CreatedAt = student.CreatedAt,
                     UpdateAt = student.UpdateAt,
                     CreatedBy = student.CreatedBy,
@@ -235,7 +235,7 @@ namespace Web_health_app.ApiService.Repository
                     Phone = student.Phone,
                     Email = student.Email,
                     Status = student.Status,
-                    StatusString = GetStatusString(student.Status),
+                    StatusString = student.GetStudentStatusString(),
                     CreatedAt = student.CreatedAt,
                     UpdateAt = student.UpdateAt,
                     CreatedBy = student.CreatedBy,
@@ -423,7 +423,7 @@ namespace Web_health_app.ApiService.Repository
                         Phone = s.Phone,
                         Email = s.Email,
                         Status = s.Status,
-                        StatusString = GetStatusString(s.Status),
+                        StatusString = s.GetStudentStatusString(),
                         CreatedAt = s.CreatedAt,
                         UpdateAt = s.UpdateAt,
                         CreatedBy = s.CreatedBy,
@@ -459,7 +459,7 @@ namespace Web_health_app.ApiService.Repository
                         Phone = s.Phone,
                         Email = s.Email,
                         Status = s.Status,
-                        StatusString = GetStatusString(s.Status),
+                        StatusString = s.GetStudentStatusString(),
                         CreatedAt = s.CreatedAt,
                         UpdateAt = s.UpdateAt,
                         CreatedBy = s.CreatedBy,
@@ -495,7 +495,7 @@ namespace Web_health_app.ApiService.Repository
                         Phone = s.Phone,
                         Email = s.Email,
                         Status = s.Status,
-                        StatusString = GetStatusString(s.Status),
+                        StatusString = s.GetStudentStatusString(),
                         CreatedAt = s.CreatedAt,
                         UpdateAt = s.UpdateAt,
                         CreatedBy = s.CreatedBy,
@@ -597,7 +597,7 @@ namespace Web_health_app.ApiService.Repository
                         Phone = s.Phone,
                         Email = s.Email,
                         Status = s.Status,
-                        StatusString = GetStatusString(s.Status),
+                        StatusString = s.GetStudentStatusString(),
                         CreatedAt = s.CreatedAt,
                         UpdateAt = s.UpdateAt,
                         CreatedBy = s.CreatedBy,
@@ -702,17 +702,17 @@ namespace Web_health_app.ApiService.Repository
 
         #region Private Helper Methods
 
-        private static string GetStatusString(short status)
-        {
-            return status switch
-            {
-                1 => "Có dữ liệu đồng bộ với Atlas",
-                10 => "Offline",
-                11 => "Online",
-                -1 => "Do user tạo ra",
-                _ => "Không xác định"
-            };
-        }
+        //private static string GetStatusString(short status)
+        //{
+        //    return status switch
+        //    {
+        //        1 => "Có dữ liệu đồng bộ với Atlas",
+        //        10 => "Offline",
+        //        11 => "Online",
+        //        -1 => "Do user tạo ra",
+        //        _ => "Không xác định"
+        //    };
+        //}
 
         private async Task<string> GenerateStudentIdAsync()
         {

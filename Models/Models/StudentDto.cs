@@ -78,7 +78,7 @@ namespace Web_health_app.Models.Models
         [StringLength(100, ErrorMessage = "Email cannot exceed 100 characters")]
         public string? Email { get; set; }
 
-        public short Status { get; set; } = 1; 
+        public short Status { get; set; } = 1;
 
         public Guid CreatedBy { get; set; }
 
@@ -270,5 +270,21 @@ namespace Web_health_app.Models.Models
         public string StudentId { get; set; } = string.Empty;
         public DateTime AssignedDate { get; set; }
         // Add other properties as needed
+    }
+
+    /// <summary>
+    /// DTO for student statistics
+    /// </summary>
+    public class StudentStatisticsDto
+    {
+        public int TotalStudents { get; set; }
+        public int ActiveStudents { get; set; }
+        public int InactiveStudents { get; set; }
+        public int StudentsWithSyncData { get; set; }
+        public int StudentsOffline { get; set; }
+        public int StudentsOnline { get; set; }
+        public Dictionary<string, int> StudentsByDepartment { get; set; } = new Dictionary<string, int>();
+        public Dictionary<string, int> StudentsByGender { get; set; } = new Dictionary<string, int>();
+        public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
     }
 }

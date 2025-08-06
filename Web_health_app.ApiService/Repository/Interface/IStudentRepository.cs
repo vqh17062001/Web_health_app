@@ -125,16 +125,16 @@ namespace Web_health_app.ApiService.Repository
     /// <summary>
     /// DTO for student statistics
     /// </summary>
-    public class StudentStatisticsDto
-    {
-        public int TotalStudents { get; set; }
-        public int ActiveStudents { get; set; }
-        public int InactiveStudents { get; set; }
-        public int StudentsWithSyncData { get; set; }
-        public int StudentsOffline { get; set; }
-        public int StudentsOnline { get; set; }
-        public Dictionary<string, int> StudentsByDepartment { get; set; } = new Dictionary<string, int>();
-        public Dictionary<string, int> StudentsByGender { get; set; } = new Dictionary<string, int>();
-        public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
-    }
+    //public class StudentStatisticsDto
+    //{
+    //    public int TotalStudents { get; set; }
+    //    public int ActiveStudents { get; set; }
+    //    public int InactiveStudents { get; set; }
+    //    public int StudentsWithSyncData { get; set; }
+    //    public int StudentsOffline { get; set; }
+    //    public int StudentsOnline { get; set; }
+    //    public Dictionary<string, int> StudentsByDepartment { get; set; } = new Dictionary<string, int>();
+    //    public Dictionary<string, int> StudentsByGender { get; set; } = new Dictionary<string, int>();
+    //    public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
+    //}
 }

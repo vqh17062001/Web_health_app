@@ -1,6 +1,10 @@
 ﻿@page "/studentmanage/mainviewstudent"
 @using Microsoft.AspNetCore.Authorization
 @using Web_health_app.Web.Components.Layout
+@using Web_health_app.Models.Models
+@using Web_health_app.Web.ApiClients
+@inject StudentApiClient StudentApiClient
+@inject IJSRuntime JSRuntime
 @layout MainLayout
 @attribute [Authorize(Roles = "ACCESS.MainViewStudent")]
 
@@ -18,7 +22,8 @@
                         <div class="row align-items-center">
                             <div class="col-md-3">
                                 <label for="filterSelect" class="form-label">Lọc theo:</label>
-                                <select id="filterSelect" class="form-select">
+                                <select id="filterSelect" class="form-select" @bind="filterType"
+                                    @bind:after="OnFilterChanged">
                                     <option value="all">Tất cả sinh viên</option>
                                     <option value="active">Đang học</option>
                                     <option value="inactive">Tạm nghỉ</option>
@@ -29,13 +34,26 @@
                             <div class="col-md-6">
                                 <label for="searchInput" class="form-label">Tìm kiếm:</label>
                                 <input type="text" id="searchInput" class="form-control"
-                                    placeholder="Nhập mã sinh viên, tên hoặc email...">
+                                    placeholder="Nhập mã sinh viên, tên hoặc email..." @bind="searchTerm"
+                                    @bind:after="OnSearchChanged">
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">&nbsp;</label>
-                                <a href="/studentmanage/addstudent" class="btn btn-primary w-100 d-block">
-                                    <i class="fas fa-plus me-2"></i>Thêm sinh viên
-                                </a>
+                                @if (isLoading)
+                                {
+                                    <div class="d-flex align-items-center">
+                                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <span>Đang tải...</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <a href="/studentmanage/addstudent" class="btn btn-primary w-100 d-block">
+                                        <i class="fas fa-plus me-2"></i>Thêm sinh viên
+                                    </a>
+                                }
                             </div>
                         </div>
                     </div>
@@ -46,259 +64,99 @@
         <!-- Content Cards -->
         <div class="row">
             <div class="col-12">
-                <div class="row g-4" id="contentCards">
-                    <!-- Student Card 1 -->
-                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                        <div class="card h-100 shadow-sm">
-                            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0">Sinh viên</h6>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
-                                        id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                                        <li><a class="dropdown-item" href="#"><i class="fas fa-eye me-2"></i>Xem chi tiết</a></li>
-                                        <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Chỉnh sửa</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Xóa</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="avatar-circle bg-info text-white me-3">
-                                        <i class="fas fa-user-graduate"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1">Nguyễn Văn An</h6>
-                                        <small class="text-muted">SV001</small>
-                                    </div>
-                                </div>
-                                <div class="mb-2">
-                                    <span class="badge bg-success me-1">Đang học</span>
-                                    <span class="badge bg-secondary">Năm 3</span>
-                                </div>
-                                <p class="card-text text-muted small mb-2">Khoa: Công nghệ thông tin</p>
-                                <p class="card-text text-muted small mb-2">Email: nguyenvanan@student.edu.vn</p>
-                                <p class="card-text text-muted small">GPA: <span class="text-success">3.8</span></p>
-                            </div>
-                            <div class="card-footer bg-light">
-                                <small class="text-muted">Cập nhật: 22/07/2025</small>
-                            </div>
+                @if (isLoading)
+                {
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                        <p class="mt-2">Đang tải danh sách sinh viên...</p>
+                    </div>
+                }
+                else if (students == null || !students.Any())
+                {
+                    <div class="text-center py-5">
+                        <div class="text-muted">
+                            <i class="fas fa-users fa-3x mb-3"></i>
+                            <p>Không có sinh viên nào được tìm thấy</p>
                         </div>
                     </div>
-
-                    <!-- Student Card 2 -->
-                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                        <div class="card h-100 shadow-sm">
-                            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0">Sinh viên</h6>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
-                                        id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
-                                        <li><a class="dropdown-item" href="#"><i class="fas fa-eye me-2"></i>Xem chi tiết</a></li>
-                                        <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Chỉnh sửa</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Xóa</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="avatar-circle bg-success text-white me-3">
-                                        <i class="fas fa-user-graduate"></i>
+                }
+                else
+                {
+                    <div class="row g-4" id="contentCards">
+                        @foreach (var student in students)
+                        {
+                            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                                <div class="card h-100 shadow-sm">
+                                    <div class="card-header @GetStatusCardClass(student.Status) text-white d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">Sinh viên</h6>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
+                                                id="dropdownMenuButton_@student.StudentId" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton_@student.StudentId">
+                                                <li><a class="dropdown-item" href="/studentmanage/detail/@student.StudentId"><i class="fas fa-eye me-2"></i>Xem chi tiết</a></li>
+                                                <li><a class="dropdown-item" href="/studentmanage/edit/@student.StudentId"><i class="fas fa-edit me-2"></i>Chỉnh sửa</a></li>
+                                                <li>
+                                                    <hr class="dropdown-divider">
+                                                </li>
+                                                <li><a class="dropdown-item text-danger" href="#" @onclick="() => DeleteStudent(student.StudentId)" @onclick:preventDefault="true"><i class="fas fa-trash me-2"></i>Xóa</a></li>
+                                            </ul>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h6 class="mb-1">Trần Thị Bình</h6>
-                                        <small class="text-muted">SV002</small>
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="avatar-circle @GetAvatarClass(student.Gender) text-white me-3">
+                                                <i class="fas fa-user-graduate"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-1">@student.Name</h6>
+                                                <small class="text-muted">@student.StudentId</small>
+                                            </div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <span class="badge @GetStatusBadgeClass(student.Status) me-1">@student.StatusString</span>
+                                            @if (!string.IsNullOrEmpty(student.Department))
+                                            {
+                                                <span class="badge bg-secondary">@student.Department</span>
+                                            }
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(student.Department))
+                                        {
+                                            <p class="card-text text-muted small mb-2">Đơn vị: @student.Department</p>
+                                        }
+                                        @if (!string.IsNullOrEmpty(student.Email))
+                                        {
+                                            <p class="card-text text-muted small mb-2">Email: @student.Email</p>
+                                        }
+                                        @if (!string.IsNullOrEmpty(student.Phone))
+                                        {
+                                            <p class="card-text text-muted small mb-2">SĐT: @student.Phone</p>
+                                        }
+                                        @if (!string.IsNullOrEmpty(student.ManageByName))
+                                        {
+                                            <p class="card-text text-muted small">Quản lý: @student.ManageByName</p>
+                                        }
+                                    </div>
+                                    <div class="card-footer bg-light">
+                                        <small class="text-muted">
+                                            @if (student.UpdateAt.HasValue)
+                                            {
+                                                <span>Cập nhật: @student.UpdateAt.Value.ToString("dd/MM/yyyy")</span>
+                                            }
+                                            else
+                                            {
+                                                <span>Tạo: @student.CreatedAt.ToString("dd/MM/yyyy")</span>
+                                            }
+                                        </small>
                                     </div>
                                 </div>
-                                <div class="mb-2">
-                                    <span class="badge bg-success me-1">Đang học</span>
-                                    <span class="badge bg-primary">Năm 4</span>
-                                </div>
-                                <p class="card-text text-muted small mb-2">Khoa: Kinh tế</p>
-                                <p class="card-text text-muted small mb-2">Email: tranthibinh@student.edu.vn</p>
-                                <p class="card-text text-muted small">GPA: <span class="text-success">3.9</span></p>
                             </div>
-                            <div class="card-footer bg-light">
-                                <small class="text-muted">Cập nhật: 21/07/2025</small>
-                            </div>
-                        </div>
+                        }
                     </div>
-
-                    <!-- Student Card 3 -->
-                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                        <div class="card h-100 shadow-sm">
-                            <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0">Sinh viên</h6>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-dark dropdown-toggle" type="button"
-                                        id="dropdownMenuButton3" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton3">
-                                        <li><a class="dropdown-item" href="#"><i class="fas fa-eye me-2"></i>Xem chi tiết</a></li>
-                                        <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Chỉnh sửa</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Xóa</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="avatar-circle bg-warning text-dark me-3">
-                                        <i class="fas fa-user-graduate"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1">Lê Văn Cường</h6>
-                                        <small class="text-muted">SV003</small>
-                                    </div>
-                                </div>
-                                <div class="mb-2">
-                                    <span class="badge bg-warning me-1">Tạm nghỉ</span>
-                                    <span class="badge bg-secondary">Năm 2</span>
-                                </div>
-                                <p class="card-text text-muted small mb-2">Khoa: Y học</p>
-                                <p class="card-text text-muted small mb-2">Email: levancuong@student.edu.vn</p>
-                                <p class="card-text text-muted small">GPA: <span class="text-info">3.2</span></p>
-                            </div>
-                            <div class="card-footer bg-light">
-                                <small class="text-muted">Cập nhật: 20/07/2025</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Student Card 4 -->
-                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                        <div class="card h-100 shadow-sm">
-                            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0">Sinh viên</h6>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
-                                        id="dropdownMenuButton4" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton4">
-                                        <li><a class="dropdown-item" href="#"><i class="fas fa-eye me-2"></i>Xem chi tiết</a></li>
-                                        <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Chỉnh sửa</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Xóa</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="avatar-circle bg-secondary text-white me-3">
-                                        <i class="fas fa-user-graduate"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1">Phạm Thị Diễm</h6>
-                                        <small class="text-muted">SV004</small>
-                                    </div>
-                                </div>
-                                <div class="mb-2">
-                                    <span class="badge bg-primary me-1">Đã tốt nghiệp</span>
-                                    <span class="badge bg-success">Xuất sắc</span>
-                                </div>
-                                <p class="card-text text-muted small mb-2">Khoa: Luật</p>
-                                <p class="card-text text-muted small mb-2">Email: phamthidiem@student.edu.vn</p>
-                                <p class="card-text text-muted small">GPA: <span class="text-success">3.95</span></p>
-                            </div>
-                            <div class="card-footer bg-light">
-                                <small class="text-muted">Cập nhật: 19/07/2025</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Student Card 5 -->
-                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                        <div class="card h-100 shadow-sm">
-                            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0">Sinh viên</h6>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
-                                        id="dropdownMenuButton5" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton5">
-                                        <li><a class="dropdown-item" href="#"><i class="fas fa-eye me-2"></i>Xem chi tiết</a></li>
-                                        <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Chỉnh sửa</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Xóa</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="avatar-circle bg-primary text-white me-3">
-                                        <i class="fas fa-user-graduate"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1">Hoàng Văn Minh</h6>
-                                        <small class="text-muted">SV005</small>
-                                    </div>
-                                </div>
-                                <div class="mb-2">
-                                    <span class="badge bg-success me-1">Đang học</span>
-                                    <span class="badge bg-info">Năm 1</span>
-                                </div>
-                                <p class="card-text text-muted small mb-2">Khoa: Kỹ thuật</p>
-                                <p class="card-text text-muted small mb-2">Email: hoangvanminh@student.edu.vn</p>
-                                <p class="card-text text-muted small">GPA: <span class="text-info">3.5</span></p>
-                            </div>
-                            <div class="card-footer bg-light">
-                                <small class="text-muted">Cập nhật: 22/07/2025</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Student Card 6 -->
-                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                        <div class="card h-100 shadow-sm">
-                            <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0">Sinh viên</h6>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
-                                        id="dropdownMenuButton6" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton6">
-                                        <li><a class="dropdown-item" href="#"><i class="fas fa-eye me-2"></i>Xem chi tiết</a></li>
-                                        <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Chỉnh sửa</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Xóa</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="avatar-circle bg-danger text-white me-3">
-                                        <i class="fas fa-user-graduate"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1">Vũ Thị Thu</h6>
-                                        <small class="text-muted">SV006</small>
-                                    </div>
-                                </div>
-                                <div class="mb-2">
-                                    <span class="badge bg-danger me-1">Bị đình chỉ</span>
-                                    <span class="badge bg-secondary">Năm 3</span>
-                                </div>
-                                <p class="card-text text-muted small mb-2">Khoa: Ngoại ngữ</p>
-                                <p class="card-text text-muted small mb-2">Email: vuthithu@student.edu.vn</p>
-                                <p class="card-text text-muted small">GPA: <span class="text-danger">2.1</span></p>
-                            </div>
-                            <div class="card-footer bg-light">
-                                <small class="text-muted">Cập nhật: 18/07/2025</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                }
             </div>
         </div>
 
@@ -308,60 +166,244 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Thống kê tổng quan</h5>
-                        <div class="row text-center">
-                            <div class="col-md-3 col-6">
-                                <div class="stat-item">
-                                    <div class="stat-number text-primary">1,247</div>
-                                    <div class="stat-label">Tổng sinh viên</div>
+                        @if (statistics != null)
+                        {
+                            <div class="row text-center">
+                                <div class="col-md-3 col-6">
+                                    <div class="stat-item">
+                                        <div class="stat-number text-primary">@statistics.TotalStudents.ToString("N0")</div>
+                                        <div class="stat-label">Tổng sinh viên</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="stat-item">
+                                        <div class="stat-number text-success">@statistics.ActiveStudents.ToString("N0")</div>
+                                        <div class="stat-label">Đang học</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="stat-item">
+                                        <div class="stat-number text-warning">@statistics.InactiveStudents.ToString("N0")</div>
+                                        <div class="stat-label">Tạm nghỉ</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="stat-item">
+                                        <div class="stat-number text-info">@statistics.StudentsOnline.ToString("N0")</div>
+                                        <div class="stat-label">Trực tuyến</div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-3 col-6">
-                                <div class="stat-item">
-                                    <div class="stat-number text-success">1,156</div>
-                                    <div class="stat-label">Đang học</div>
+                        }
+                        else
+                        {
+                            <div class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Đang tải thống kê...</span>
                                 </div>
                             </div>
-                            <div class="col-md-3 col-6">
-                                <div class="stat-item">
-                                    <div class="stat-number text-warning">45</div>
-                                    <div class="stat-label">Tạm nghỉ</div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 col-6">
-                                <div class="stat-item">
-                                    <div class="stat-number text-info">46</div>
-                                    <div class="stat-label">Đã tốt nghiệp</div>
-                                </div>
-                            </div>
-                        </div>
+                        }
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Pagination -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <nav aria-label="Phân trang">
-                    <ul class="pagination justify-content-center">
-                        <li class="page-item disabled">
-                            <a class="page-link" href="#" tabindex="-1">Trước</a>
-                        </li>
-                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                        <li class="page-item"><a class="page-link" href="#">4</a></li>
-                        <li class="page-item"><a class="page-link" href="#">5</a></li>
-                        <li class="page-item">
-                            <a class="page-link" href="#">Sau</a>
-                        </li>
-                    </ul>
-                </nav>
+        @if (pagination != null && pagination.TotalPages > 1)
+        {
+            <div class="row mt-4">
+                <div class="col-12">
+                    <nav aria-label="Phân trang">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item @(pagination.HasPreviousPage ? "" : "disabled")">
+                                <a class="page-link" href="#" @onclick="() => GoToPage(currentPage - 1)" @onclick:preventDefault="true">Trước</a>
+                            </li>
+                            
+                            @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(pagination.TotalPages, currentPage + 2); i++)
+                            {
+                                <li class="page-item @(i == currentPage ? "active" : "")">
+                                    <a class="page-link" href="#" @onclick="() => GoToPage(i)" @onclick:preventDefault="true">@i</a>
+                                </li>
+                            }
+                            
+                            <li class="page-item @(pagination.HasNextPage ? "" : "disabled")">
+                                <a class="page-link" href="#" @onclick="() => GoToPage(currentPage + 1)" @onclick:preventDefault="true">Sau</a>
+                            </li>
+                        </ul>
+                    </nav>
+                    <div class="text-center mt-2">
+                        <small class="text-muted">
+                            Hiển thị @((currentPage - 1) * pageSize + 1) - @Math.Min(currentPage * pageSize, pagination.TotalCount) 
+                            trong tổng số @pagination.TotalCount sinh viên
+                        </small>
+                    </div>
+                </div>
             </div>
-        </div>
+        }
     </div>
 </div>
 
 @code {
+    private List<StudentInfoDto> students = new();
+    private StudentsPaginationInfo? pagination;
+    private StudentStatisticsDto? statistics;
+    private bool isLoading = false;
+    private string searchTerm = "";
+    private string filterType = "all";
+    private int currentPage = 1;
+    private int pageSize = 20;
 
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStudents();
+        await LoadStatistics();
+    }
+
+    private async Task LoadStudents()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var includeInactive = filterType == "all" || filterType == "inactive";
+            var response = await StudentApiClient.GetAllStudentsAsync(currentPage, pageSize, searchTerm, includeInactive);
+
+            if (response.IsSuccess && response.Data != null)
+            {
+                students = response.Data.Students ?? new List<StudentInfoDto>();
+                pagination = response.Data.Pagination;
+                
+                // Cập nhật StatusString cho từng student
+              
+            }
+            else
+            {
+                students = new List<StudentInfoDto>();
+                // Log error hoặc hiển thị thông báo lỗi
+                Console.WriteLine($"Error loading students: {response.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception loading students: {ex.Message}");
+            students = new List<StudentInfoDto>();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadStatistics()
+    {
+        try
+        {
+            var response = await StudentApiClient.GetStudentStatisticsAsync();
+            if (response.IsSuccess && response.Data != null)
+            {
+                statistics = response.Data;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception loading statistics: {ex.Message}");
+        }
+    }
+
+    private async Task OnSearchChanged()
+    {
+        currentPage = 1; // Reset về trang đầu khi search
+        await Task.Delay(500); // Debounce
+        await LoadStudents();
+    }
+
+    private async Task OnFilterChanged()
+    {
+        currentPage = 1; // Reset về trang đầu khi filter
+        await LoadStudents();
+    }
+
+    private async Task GoToPage(int page)
+    {
+        if (page >= 1 && pagination != null && page <= pagination.TotalPages)
+        {
+            currentPage = page;
+            await LoadStudents();
+        }
+    }
+
+    private async Task DeleteStudent(string studentId)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Bạn có chắc chắn muốn xóa sinh viên {studentId}?");
+        if (confirmed)
+        {
+            try
+            {
+                var response = await StudentApiClient.DeleteStudentAsync(studentId);
+                if (response.IsSuccess)
+                {
+                    await LoadStudents(); // Reload danh sách
+                    await LoadStatistics(); // Reload thống kê
+                }
+                else
+                {
+                    // Hiển thị thông báo lỗi
+                    Console.WriteLine($"Error deleting student: {response.Message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception deleting student: {ex.Message}");
+            }
+        }
+    }
+
+    private string GetStatusCardClass(short status)
+    {
+        return status switch
+        {
+            1 => "bg-success", // Đang học
+            0 => "bg-warning", // Tạm nghỉ
+            2 => "bg-info", // Đã tốt nghiệp
+            -1 => "bg-danger", // Bị đình chỉ
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetStatusBadgeClass(short status)
+    {
+        return status switch
+        {
+            1 => "bg-success", // Đang học
+            0 => "bg-warning", // Tạm nghỉ
+            2 => "bg-info", // Đã tốt nghiệp
+            -1 => "bg-danger", // Bị đình chỉ
+            _ => "bg-secondary"
+        };
+    }
+
+    // private string GetStatusText(short status)
+    // {
+    //     return status switch
+    //     {
+    //         1 => "Đang học",
+    //         0 => "Tạm nghỉ",
+    //         2 => "Đã tốt nghiệp",
+    //         -1 => "Bị đình chỉ",
+    //         _ => "Không xác định"
+    //     };
+    // }
+
+    private string GetAvatarClass(string? gender)
+    {
+        return gender?.ToLower() switch
+        {
+            "male" => "bg-primary",
+            "female" => "bg-info",
+            _ => "bg-secondary"
+        };
+    }
 }
