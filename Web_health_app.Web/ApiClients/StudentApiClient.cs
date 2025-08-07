@@ -140,6 +140,44 @@ namespace Web_health_app.Web.ApiClients
         }
 
         /// <summary>
+        /// Search students with advanced filters
+        /// </summary>
+        public async Task<ApiResponse<StudentsApiResponse>> SearchStudentsAsync(StudentSearchDto searchDto)
+        {
+            try
+            {
+                await SetAuthorizeHeader();
+                var json = JsonSerializer.Serialize(searchDto, _jsonOptions);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var response = await _httpClient.PostAsync("api/student/search", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var result = JsonSerializer.Deserialize<StudentsApiResponse>(responseContent, _jsonOptions);
+                    return new ApiResponse<StudentsApiResponse> { IsSuccess = true, Data = result };
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    return new ApiResponse<StudentsApiResponse>
+                    {
+                        IsSuccess = false,
+                        Message = $"API Error: {response.StatusCode} - {errorContent}"
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<StudentsApiResponse>
+                {
+                    IsSuccess = false,
+                    Message = $"Exception: {ex.Message}"
+                };
+            }
+        }
+
+        /// <summary>
         /// Get student statistics
         /// </summary>
         public async Task<ApiResponse<StudentStatisticsDto>> GetStudentStatisticsAsync()

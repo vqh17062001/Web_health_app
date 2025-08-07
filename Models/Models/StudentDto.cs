@@ -163,6 +163,10 @@ namespace Web_health_app.Models.Models
         public string? Gender { get; set; }
         public short? Status { get; set; }
         public Guid? ManageBy { get; set; }
+        public string? DobFrom { get; set; }
+        public string? DobTo { get; set; }
+
+
         public DateTime? CreatedFrom { get; set; }
         public DateTime? CreatedTo { get; set; }
         public string? SortBy { get; set; } = "StudentId";

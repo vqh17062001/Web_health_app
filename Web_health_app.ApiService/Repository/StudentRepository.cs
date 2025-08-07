@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using Web_health_app.ApiService.Entities;
 using Web_health_app.Models.Models;
-using System.Text.RegularExpressions;
 
 namespace Web_health_app.ApiService.Repository
 {
@@ -14,7 +15,7 @@ namespace Web_health_app.ApiService.Repository
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public async Task<(List<StudentInfoDto> Students, int TotalCount)> GetAllStudentsAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null, bool includeInactive = false, string? managerId ="")
+        public async Task<(List<StudentInfoDto> Students, int TotalCount)> GetAllStudentsAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null, bool includeInactive = false, string? managerId = "")
         {
             try
             {
@@ -25,7 +26,8 @@ namespace Web_health_app.ApiService.Repository
                 {
                     query = query.Where(s => s.Status >= 0);
                 }
-                if (managerId != "") { 
+                if (managerId != "")
+                {
                     query = query.Where(s => s.ManageBy.ToString() == managerId);
                 }
 
@@ -127,6 +129,28 @@ namespace Web_health_app.ApiService.Repository
                 {
                     query = query.Where(s => s.CreatedAt <= searchDto.CreatedTo.Value);
                 }
+
+                // Filter theo khoảng Dob - sử dụng so sánh chuỗi với format yyyy-MM-dd
+                if (!string.IsNullOrWhiteSpace(searchDto.DobFrom))
+                {
+                    // Validate và format lại string để đảm bảo format đúng
+                    if (DateTime.TryParseExact(searchDto.DobFrom, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var fromDate))
+                    {
+                        var fromStr = fromDate.ToString("yyyy-MM-dd");
+                        query = query.Where(s => s.Dob != null && string.Compare(s.Dob, fromStr) >= 0);
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(searchDto.DobTo))
+                {
+                    // Validate và format lại string để đảm bảo format đúng
+                    if (DateTime.TryParseExact(searchDto.DobTo, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var toDate))
+                    {
+                        var toStr = toDate.ToString("yyyy-MM-dd");
+                        query = query.Where(s => s.Dob != null && string.Compare(s.Dob, toStr) <= 0);
+                    }
+                }
+
 
                 var totalCount = await query.CountAsync();
 
@@ -521,7 +545,7 @@ namespace Web_health_app.ApiService.Repository
                 var totalStudents = await _context.Students.CountAsync();
                 var activeStudents = await _context.Students.CountAsync(s => s.Status >= 0);
                 var inactiveStudents = await _context.Students.CountAsync(s => s.Status < 0);
-                var studentsWithSyncData = await _context.Students.CountAsync(s => s.Status == 1|| s.Status == 10|| s.Status == 11);
+                var studentsWithSyncData = await _context.Students.CountAsync(s => s.Status == 1 || s.Status == 10 || s.Status == 11);
                 var studentsOffline = await _context.Students.CountAsync(s => s.Status == 10);
                 var studentsOnline = await _context.Students.CountAsync(s => s.Status == 11);
 
@@ -601,9 +625,9 @@ namespace Web_health_app.ApiService.Repository
                         CreatedAt = s.CreatedAt,
                         UpdateAt = s.UpdateAt,
                         CreatedBy = s.CreatedBy,
-                        CreatedByName = s.CreatedByNavigation.FullName,
+                        CreatedByName = s.CreatedByNavigation != null ? s.CreatedByNavigation.FullName : null,
                         ManageBy = s.ManageBy,
-                        ManageByName = s.ManageByNavigation.FullName,
+                        ManageByName = s.ManageByNavigation != null ? s.ManageByNavigation.FullName : null,
                         Department = s.Department
                     })
                     .ToListAsync();

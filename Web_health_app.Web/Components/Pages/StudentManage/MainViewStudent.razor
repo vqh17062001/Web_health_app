@@ -4,8 +4,9 @@
 @using Web_health_app.Models.Models
 @using Web_health_app.Web.ApiClients
 @inject StudentApiClient StudentApiClient
+@inject UserApiClient UserApiClient
+@inject DepartmentApiClient DepartmentApiClient
 @inject IJSRuntime JSRuntime
-@layout MainLayout
 @attribute [Authorize(Roles = "ACCESS.MainViewStudent")]
 
 <link href="/css/StudentManage/MainViewStudent.css" rel="stylesheet" />
@@ -16,28 +17,134 @@
             <div class="col-12">
                 <h3 class="mb-4">Quản lý Sinh viên</h3>
 
-                <!-- Filter and Search Bar -->
-                <div class="card mb-4">
-                    <div class="card-body">
+                <!-- Advanced Filter and Search Bar -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-light">
                         <div class="row align-items-center">
-                            <div class="col-md-3">
-                                <label for="filterSelect" class="form-label">Lọc theo:</label>
-                                <select id="filterSelect" class="form-select" @bind="filterType"
-                                    @bind:after="OnFilterChanged">
-                                    <option value="all">Tất cả sinh viên</option>
-                                    <option value="active">Đang học</option>
-                                    <option value="inactive">Tạm nghỉ</option>
-                                    <option value="graduated">Đã tốt nghiệp</option>
-                                    <option value="department">Theo khoa</option>
-                                </select>
-                            </div>
                             <div class="col-md-6">
-                                <label for="searchInput" class="form-label">Tìm kiếm:</label>
+                                <h5 class="mb-0">
+                                    <i class="fas fa-filter me-2 text-primary"></i>
+                                    Bộ lọc và tìm kiếm nâng cao
+                                    @if (HasActiveFilters())
+                                    {
+                                        <span class="badge bg-primary ms-2">@GetActiveFiltersCount()</span>
+                                    }
+                                </h5>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <!-- Quick Filter Presets -->
+                                <div class="btn-group me-2" role="group">
+                                    <button type="button" class="btn btn-outline-info btn-sm" @onclick="@(() => ApplyQuickFilter("active"))">
+                                        <i class="fas fa-users me-1"></i>Đang hoạt động
+                                    </button>
+                                    <button type="button" class="btn btn-outline-warning btn-sm" @onclick="@(() => ApplyQuickFilter("new"))">
+                                        <i class="fas fa-user-plus me-1"></i>Mới tạo
+                                    </button>
+                                    <button type="button" class="btn btn-outline-success btn-sm" @onclick="@(() => ApplyQuickFilter("synced"))">
+                                        <i class="fas fa-sync me-1"></i>Đã đồng bộ
+                                    </button>
+                                </div>
+                                
+                                <button type="button" class="btn btn-outline-secondary btn-sm me-2" @onclick="ResetFilters">
+                                    <i class="fas fa-undo me-1"></i>Đặt lại
+                                </button>
+                                <button type="button" class="btn btn-outline-primary btn-sm" @onclick="ToggleAdvancedFilter">
+                                    <i class="fas @(showAdvancedFilter ? "fa-chevron-up" : "fa-chevron-down") me-1"></i>
+                                    @(showAdvancedFilter ? "Ẩn" : "Hiện") bộ lọc nâng cao
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Active Filter Tags -->
+                        @if (HasActiveFilters())
+                        {
+                            <div class="mt-3">
+                                <small class="text-muted">Bộ lọc đang áp dụng:</small>
+                                <div class="d-flex flex-wrap mt-1">
+                                    @if (!string.IsNullOrEmpty(searchDto.SearchTerm))
+                                    {
+                                        <span class="badge bg-primary me-1 mb-1">
+                                            Tìm kiếm: "@searchDto.SearchTerm"
+                                            <button type="button" class="btn-close btn-close-white ms-1" @onclick="@(() => ClearFilter("search"))" style="font-size: 0.7em;"></button>
+                                        </span>
+                                    }
+                                    @if (!string.IsNullOrEmpty(searchDto.Department))
+                                    {
+                                        <span class="badge bg-info me-1 mb-1">
+                                            Khoa: "@GetDepartmentDisplayName(searchDto.Department)"
+                                            <button type="button" class="btn-close btn-close-white ms-1" @onclick="@(() => ClearFilter("department"))" style="font-size: 0.7em;"></button>
+                                        </span>
+                                    }
+                                    @if (!string.IsNullOrEmpty(searchDto.Gender))
+                                    {
+                                        <span class="badge bg-success me-1 mb-1">
+                                            Giới tính: "@GetGenderDisplayName(searchDto.Gender)"
+                                            <button type="button" class="btn-close btn-close-white ms-1" @onclick="@(() => ClearFilter("gender"))" style="font-size: 0.7em;"></button>
+                                        </span>
+                                    }
+                                    @if (searchDto.Status.HasValue)
+                                    {
+                                        <span class="badge bg-warning me-1 mb-1">
+                                            Trạng thái: "@GetStatusDisplayName(searchDto.Status.Value)"
+                                            <button type="button" class="btn-close btn-close-white ms-1" @onclick="@(() => ClearFilter("status"))" style="font-size: 0.7em;"></button>
+                                        </span>
+                                    }
+                                    @if (searchDto.ManageBy.HasValue)
+                                    {
+                                        <span class="badge bg-dark me-1 mb-1">
+                                            Quản lý: "@GetManagerDisplayName(searchDto.ManageBy.Value)"
+                                            <button type="button" class="btn-close btn-close-white ms-1" @onclick="@(() => ClearFilter("manager"))" style="font-size: 0.7em;"></button>
+                                        </span>
+                                    }
+                                    @if (searchDto.CreatedFrom.HasValue || searchDto.CreatedTo.HasValue)
+                                    {
+                                        <span class="badge bg-secondary me-1 mb-1">
+                                            Ngày tạo: @GetDateRangeDisplayName()
+                                            <button type="button" class="btn-close btn-close-white ms-1" @onclick="@(() => ClearFilter("daterange"))" style="font-size: 0.7em;"></button>
+                                        </span>
+                                    }
+                                    @if (!string.IsNullOrEmpty(selectedAgeRange))
+                                    {
+                                        <span class="badge bg-purple me-1 mb-1">
+                                            Độ tuổi: @GetAgeRangeDisplayName()
+                                            <button type="button" class="btn-close btn-close-white ms-1" @onclick="@(() => ClearFilter("agerange"))" style="font-size: 0.7em;"></button>
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div class="card-body">
+                        <!-- Basic Search Row -->
+                        <div class="row align-items-center mb-3">
+                            <div class="col-md-4">
+                                <label for="searchInput" class="form-label">Tìm kiếm nhanh:</label>
                                 <input type="text" id="searchInput" class="form-control"
-                                    placeholder="Nhập mã sinh viên, tên hoặc email..." @bind="searchTerm"
+                                    placeholder="Nhập mã sinh viên, tên, email hoặc số điện thoại..." 
+                                    @bind="searchDto.SearchTerm"
                                     @bind:after="OnSearchChanged">
                             </div>
                             <div class="col-md-3">
+                                <label for="statusFilter" class="form-label">Trạng thái:</label>
+                                <select id="statusFilter" class="form-select" @bind="searchDto.Status"
+                                    @bind:after="OnFilterChanged">
+                                    <option value="">Tất cả trạng thái</option>
+                                    <option value="1">Có dữ liệu đồng bộ với Atlas</option>
+                                    <option value="0">Do user tạo ra</option>
+                                    <option value="-1">Tạm xóa</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="genderFilter" class="form-label">Giới tính:</label>
+                                <select id="genderFilter" class="form-select" @bind="searchDto.Gender"
+                                    @bind:after="OnFilterChanged">
+                                    <option value="">Tất cả giới tính</option>
+                                    <option value="Male">Nam</option>
+                                    <option value="Female">Nữ</option>
+                                    <option value="Other">Khác</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
                                 <label class="form-label">&nbsp;</label>
                                 @if (isLoading)
                                 {
@@ -56,6 +163,186 @@
                                 }
                             </div>
                         </div>
+
+                        <!-- Advanced Filter Row (Collapsible) -->
+                        @if (showAdvancedFilter)
+                        {
+                            <div class="advanced-filters">
+                                <hr class="my-3">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="departmentFilter" class="form-label">
+                                            <i class="fas fa-university me-1"></i>Khoa/Viện:
+                                        </label>
+                                        @if (isLoadingDepartments)
+                                        {
+                                            <select class="form-select" disabled>
+                                                <option>Đang tải...</option>
+                                            </select>
+                                        }
+                                        else
+                                        {
+                                            <select id="departmentFilter" class="form-select" @bind="searchDto.Department"
+                                                @bind:after="OnFilterChanged">
+                                                <option value="">Tất cả khoa/viện</option>
+                                                @foreach (var department in availableDepartments)
+                                                {
+                                                    <option value="@department.DepartmentCode">
+                                                        @department.DisplayName
+                                                    </option>
+                                                }
+                                            </select>
+                                        }
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="managerFilter" class="form-label">
+                                            <i class="fas fa-user-tie me-1"></i>Người quản lý:
+                                        </label>
+                                        @if (isLoadingManagers)
+                                        {
+                                            <select class="form-select" disabled>
+                                                <option>Đang tải...</option>
+                                            </select>
+                                        }
+                                        else
+                                        {
+                                            <select id="managerFilter" class="form-select" @bind="selectedManagerId"
+                                                @bind:after="OnManagerFilterChanged">
+                                                <option value="">Tất cả người quản lý</option>
+                                                @foreach (var manager in availableManagers)
+                                                {
+                                                    <option value="@manager.UserId.ToString()">
+                                                        @manager.UserName - @manager.FullName
+                                                    </option>
+                                                }
+                                            </select>
+                                        }
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="sortByFilter" class="form-label">
+                                            <i class="fas fa-sort me-1"></i>Sắp xếp theo:
+                                        </label>
+                                        <select id="sortByFilter" class="form-select" @bind="searchDto.SortBy"
+                                            @bind:after="OnFilterChanged">
+                                            <option value="StudentId">Mã sinh viên</option>
+                                            <option value="Name">Tên</option>
+                                            <option value="CreatedAt">Ngày tạo</option>
+                                            <option value="UpdateAt">Ngày cập nhật</option>
+                                            <option value="Department">Khoa/Viện</option>
+                                            <option value="Age">Tuổi</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="sortDirectionFilter" class="form-label">
+                                            <i class="fas fa-sort-amount-down me-1"></i>Thứ tự:
+                                        </label>
+                                        <select id="sortDirectionFilter" class="form-select" @bind="searchDto.SortDirection"
+                                            @bind:after="OnFilterChanged">
+                                            <option value="asc">Tăng dần</option>
+                                            <option value="desc">Giảm dần</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-3">
+                                    <div class="col-md-3">
+                                        <label for="createdFromFilter" class="form-label">
+                                            <i class="fas fa-calendar-alt me-1"></i>Tạo từ ngày:
+                                        </label>
+                                        <input type="date" id="createdFromFilter" class="form-control" 
+                                            @bind="createdFromDate" @bind:after="OnDateFilterChanged">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="createdToFilter" class="form-label">
+                                            <i class="fas fa-calendar-alt me-1"></i>Tạo đến ngày:
+                                        </label>
+                                        <input type="date" id="createdToFilter" class="form-control" 
+                                            @bind="createdToDate" @bind:after="OnDateFilterChanged">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="ageRangeFilter" class="form-label">
+                                            <i class="fas fa-birthday-cake me-1"></i>Độ tuổi:
+                                        </label>
+                                        <select id="ageRangeFilter" class="form-select" @bind="selectedAgeRange"
+                                            @bind:after="OnAgeRangeFilterChanged">
+                                            <option value="">Tất cả độ tuổi</option>
+                                            <option value="18-">Dưới 18 tuổi</option>
+
+                                            <option value="18-20">18-20 tuổi</option>
+                                            <option value="21-23">21-23 tuổi</option>
+                                            <option value="24-26">24-26 tuổi</option>
+                                            <option value="27-30">27-30 tuổi</option>
+                                            <option value="31+">Trên 30 tuổi</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="pageSizeFilter" class="form-label">
+                                            <i class="fas fa-list me-1"></i>Số mục/trang:
+                                        </label>
+                                        <select id="pageSizeFilter" class="form-select" @bind="searchDto.PageSize"
+                                            @bind:after="OnPageSizeChanged">
+                                         
+                                            <option value="12">12</option>
+
+                                        
+                                            <option value="24">24</option>
+                                            <option value="36">36</option>
+                                            <option value="48">48</option>
+                                            <option value="60">60</option>
+                                            
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Statistics Row -->
+                                <div class="row mt-3">
+                                    <div class="col-md-3">
+                                        <div class="card border-primary">
+                                            <div class="card-body text-center p-2">
+                                                <h6 class="card-title mb-1">
+                                                    <i class="fas fa-search text-primary me-1"></i>Kết quả tìm thấy
+                                                </h6>
+                                                <h4 class="text-primary mb-0">@(pagination?.TotalCount ?? 0)</h4>
+                                                <small class="text-muted">sinh viên</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card border-success">
+                                            <div class="card-body text-center p-2">
+                                                <h6 class="card-title mb-1">
+                                                    <i class="fas fa-sync text-success me-1"></i>Đã đồng bộ
+                                                </h6>
+                                                <h4 class="text-success mb-0">@(statistics?.StudentsWithSyncData ?? 0)</h4>
+                                                <small class="text-muted">sinh viên</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card border-warning">
+                                            <div class="card-body text-center p-2">
+                                                <h6 class="card-title mb-1">
+                                                    <i class="fas fa-users text-warning me-1"></i>Đang hoạt động
+                                                </h6>
+                                                <h4 class="text-warning mb-0">@(statistics?.ActiveStudents ?? 0)</h4>
+                                                <small class="text-muted">sinh viên</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card border-danger">
+                                            <div class="card-body text-center p-2">
+                                                <h6 class="card-title mb-1">
+                                                    <i class="fas fa-user-times text-danger me-1"></i>Không hoạt động
+                                                </h6>
+                                                <h4 class="text-danger mb-0">@(statistics?.InactiveStudents ?? 0)</h4>
+                                                <small class="text-muted">sinh viên</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -262,10 +549,35 @@
 </div>
 
 @code {
+    // Data properties
     private List<StudentInfoDto> students = new();
     private StudentsPaginationInfo? pagination;
     private StudentStatisticsDto? statistics;
+    private List<UserInfoDto> availableManagers = new();
+    private List<DepartmentInfoDto> availableDepartments = new();
+
+    // Loading states
     private bool isLoading = false;
+    private bool isLoadingManagers = false;
+    private bool isLoadingDepartments = false;
+
+    // Filter properties
+    private StudentSearchDto searchDto = new StudentSearchDto
+    {
+        Page = 1,
+        PageSize = 12,
+        SortBy = "StudentId",
+        SortDirection = "asc"
+    };
+
+    // UI State
+    private bool showAdvancedFilter = false;
+    private string selectedManagerId = "";
+    private DateTime? createdFromDate;
+    private DateTime? createdToDate;
+    private string selectedAgeRange = "";
+
+    // Legacy properties for backward compatibility
     private string searchTerm = "";
     private string filterType = "all";
     private int currentPage = 1;
@@ -273,8 +585,12 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadStudents();
-        await LoadStatistics();
+        await Task.WhenAll(
+            LoadStudents(),
+            LoadStatistics(),
+            LoadManagers(),
+            LoadDepartments()
+        );
     }
 
     private async Task LoadStudents()
@@ -284,22 +600,36 @@
 
         try
         {
-            var includeInactive = filterType == "all" || filterType == "inactive";
-            var response = await StudentApiClient.GetAllStudentsAsync(currentPage, pageSize, searchTerm, includeInactive);
-
-            if (response.IsSuccess && response.Data != null)
+            // Use advanced search if any advanced filters are set
+            if (HasAdvancedFilters())
             {
-                students = response.Data.Students ?? new List<StudentInfoDto>();
-                pagination = response.Data.Pagination;
-                
-                // Cập nhật StatusString cho từng student
-              
+                var response = await StudentApiClient.SearchStudentsAsync(searchDto);
+                if (response.IsSuccess && response.Data != null)
+                {
+                    students = response.Data.Students ?? new List<StudentInfoDto>();
+                    pagination = response.Data.Pagination;
+                }
+                else
+                {
+                    students = new List<StudentInfoDto>();
+                    Console.WriteLine($"Error loading students: {response.Message}");
+                }
             }
             else
             {
-                students = new List<StudentInfoDto>();
-                // Log error hoặc hiển thị thông báo lỗi
-                Console.WriteLine($"Error loading students: {response.Message}");
+                // Use simple search for backward compatibility
+                var includeInactive = filterType == "all" || filterType == "inactive";
+                var response = await StudentApiClient.GetAllStudentsAsync(currentPage, pageSize, searchTerm, includeInactive);
+                if (response.IsSuccess && response.Data != null)
+                {
+                    students = response.Data.Students ?? new List<StudentInfoDto>();
+                    pagination = response.Data.Pagination;
+                }
+                else
+                {
+                    students = new List<StudentInfoDto>();
+                    Console.WriteLine($"Error loading students: {response.Message}");
+                }
             }
         }
         catch (Exception ex)
@@ -331,27 +661,131 @@
         }
     }
 
+    private async Task LoadManagers()
+    {
+        isLoadingManagers = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await UserApiClient.GetAllUsersAsync(1, 100);
+            if (response.IsSuccess && response.Data != null)
+            {
+                availableManagers = response.Data.Users.Where(u => !string.IsNullOrEmpty(u.FullName)).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading managers: {ex.Message}");
+        }
+        finally
+        {
+            isLoadingManagers = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadDepartments()
+    {
+        isLoadingDepartments = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await DepartmentApiClient.GetAllDepartmentsAsync();
+            if (response.IsSuccess && response.Data != null)
+            {
+                availableDepartments = response.Data.Departments;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading departments: {ex.Message}");
+        }
+        finally
+        {
+            isLoadingDepartments = false;
+            StateHasChanged();
+        }
+    }
+
+    private bool HasAdvancedFilters()
+    {
+        return HasActiveFilters() || showAdvancedFilter;
+    }
+
+    // Event handlers
     private async Task OnSearchChanged()
     {
-        currentPage = 1; // Reset về trang đầu khi search
+        searchDto.Page = 1; // Reset to first page
         await Task.Delay(500); // Debounce
         await LoadStudents();
     }
 
     private async Task OnFilterChanged()
     {
-        currentPage = 1; // Reset về trang đầu khi filter
+        searchDto.Page = 1; // Reset to first page
+        await LoadStudents();
+    }
+
+    private async Task OnManagerFilterChanged()
+    {
+        if (!string.IsNullOrEmpty(selectedManagerId) && Guid.TryParse(selectedManagerId, out Guid managerId))
+        {
+            searchDto.ManageBy = managerId;
+        }
+        else
+        {
+            searchDto.ManageBy = null;
+        }
+        searchDto.Page = 1;
+        await LoadStudents();
+    }
+
+    private async Task OnDateFilterChanged()
+    {
+        searchDto.CreatedFrom = createdFromDate;
+        searchDto.CreatedTo = createdToDate;
+        searchDto.Page = 1;
+        await LoadStudents();
+    }
+
+    private async Task OnPageSizeChanged()
+    {
+        searchDto.Page = 1;
+        pageSize = searchDto.PageSize; // Update legacy property
         await LoadStudents();
     }
 
     private async Task GoToPage(int page)
     {
-        if (page < 1 || pagination == null || page > pagination.TotalPages || page == currentPage)
+        if (page < 1 || pagination == null || page > pagination.TotalPages || page == searchDto.Page)
         {
-            return; // Không làm gì nếu trang không hợp lệ hoặc đã ở trang hiện tại
+            return;
         }
 
-        currentPage = page;
+        searchDto.Page = page;
+        currentPage = page; // Update legacy property
+        await LoadStudents();
+    }
+
+    // UI Control methods
+    private void ToggleAdvancedFilter()
+    {
+        showAdvancedFilter = !showAdvancedFilter;
+        StateHasChanged();
+    }
+
+    private async Task ResetFilters()
+    {
+        ResetFiltersInternal();
+
+        // Reset legacy properties
+        searchTerm = "";
+        filterType = "all";
+        currentPage = 1;
+        showAdvancedFilter = false;
+
         await LoadStudents();
     }
 
@@ -381,14 +815,14 @@
         }
     }
 
+    // Helper methods for styling
     private string GetStatusCardClass(short status)
     {
         return status switch
         {
-            1 => "bg-success", // Đang học
-            0 => "bg-warning", // Tạm nghỉ
-            2 => "bg-info", // Đã tốt nghiệp
-            -1 => "bg-danger", // Bị đình chỉ
+            1 => "bg-success", // Có dữ liệu đồng bộ với Atlas
+            0 => "bg-warning", // Do user tạo ra
+            -1 => "bg-danger", // Tạm xóa
             _ => "bg-secondary"
         };
     }
@@ -397,25 +831,12 @@
     {
         return status switch
         {
-            1 => "bg-success", // Đang học
-            0 => "bg-warning", // Tạm nghỉ
-            2 => "bg-info", // Đã tốt nghiệp
-            -1 => "bg-danger", // Bị đình chỉ
+            1 => "bg-success", // Có dữ liệu đồng bộ với Atlas
+            0 => "bg-warning", // Do user tạo ra
+            -1 => "bg-danger", // Tạm xóa
             _ => "bg-secondary"
         };
     }
-
-    // private string GetStatusText(short status)
-    // {
-    //     return status switch
-    //     {
-    //         1 => "Đang học",
-    //         0 => "Tạm nghỉ",
-    //         2 => "Đã tốt nghiệp",
-    //         -1 => "Bị đình chỉ",
-    //         _ => "Không xác định"
-    //     };
-    // }
 
     private string GetAvatarClass(string? gender)
     {
@@ -425,5 +846,221 @@
             "female" => "bg-info",
             _ => "bg-secondary"
         };
+    }
+
+    // Enhanced Filter Methods
+    private bool HasActiveFilters()
+    {
+        return !string.IsNullOrEmpty(searchDto.SearchTerm) ||
+               !string.IsNullOrEmpty(searchDto.Department) ||
+               !string.IsNullOrEmpty(searchDto.Gender) ||
+               searchDto.Status.HasValue ||
+               searchDto.ManageBy.HasValue ||
+               searchDto.CreatedFrom.HasValue ||
+               searchDto.CreatedTo.HasValue ||
+               !string.IsNullOrEmpty(searchDto.DobFrom) ||
+               !string.IsNullOrEmpty(searchDto.DobTo) ||
+               !string.IsNullOrEmpty(selectedAgeRange);
+    }
+
+    private int GetActiveFiltersCount()
+    {
+        int count = 0;
+        if (!string.IsNullOrEmpty(searchDto.SearchTerm)) count++;
+        if (!string.IsNullOrEmpty(searchDto.Department)) count++;
+        if (!string.IsNullOrEmpty(searchDto.Gender)) count++;
+        if (searchDto.Status.HasValue) count++;
+        if (searchDto.ManageBy.HasValue) count++;
+        if (searchDto.CreatedFrom.HasValue || searchDto.CreatedTo.HasValue) count++;
+        if (!string.IsNullOrEmpty(searchDto.DobFrom) || !string.IsNullOrEmpty(searchDto.DobTo) || !string.IsNullOrEmpty(selectedAgeRange)) count++;
+        return count;
+    }
+
+    private async Task ApplyQuickFilter(string filterType)
+    {
+        ResetFiltersInternal();
+        
+        switch (filterType)
+        {
+            case "active":
+                searchDto.Status = 1; // Có dữ liệu đồng bộ với Atlas
+                break;
+            case "new":
+                searchDto.Status = 0; // Do user tạo ra
+                break;
+            case "synced":
+                searchDto.Status = 1; // Đã đồng bộ
+                break;
+        }
+
+        await LoadStudents();
+    }
+
+    private async Task ClearFilter(string filterType)
+    {
+        switch (filterType)
+        {
+            case "search":
+                searchDto.SearchTerm = "";
+                break;
+            case "department":
+                searchDto.Department = "";
+                break;
+            case "gender":
+                searchDto.Gender = "";
+                break;
+            case "status":
+                searchDto.Status = null;
+                break;
+            case "manager":
+                searchDto.ManageBy = null;
+                selectedManagerId = "";
+                break;
+            case "daterange":
+                searchDto.CreatedFrom = null;
+                searchDto.CreatedTo = null;
+                createdFromDate = null;
+                createdToDate = null;
+                break;
+            case "agerange":
+                selectedAgeRange = "";
+                searchDto.DobFrom = null;
+                searchDto.DobTo = null;
+                break;
+        }
+
+        searchDto.Page = 1;
+        await LoadStudents();
+    }
+
+    private async Task OnAgeRangeFilterChanged()
+    {
+        // Xử lý age range filter bằng cách tính toán ngày sinh tương ứng
+        if (string.IsNullOrEmpty(selectedAgeRange))
+        {
+            searchDto.DobFrom = null;
+            searchDto.DobTo = null;
+        }
+        else
+        {
+            var today = DateTime.Today;
+            
+            switch (selectedAgeRange)
+            {
+                case "18-":
+                    // 18-20 tuổi: sinh từ 20 năm trước đến 18 năm trước
+                    searchDto.DobFrom = today.AddYears(-18).ToString("yyyy-MM-dd");
+                    searchDto.DobTo = today.AddYears(-0).ToString("yyyy-MM-dd");
+                    break;
+                case "18-20":
+                    // 18-20 tuổi: sinh từ 20 năm trước đến 18 năm trước
+                    searchDto.DobFrom = today.AddYears(-20).ToString("yyyy-MM-dd");
+                    searchDto.DobTo = today.AddYears(-18).ToString("yyyy-MM-dd");
+                    break;
+                case "21-23":
+                    // 21-23 tuổi: sinh từ 23 năm trước đến 21 năm trước
+                    searchDto.DobFrom = today.AddYears(-23).ToString("yyyy-MM-dd");
+                    searchDto.DobTo = today.AddYears(-21).ToString("yyyy-MM-dd");
+                    break;
+                case "24-26":
+                    // 24-26 tuổi: sinh từ 26 năm trước đến 24 năm trước
+                    searchDto.DobFrom = today.AddYears(-26).ToString("yyyy-MM-dd");
+                    searchDto.DobTo = today.AddYears(-24).ToString("yyyy-MM-dd");
+                    break;
+                case "27-30":
+                    // 27-30 tuổi: sinh từ 30 năm trước đến 27 năm trước
+                    searchDto.DobFrom = today.AddYears(-30).ToString("yyyy-MM-dd");
+                    searchDto.DobTo = today.AddYears(-27).ToString("yyyy-MM-dd");
+                    break;
+                case "31+":
+                    // Trên 30 tuổi: sinh trước 31 năm trước
+                    searchDto.DobFrom = "1900-01-01"; // Ngày tối thiểu
+                    searchDto.DobTo = today.AddYears(-31).ToString("yyyy-MM-dd");
+                    break;
+            }
+        }
+        
+        searchDto.Page = 1;
+        await LoadStudents();
+    }
+
+    private string GetDepartmentDisplayName(string departmentCode)
+    {
+        var department = availableDepartments.FirstOrDefault(d => d.DepartmentCode == departmentCode);
+        return department?.DisplayName ?? departmentCode;
+    }
+
+    private string GetGenderDisplayName(string gender)
+    {
+        return gender switch
+        {
+            "Male" => "Nam",
+            "Female" => "Nữ",
+            "Other" => "Khác",
+            _ => gender
+        };
+    }
+
+    private string GetStatusDisplayName(short status)
+    {
+        return status switch
+        {
+            1 => "Đã đồng bộ",
+            0 => "Tự tạo",
+            -1 => "Đã xóa",
+            _ => "Không xác định"
+        };
+    }
+
+    private string GetManagerDisplayName(Guid managerId)
+    {
+        var manager = availableManagers.FirstOrDefault(m => m.UserId == managerId);
+        return manager != null ? $"{manager.UserName} - {manager.FullName}" : "Không xác định";
+    }
+
+    private string GetDateRangeDisplayName()
+    {
+        if (searchDto.CreatedFrom.HasValue && searchDto.CreatedTo.HasValue)
+        {
+            return $"{searchDto.CreatedFrom.Value:dd/MM/yyyy} - {searchDto.CreatedTo.Value:dd/MM/yyyy}";
+        }
+        else if (searchDto.CreatedFrom.HasValue)
+        {
+            return $"Từ {searchDto.CreatedFrom.Value:dd/MM/yyyy}";
+        }
+        else if (searchDto.CreatedTo.HasValue)
+        {
+            return $"Đến {searchDto.CreatedTo.Value:dd/MM/yyyy}";
+        }
+        return "";
+    }
+
+    private string GetAgeRangeDisplayName()
+    {
+        return selectedAgeRange switch
+        {
+            "18-20" => "18-20 tuổi",
+            "21-23" => "21-23 tuổi",
+            "24-26" => "24-26 tuổi",
+            "27-30" => "27-30 tuổi",
+            "31+" => "Trên 30 tuổi",
+            _ => selectedAgeRange
+        };
+    }
+
+    private void ResetFiltersInternal()
+    {
+        searchDto = new StudentSearchDto
+        {
+            Page = 1,
+            PageSize = searchDto.PageSize,
+            SortBy = "StudentId",
+            SortDirection = "asc"
+        };
+
+        selectedManagerId = "";
+        createdFromDate = null;
+        createdToDate = null;
+        selectedAgeRange = "";
     }
 }
