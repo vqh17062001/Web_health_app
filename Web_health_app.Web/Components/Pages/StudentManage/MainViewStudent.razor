@@ -235,11 +235,12 @@
                                 int startPage = Math.Max(1, currentPage - 2);
                                 int endPage = Math.Min(pagination.TotalPages, currentPage + 2);
                             }
-                            @for (int pageNum = startPage; pageNum <= endPage; pageNum++)
+                            
+                            @for (int i = startPage; i <= endPage; i++)
                             {
-                                int currentPageNum = pageNum; // Capture the loop variable
-                                <li class="page-item @(currentPageNum == currentPage ? "active" : "")">
-                                    <a class="page-link" href="#" @onclick="() => GoToPage(currentPageNum)" @onclick:preventDefault="true">@currentPageNum</a>
+                                int pageNum = i; // Capture the loop variable
+                                <li class="page-item @(pageNum == currentPage ? "active" : "")">
+                                    <a class="page-link" href="#" @onclick="() => GoToPage(pageNum)" @onclick:preventDefault="true">@pageNum</a>
                                 </li>
                             }
                             
