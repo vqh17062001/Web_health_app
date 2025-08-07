@@ -7,6 +7,7 @@
 @using System.ComponentModel.DataAnnotations
 @inject StudentApiClient StudentApiClient
 @inject UserApiClient UserApiClient
+@inject DepartmentApiClient DepartmentApiClient
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
@@ -119,17 +120,33 @@
                                 <i class="fas fa-building"></i>
                                 Khoa/Viện
                             </label>
-                            <InputSelect class="form-select" @bind-Value="createStudentDto.Department">
-                                <option value="">-- Chọn khoa/viện --</option>
-                                <option value="Công nghệ thông tin">Công Nghệ Thông Tin</option>
-                                <option value="Kinh tế">Kinh Tế</option>
-                                <option value="Y học">Y Dược</option>
-                                <option value="Luật">Luật</option>
-                                <option value="Ngoại ngữ">Ngoại Ngữ</option>
-                                <option value="Kỹ thuật">Kỹ Thuật</option>
-                                <option value="Khác">Khác</option>
-                            </InputSelect>
+                            @if (isLoadingDepartments)
+                            {
+                                <select class="form-select" disabled>
+                                    <option>Đang tải danh sách khoa/viện...</option>
+                                </select>
+                            }
+                            else
+                            {
+                                <InputSelect class="form-select" @bind-Value="createStudentDto.Department"
+                                           @bind-Value:after="OnDepartmentChanged">
+                                    <option value="">-- Chọn khoa/viện --</option>
+                                    @foreach (var department in availableDepartments)
+                                    {
+                                        <option value="@department.DepartmentCode">
+                                            @department.DisplayName
+                                        </option>
+                                    }
+                                </InputSelect>
+                            }
                             <ValidationMessage For="@(() => createStudentDto.Department)" class="validation-message" />
+                            @if (!string.IsNullOrEmpty(selectedDepartmentInfo))
+                            {
+                                <small class="department-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    @selectedDepartmentInfo
+                                </small>
+                            }
                         </div>
 
                         <div class="form-group">
@@ -230,17 +247,20 @@
 @code {
     private CreateStudentDto createStudentDto = new CreateStudentDto();
     private List<UserInfoDto> availableManagers = new List<UserInfoDto>();
+    private List<DepartmentInfoDto> availableDepartments = new List<DepartmentInfoDto>();
     private bool isLoadingManagers = false;
+    private bool isLoadingDepartments = false;
     private bool isSubmitting = false;
     private string selectedManagerId = string.Empty;
     private string selectedManagerInfo = string.Empty;
+    private string selectedDepartmentInfo = string.Empty;
     private DateTime? dobDate;
     private string alertMessage = string.Empty;
     private string alertType = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadManagers();
+        await Task.WhenAll(LoadManagers(), LoadDepartments());
 
         // Set default values
         createStudentDto.Status = 0; // Đang học
@@ -250,6 +270,51 @@
     private void NavigateToMainView()
     {
         Navigation.NavigateTo("/studentmanage/mainviewstudent");
+    }
+
+    private async Task LoadDepartments()
+    {
+        isLoadingDepartments = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await DepartmentApiClient.GetAllDepartmentsSimpleAsync();
+            if (response.IsSuccess && response.Data != null)
+            {
+                availableDepartments = response.Data;
+            }
+            else
+            {
+                ShowAlert("Không thể tải danh sách khoa/viện: " + response.Message, "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowAlert("Lỗi khi tải danh sách khoa/viện: " + ex.Message, "error");
+        }
+        finally
+        {
+            isLoadingDepartments = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnDepartmentChanged()
+    {
+        if (!string.IsNullOrEmpty(createStudentDto.Department))
+        {
+            var selectedDepartment = availableDepartments.FirstOrDefault(d => d.DepartmentCode == createStudentDto.Department);
+            if (selectedDepartment != null)
+            {
+                selectedDepartmentInfo = selectedDepartment.FullDescription;
+            }
+        }
+        else
+        {
+            selectedDepartmentInfo = string.Empty;
+        }
+        StateHasChanged();
     }
 
     private async Task LoadManagers()
@@ -319,7 +384,10 @@
                 createStudentDto.Dob = dobDate.Value.ToString("yyyy-MM-dd");
             }
             var curenUser = await UserApiClient.GetCurrentUserAsync();
-            createStudentDto.CreatedBy = curenUser.Data.UserId;
+            if (curenUser?.Data != null)
+            {
+                createStudentDto.CreatedBy = curenUser.Data.UserId;
+            }
 
             var response = await StudentApiClient.CreateStudentAsync(createStudentDto);
             
