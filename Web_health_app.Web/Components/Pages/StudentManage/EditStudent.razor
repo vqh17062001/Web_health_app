@@ -1,6 +1,15 @@
-﻿@page "/studentmanage/edit"
+﻿@page "/studentmanage/edit/{studentId}"
 @using Microsoft.AspNetCore.Authorization
 @using Web_health_app.Web.Components.Layout
+@using Web_health_app.Models.Models
+@using Web_health_app.Web.ApiClients
+@using Microsoft.AspNetCore.Components.Forms
+@using System.ComponentModel.DataAnnotations
+@inject StudentApiClient StudentApiClient
+@inject UserApiClient UserApiClient
+@inject DepartmentApiClient DepartmentApiClient
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
 @layout EmptyLayout
 @attribute [Authorize(Roles = "ACCESS.EditStudent")]
@@ -20,398 +29,648 @@
                     <p>Cập nhật thông tin sinh viên trong hệ thống</p>
                 </div>
             </div>
-            <button type="button" class="btn-close" onclick="window.history.back()">
+            <button type="button" class="btn-close" @onclick="NavigateToMainView">
                 <i class="fas fa-times"></i>
             </button>
         </div>
 
-        <!-- Form Body -->
-        <div class="card-body">
-            <form class="edit-student-form">
-                <!-- Current Student Info Section -->
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-info-circle"></i>
-                        Thông Tin Hiện Tại
-                    </h3>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-hashtag"></i>
-                                Mã Sinh Viên
-                            </label>
-                            <div class="info-display">
-                                <i class="fas fa-id-badge"></i>
-                                SV12345
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-calendar"></i>
-                                Ngày Tạo Hồ Sơ
-                            </label>
-                            <div class="info-display">
-                                <i class="fas fa-clock"></i>
-                                15/01/2024
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-toggle-on"></i>
-                                Trạng Thái Hiện Tại
-                            </label>
-                            <div class="status-badge active">
-                                <i class="fas fa-check-circle"></i>
-                                Đang Học
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-edit"></i>
-                                Lần Cập Nhật Cuối
-                            </label>
-                            <div class="info-display">
-                                <i class="fas fa-history"></i>
-                                20/01/2024 14:30
-                            </div>
-                        </div>
-                    </div>
+        @if (isLoading)
+        {
+            <div class="loading-container">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Đang tải...</span>
                 </div>
-
-                <!-- Basic Student Information Section -->
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-user"></i>
-                        Thông Tin Cơ Bản
-                    </h3>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-user"></i>
-                                Họ và Tên <span class="required">*</span>
-                            </label>
-                            <input type="text" class="form-control" id="fullName" name="fullName"
-                                placeholder="Nhập họ và tên đầy đủ" value="Nguyễn Văn A" required />
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-calendar-alt"></i>
-                                Ngày Sinh <span class="required">*</span>
-                            </label>
-                            <input type="date" class="form-control" id="dateOfBirth" name="dateOfBirth"
-                                value="2002-05-15" required />
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-venus-mars"></i>
-                                Giới Tính <span class="required">*</span>
-                            </label>
-                            <select class="form-select" id="gender" name="gender" required>
-                                <option value="">Chọn giới tính</option>
-                                <option value="male" selected>Nam</option>
-                                <option value="female">Nữ</option>
-                                <option value="other">Khác</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-id-card"></i>
-                                CMND/CCCD <span class="required">*</span>
-                            </label>
-                            <input type="text" class="form-control" id="idNumber" name="idNumber"
-                                placeholder="Nhập số CMND/CCCD" value="123456789012" maxlength="12" required />
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group full-width">
-                            <label class="form-label">
-                                <i class="fas fa-map-marker-alt"></i>
-                                Địa Chỉ Thường Trú
-                            </label>
-                            <textarea class="form-control" id="address" name="address" rows="3"
-                                placeholder="Nhập địa chỉ thường trú">123 Đường ABC, Phường XYZ, Quận 1, TP.HCM</textarea>
-                        </div>
-                    </div>
+                <p class="mt-2">Đang tải thông tin sinh viên...</p>
+            </div>
+        }
+        else if (currentStudent == null)
+        {
+            <div class="error-container">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Không tìm thấy thông tin sinh viên
                 </div>
-
-                <!-- Academic Information Section -->
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-graduation-cap"></i>
-                        Thông Tin Học Tập
-                    </h3>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-university"></i>
-                                Khoa <span class="required">*</span>
-                            </label>
-                            <select class="form-select" id="faculty" name="faculty" required>
-                                <option value="">Chọn khoa</option>
-                                <option value="cntt" selected>Công Nghệ Thông Tin</option>
-                                <option value="kt">Kinh Tế</option>
-                                <option value="nn">Ngoại Ngữ</option>
-                                <option value="sp">Sư Phạm</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-book"></i>
-                                Chuyên Ngành <span class="required">*</span>
-                            </label>
-                            <select class="form-select" id="major" name="major" required>
-                                <option value="">Chọn chuyên ngành</option>
-                                <option value="ktpm" selected>Kỹ Thuật Phần Mềm</option>
-                                <option value="httt">Hệ Thống Thông Tin</option>
-                                <option value="tmdt">Thương Mại Điện Tử</option>
-                                <option value="attt">An Toàn Thông Tin</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-layer-group"></i>
-                                Khóa Học <span class="required">*</span>
-                            </label>
-                            <select class="form-select" id="academicYear" name="academicYear" required>
-                                <option value="">Chọn khóa học</option>
-                                <option value="2020">Khóa 2020</option>
-                                <option value="2021">Khóa 2021</option>
-                                <option value="2022" selected>Khóa 2022</option>
-                                <option value="2023">Khóa 2023</option>
-                                <option value="2024">Khóa 2024</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-users"></i>
-                                Lớp Học <span class="required">*</span>
-                            </label>
-                            <select class="form-select" id="class" name="class" required>
-                                <option value="">Chọn lớp học</option>
-                                <option value="KTPM01" selected>KTPM01</option>
-                                <option value="KTPM02">KTPM02</option>
-                                <option value="HTTT01">HTTT01</option>
-                                <option value="TMDT01">TMDT01</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-chart-line"></i>
-                                GPA Hiện Tại
-                            </label>
-                            <input type="number" class="form-control" id="gpa" name="gpa" step="0.01" min="0" max="4"
-                                placeholder="Nhập GPA (0.0 - 4.0)" value="3.25" />
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-toggle-on"></i>
-                                Trạng Thái Học Tập <span class="required">*</span>
-                            </label>
-                            <select class="form-select" id="academicStatus" name="academicStatus" required>
-                                <option value="">Chọn trạng thái</option>
-                                <option value="active" selected>Đang Học</option>
-                                <option value="suspended">Tạm Nghỉ</option>
-                                <option value="probation">Cảnh Báo Học Vụ</option>
-                                <option value="graduated">Đã Tốt Nghiệp</option>
-                                <option value="dropped">Thôi Học</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Contact Information Section -->
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-address-book"></i>
-                        Thông Tin Liên Hệ
-                    </h3>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-phone"></i>
-                                Số Điện Thoại <span class="required">*</span>
-                            </label>
-                            <input type="tel" class="form-control" id="phone" name="phone"
-                                placeholder="Nhập số điện thoại" value="0987654321" maxlength="11" required />
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-envelope"></i>
-                                Email <span class="required">*</span>
-                            </label>
-                            <input type="email" class="form-control" id="email" name="email"
-                                placeholder="Nhập địa chỉ email" value="nguyenvana@student.edu.vn" required />
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-user-friends"></i>
-                                Họ Tên Phụ Huynh
-                            </label>
-                            <input type="text" class="form-control" id="guardianName" name="guardianName"
-                                placeholder="Nhập họ tên phụ huynh" value="Nguyễn Văn B" />
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-phone-alt"></i>
-                                SĐT Phụ Huynh
-                            </label>
-                            <input type="tel" class="form-control" id="guardianPhone" name="guardianPhone"
-                                placeholder="Nhập SĐT phụ huynh" value="0912345678" maxlength="11" />
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group full-width">
-                            <label class="form-label">
-                                <i class="fas fa-home"></i>
-                                Địa Chỉ Liên Hệ Hiện Tại
-                            </label>
-                            <textarea class="form-control" id="currentAddress" name="currentAddress" rows="3"
-                                placeholder="Nhập địa chỉ liên hệ hiện tại (nếu khác với địa chỉ thường trú)">456 Đường DEF, Phường ABC, Quận 3, TP.HCM</textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Health Information Section -->
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-heartbeat"></i>
-                        Thông Tin Sức Khỏe
-                    </h3>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-weight"></i>
-                                Cân Nặng (kg)
-                            </label>
-                            <input type="number" class="form-control" id="weight" name="weight" step="0.1" min="0"
-                                max="300" placeholder="Nhập cân nặng" value="65.5" />
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-ruler-vertical"></i>
-                                Chiều Cao (cm)
-                            </label>
-                            <input type="number" class="form-control" id="height" name="height" min="0" max="300"
-                                placeholder="Nhập chiều cao" value="170" />
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-tint"></i>
-                                Nhóm Máu
-                            </label>
-                            <select class="form-select" id="bloodType" name="bloodType">
-                                <option value="">Chọn nhóm máu</option>
-                                <option value="A">A</option>
-                                <option value="B" selected>B</option>
-                                <option value="AB">AB</option>
-                                <option value="O">O</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-allergies"></i>
-                                Tình Trạng Sức Khỏe
-                            </label>
-                            <select class="form-select" id="healthStatus" name="healthStatus">
-                                <option value="">Chọn tình trạng</option>
-                                <option value="good" selected>Tốt</option>
-                                <option value="fair">Trung Bình</option>
-                                <option value="poor">Kém</option>
-                                <option value="chronic">Bệnh Mãn Tính</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group full-width">
-                            <label class="form-label">
-                                <i class="fas fa-notes-medical"></i>
-                                Ghi Chú Sức Khỏe
-                            </label>
-                            <textarea class="form-control" id="healthNotes" name="healthNotes" rows="3"
-                                placeholder="Ghi chú về tình trạng sức khỏe, dị ứng, bệnh lý...">Không có tiền sử bệnh lý đặc biệt</textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Additional Notes Section -->
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-sticky-note"></i>
-                        Ghi Chú Bổ Sung
-                    </h3>
-
-                    <div class="form-row">
-                        <div class="form-group full-width">
-                            <label class="form-label">
-                                <i class="fas fa-comment-alt"></i>
-                                Ghi Chú
-                            </label>
-                            <textarea class="form-control" id="additionalNotes" name="additionalNotes" rows="4"
-                                placeholder="Ghi chú bổ sung về sinh viên...">Sinh viên tích cực tham gia các hoạt động ngoại khóa</textarea>
-                        </div>
-                    </div>
-                </div>
-            </form>
-        </div>
-
-        <!-- Footer Actions -->
-        <div class="card-footer">
-            <div class="action-buttons">
-                <button type="button" class="btn btn-reset">
-                    <i class="fas fa-undo"></i>
-                    Khôi Phục
-                </button>
-                <button type="button" class="btn btn-cancel" onclick="window.history.back()">
-                    <i class="fas fa-times"></i>
-                    Hủy Bỏ
-                </button>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i>
-                    Cập Nhật
+                <button class="btn btn-secondary" @onclick="NavigateToMainView">
+                    Quay lại danh sách
                 </button>
             </div>
-        </div>
+        }
+        else
+        {
+            <!-- Form Body -->
+            <div class="card-body">
+                <EditForm Model="updateStudentDto" OnValidSubmit="HandleValidSubmit" FormName="EditStudentForm">
+                    <DataAnnotationsValidator />
+
+                    <!-- Current Student Info Section -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-info-circle"></i>
+                            Thông Tin Hiện Tại
+                        </h3>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-hashtag"></i>
+                                    Mã Sinh Viên
+                                </label>
+                                <div class="info-display">
+                                    <i class="fas fa-id-badge"></i>
+                                    @currentStudent.StudentId
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-calendar"></i>
+                                    Ngày Tạo Hồ Sơ
+                                </label>
+                                <div class="info-display">
+                                    <i class="fas fa-clock"></i>
+                                    @currentStudent.CreatedAt.ToString("dd/MM/yyyy")
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-toggle-on"></i>
+                                    Trạng Thái Hiện Tại
+                                </label>
+                                <div class="status-badge @GetStatusClass(currentStudent.Status)">
+                                    <i class="fas @GetStatusIcon(currentStudent.Status)"></i>
+                                    @currentStudent.StatusString
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-edit"></i>
+                                    Lần Cập Nhật Cuối
+                                </label>
+                                <div class="info-display">
+                                    <i class="fas fa-history"></i>
+                                    @(currentStudent.UpdateAt?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa cập nhật")
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(currentStudent.CreatedByName))
+                        {
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-user-plus"></i>
+                                        Người Tạo Hồ Sơ
+                                    </label>
+                                    <div class="info-display">
+                                        <i class="fas fa-user"></i>
+                                        @currentStudent.CreatedByName
+                                    </div>
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(currentStudent.ManageByName))
+                                {
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            <i class="fas fa-user-tie"></i>
+                                            Người Quản Lý Hiện Tại
+                                        </label>
+                                        <div class="info-display">
+                                            <i class="fas fa-user-cog"></i>
+                                            @currentStudent.ManageByName
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Basic Student Information Section -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-user"></i>
+                            Thông Tin Cơ Bản
+                        </h3>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-user"></i>
+                                    Họ và Tên <span class="required">*</span>
+                                </label>
+                                <InputText class="form-control" @bind-Value="updateStudentDto.Name"
+                                    placeholder="Nhập họ và tên đầy đủ" maxlength="100" />
+                                <ValidationMessage For="@(() => updateStudentDto.Name)" class="validation-message" />
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-venus-mars"></i>
+                                    Giới Tính
+                                </label>
+                                <InputSelect class="form-select" @bind-Value="updateStudentDto.Gender">
+                                    <option value="">-- Chọn giới tính --</option>
+                                    <option value="Male">Nam</option>
+                                    <option value="Female">Nữ</option>
+                                    <option value="Other">Khác</option>
+                                </InputSelect>
+                                <ValidationMessage For="@(() => updateStudentDto.Gender)" class="validation-message" />
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    Ngày Sinh
+                                </label>
+                                <InputDate class="form-control" @bind-Value="dobDate"
+                                    max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                <ValidationMessage For="@(() => updateStudentDto.Dob)" class="validation-message" />
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-phone"></i>
+                                    Số Điện Thoại
+                                </label>
+                                <InputText class="form-control" @bind-Value="updateStudentDto.Phone"
+                                    placeholder="Nhập số điện thoại" maxlength="15" />
+                                <ValidationMessage For="@(() => updateStudentDto.Phone)" class="validation-message" />
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label class="form-label">
+                                    <i class="fas fa-envelope"></i>
+                                    Email
+                                </label>
+                                <InputText type="email" class="form-control" @bind-Value="updateStudentDto.Email"
+                                    placeholder="Nhập địa chỉ email" maxlength="100" />
+                                <ValidationMessage For="@(() => updateStudentDto.Email)" class="validation-message" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Academic Information Section -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-graduation-cap"></i>
+                            Thông Tin Học Vụ
+                        </h3>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-building"></i>
+                                    Khoa/Viện
+                                </label>
+                                @if (isLoadingDepartments)
+                                {
+                                    <select class="form-select" disabled>
+                                        <option>Đang tải danh sách khoa/viện...</option>
+                                    </select>
+                                }
+                                else
+                                {
+                                    <InputSelect class="form-select" @bind-Value="updateStudentDto.Department"
+                                        @bind-Value:after="OnDepartmentChanged">
+                                        <option value="">-- Chọn khoa/viện --</option>
+                                        @foreach (var department in availableDepartments)
+                                        {
+                                            <option value="@department.DepartmentCode">
+                                                @department.DisplayName
+                                            </option>
+                                        }
+                                    </InputSelect>
+                                }
+                                <ValidationMessage For="@(() => updateStudentDto.Department)" class="validation-message" />
+                                @if (!string.IsNullOrEmpty(selectedDepartmentInfo))
+                                {
+                                    <small class="department-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        @selectedDepartmentInfo
+                                    </small>
+                                }
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-info-circle"></i>
+                                    Trạng Thái <span class="required">*</span>
+                                </label>
+                                <InputSelect class="form-select" @bind-Value="updateStudentDto.Status">
+                                    <option value="0">Do user tạo ra</option>
+                                    <option value="1">Có dữ liệu đồng bộ với Atlas</option>
+
+                                    <option value="-1">Tạm xóa</option>
+                                </InputSelect>
+                                <ValidationMessage For="@(() => updateStudentDto.Status)" class="validation-message" />
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label class="form-label">
+                                    <i class="fas fa-user-tie"></i>
+                                    Người Quản Lý
+                                </label>
+                                @if (isLoadingManagers)
+                                {
+                                    <select class="form-select" disabled>
+                                        <option>Đang tải danh sách...</option>
+                                    </select>
+                                }
+                                else
+                                {
+                                    <InputSelect class="form-select" @bind-Value="selectedManagerId"
+                                        @bind-Value:after="OnManagerChanged">
+                                        <option value="">-- Chọn người quản lý --</option>
+                                        @foreach (var manager in availableManagers)
+                                        {
+                                            <option value="@manager.UserId.ToString()">
+                                                @manager.UserName - @manager.FullName
+                                            </option>
+                                        }
+                                    </InputSelect>
+                                }
+                                @if (!string.IsNullOrEmpty(selectedManagerInfo))
+                                {
+                                    <small class="manager-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        @selectedManagerInfo
+                                    </small>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="card-footer">
+                <div class="action-buttons">
+                    <button type="button" class="btn btn-reset" @onclick="ResetForm">
+                        <i class="fas fa-undo"></i>
+                        Khôi Phục
+                    </button>
+                    <button type="button" class="btn btn-cancel" @onclick="NavigateToMainView">
+                        <i class="fas fa-times"></i>
+                        Hủy Bỏ
+                    </button>
+                    <button type="submit" class="btn btn-primary" @onclick="HandleValidSubmit" disabled="@isSubmitting">
+                        @if (isSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status"></span>
+                            <span>Đang cập nhật...</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-save"></i>
+                            <span>Cập Nhật</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        }
     </div>
 </div>
 
-@code {
-
+<!-- Success/Error Messages -->
+@if (!string.IsNullOrEmpty(alertMessage))
+{
+    <div class="alert-container">
+        <div class="alert @(alertType == "success" ? "alert-success" : "alert-danger")">
+            <i class="fas @(alertType == "success" ? "fa-check-circle" : "fa-exclamation-triangle")"></i>
+            @alertMessage
+            <button type="button" class="alert-close" @onclick="() => alertMessage = string.Empty">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
 }
- max="300"
+
+@code {
+    [Parameter] public string StudentId { get; set; } = string.Empty;
+
+    private StudentInfoDto? currentStudent;
+    private UpdateStudentDto updateStudentDto = new UpdateStudentDto();
+    private List<UserInfoDto> availableManagers = new List<UserInfoDto>();
+    private List<DepartmentInfoDto> availableDepartments = new List<DepartmentInfoDto>();
+
+    private bool isLoading = false;
+    private bool isLoadingManagers = false;
+    private bool isLoadingDepartments = false;
+    private bool isSubmitting = false;
+
+    private string selectedManagerId = string.Empty;
+    private string selectedManagerInfo = string.Empty;
+    private string selectedDepartmentInfo = string.Empty;
+    private DateTime? dobDate;
+    private string alertMessage = string.Empty;
+    private string alertType = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrEmpty(StudentId))
+        {
+            Navigation.NavigateTo("/studentmanage/mainviewstudent");
+            return;
+        }
+
+        await LoadStudentData();
+        await Task.WhenAll(LoadManagers(), LoadDepartments());
+    }
+
+    private async Task LoadStudentData()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await StudentApiClient.GetStudentByIdAsync(StudentId);
+            if (response.IsSuccess && response.Data != null)
+            {
+                currentStudent = response.Data;
+
+                // Populate UpdateStudentDto với dữ liệu hiện tại
+                updateStudentDto.Name = currentStudent.Name;
+                updateStudentDto.Dob = currentStudent.Dob;
+                updateStudentDto.Gender = currentStudent.Gender;
+                updateStudentDto.Phone = currentStudent.Phone;
+                updateStudentDto.Email = currentStudent.Email;
+                updateStudentDto.Status = currentStudent.Status;
+                updateStudentDto.Department = currentStudent.Department;
+                updateStudentDto.ManageBy = currentStudent.ManageBy;
+
+                // Set selected manager
+                if (currentStudent.ManageBy.HasValue)
+                {
+                    selectedManagerId = currentStudent.ManageBy.Value.ToString();
+                }
+
+                // Parse date of birth
+                if (!string.IsNullOrEmpty(currentStudent.Dob))
+                {
+                    if (DateTime.TryParse(currentStudent.Dob, out DateTime parsedDate))
+                    {
+                        dobDate = parsedDate;
+                    }
+                }
+            }
+            else
+            {
+                currentStudent = null;
+                ShowAlert("Không tìm thấy thông tin sinh viên", "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading student: {ex.Message}");
+            ShowAlert("Có lỗi xảy ra khi tải thông tin sinh viên", "error");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadManagers()
+    {
+        isLoadingManagers = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await UserApiClient.GetAllUsersAsync(1, 100);
+            if (response.IsSuccess && response.Data != null)
+            {
+                // Filter users who can be managers (you might want to add role checking here)
+                availableManagers = response.Data.Users.Where(u => !string.IsNullOrEmpty(u.FullName)).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading managers: {ex.Message}");
+        }
+        finally
+        {
+            isLoadingManagers = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadDepartments()
+    {
+        isLoadingDepartments = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await DepartmentApiClient.GetAllDepartmentsAsync();
+            if (response.IsSuccess && response.Data != null)
+            {
+                availableDepartments = response.Data.Departments;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading departments: {ex.Message}");
+        }
+        finally
+        {
+            isLoadingDepartments = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (currentStudent == null || isSubmitting) return;
+
+        isSubmitting = true;
+        StateHasChanged();
+
+        try
+        {
+            // Update date of birth
+            if (dobDate.HasValue)
+            {
+                updateStudentDto.Dob = dobDate.Value.ToString("yyyy-MM-dd");
+            }
+
+            // Update manager
+            if (!string.IsNullOrEmpty(selectedManagerId) && Guid.TryParse(selectedManagerId, out Guid managerId))
+            {
+                updateStudentDto.ManageBy = managerId;
+            }
+            else
+            {
+                updateStudentDto.ManageBy = null;
+            }
+
+            var response = await StudentApiClient.UpdateStudentAsync(currentStudent.StudentId, updateStudentDto);
+
+            if (response.IsSuccess)
+            {
+                ShowAlert("Cập nhật thông tin sinh viên thành công!", "success");
+
+                // Reload student data to show updated information
+                await LoadStudentData();
+            }
+            else
+            {
+                ShowAlert($"Cập nhật thất bại: {response.Message}", "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating student: {ex.Message}");
+            ShowAlert("Có lỗi xảy ra khi cập nhật thông tin sinh viên", "error");
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ResetForm()
+    {
+        if (currentStudent != null)
+        {
+            // Reset form to original values
+            updateStudentDto.Name = currentStudent.Name;
+            updateStudentDto.Dob = currentStudent.Dob;
+            updateStudentDto.Gender = currentStudent.Gender;
+            updateStudentDto.Phone = currentStudent.Phone;
+            updateStudentDto.Email = currentStudent.Email;
+            updateStudentDto.Status = currentStudent.Status;
+            updateStudentDto.Department = currentStudent.Department;
+            updateStudentDto.ManageBy = currentStudent.ManageBy;
+
+            if (currentStudent.ManageBy.HasValue)
+            {
+                selectedManagerId = currentStudent.ManageBy.Value.ToString();
+            }
+            else
+            {
+                selectedManagerId = string.Empty;
+            }
+
+            if (!string.IsNullOrEmpty(currentStudent.Dob))
+            {
+                if (DateTime.TryParse(currentStudent.Dob, out DateTime parsedDate))
+                {
+                    dobDate = parsedDate;
+                }
+            }
+            else
+            {
+                dobDate = null;
+            }
+
+            selectedManagerInfo = string.Empty;
+            selectedDepartmentInfo = string.Empty;
+            StateHasChanged();
+        }
+    }
+
+    private void OnManagerChanged()
+    {
+        if (!string.IsNullOrEmpty(selectedManagerId) && Guid.TryParse(selectedManagerId, out Guid managerId))
+        {
+            var manager = availableManagers.FirstOrDefault(m => m.UserId == managerId);
+            if (manager != null)
+            {
+                selectedManagerInfo = $"Bộ phận: {manager.Department ?? "Chưa xác định"}";
+            }
+            else
+            {
+                selectedManagerInfo = string.Empty;
+            }
+        }
+        else
+        {
+            selectedManagerInfo = string.Empty;
+        }
+        StateHasChanged();
+    }
+
+    private void OnDepartmentChanged()
+    {
+        if (!string.IsNullOrEmpty(updateStudentDto.Department))
+        {
+            var department = availableDepartments.FirstOrDefault(d => d.DepartmentCode == updateStudentDto.Department);
+            if (department != null)
+            {
+                selectedDepartmentInfo = $"Mô tả: {department.FullDescription}";
+            }
+            else
+            {
+                selectedDepartmentInfo = string.Empty;
+            }
+        }
+        else
+        {
+            selectedDepartmentInfo = string.Empty;
+        }
+        StateHasChanged();
+    }
+
+    private void NavigateToMainView()
+    {
+        Navigation.NavigateTo("/studentmanage/mainviewstudent");
+    }
+
+    private void ShowAlert(string message, string type)
+    {
+        alertMessage = message;
+        alertType = type;
+        StateHasChanged();
+
+        // Auto hide alert after 5 seconds
+        _ = Task.Delay(5000).ContinueWith(t =>
+        {
+            InvokeAsync(() =>
+    {
+            if (alertMessage == message) // Only clear if it's the same message
+            {
+                alertMessage = string.Empty;
+                StateHasChanged();
+            }
+        });
+        });
+    }
+
+    // Helper methods for status display
+    private string GetStatusClass(short status)
+    {
+        return status switch
+        {
+            1 => "active", // Đang học
+            0 => "pending", // Do user tạo ra
+            2 => "graduated", // Đã tốt nghiệp
+            -1 => "inactive", // Tạm xóa
+            _ => "unknown"
+        };
+    }
+
+    private string GetStatusIcon(short status)
+    {
+        return status switch
+        {
+            1 => "fa-check-circle", // Đang học
+            0 => "fa-clock", // Do user tạo ra
+            2 => "fa-graduation-cap", // Đã tốt nghiệp
+            -1 => "fa-ban", // Tạm xóa
+            _ => "fa-question-circle"
+        };
+    }
+}
