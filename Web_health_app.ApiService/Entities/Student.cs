@@ -55,6 +55,7 @@ public partial class Student
             10 => "offline",
             11 => "online",
             0 => "Do user tạo ra",
+            -1 => "Tạm xóa",
             _ => "Không xác định"
         };
     }

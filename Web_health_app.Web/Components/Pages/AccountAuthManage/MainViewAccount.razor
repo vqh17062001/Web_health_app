@@ -409,12 +409,15 @@
                                     @onclick:preventDefault="true" tabindex="-1">Trước</a>
                             </li>
 
-                            @for (int i = Math.Max(1, pagination.CurrentPage - 2); i <= Math.Min(pagination.TotalPages,
-                                                    pagination.CurrentPage + 2); i++)
+                           @{
+                                int startPage = Math.Max(1, pagination.CurrentPage - 2);
+                                int endPage = Math.Min(pagination.TotalPages, pagination.CurrentPage + 2);
+                            }
+                            @for (int pageNum = startPage; pageNum <= endPage; pageNum++)
                             {
-                                <li class="page-item @(i == pagination.CurrentPage ? "active" : "")">
-                                    <a class="page-link" href="#" @onclick="() => LoadPage(i)"
-                                        @onclick:preventDefault="true">@i</a>
+                                int currentPageNum = pageNum;
+                                <li class="page-item @(currentPageNum == pagination.CurrentPage ? "active" : "")">
+                                    <a class="page-link" href="#" @onclick="() => LoadPage(currentPageNum)" @onclick:preventDefault="true">@currentPageNum</a>
                                 </li>
                             }
 

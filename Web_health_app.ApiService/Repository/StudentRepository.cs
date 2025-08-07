@@ -521,7 +521,7 @@ namespace Web_health_app.ApiService.Repository
                 var totalStudents = await _context.Students.CountAsync();
                 var activeStudents = await _context.Students.CountAsync(s => s.Status >= 0);
                 var inactiveStudents = await _context.Students.CountAsync(s => s.Status < 0);
-                var studentsWithSyncData = await _context.Students.CountAsync(s => s.Status == 1);
+                var studentsWithSyncData = await _context.Students.CountAsync(s => s.Status == 1|| s.Status == 10|| s.Status == 11);
                 var studentsOffline = await _context.Students.CountAsync(s => s.Status == 10);
                 var studentsOnline = await _context.Students.CountAsync(s => s.Status == 11);
 
