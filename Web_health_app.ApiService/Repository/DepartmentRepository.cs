@@ -14,8 +14,8 @@ namespace Web_health_app.ApiService.Repository
         }
 
         public async Task<(List<DepartmentInfoDto> Departments, int TotalCount)> GetAllDepartmentsAsync(
-            int pageNumber = 1, 
-            int pageSize = 20, 
+            int pageNumber = 1,
+            int pageSize = 20,
             string? searchTerm = null)
         {
             var query = _context.Departments.AsQueryable();
@@ -24,7 +24,7 @@ namespace Web_health_app.ApiService.Repository
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 var searchLower = searchTerm.ToLower();
-                query = query.Where(d => 
+                query = query.Where(d =>
                     d.DepartmentCode.ToLower().Contains(searchLower) ||
                     (d.Battalion != null && d.Battalion.ToLower().Contains(searchLower)) ||
                     (d.Course != null && d.Course.ToLower().Contains(searchLower)) ||
@@ -58,7 +58,7 @@ namespace Web_health_app.ApiService.Repository
             if (!string.IsNullOrWhiteSpace(searchDto.SearchTerm))
             {
                 var searchLower = searchDto.SearchTerm.ToLower();
-                query = query.Where(d => 
+                query = query.Where(d =>
                     d.DepartmentCode.ToLower().Contains(searchLower) ||
                     (d.Battalion != null && d.Battalion.ToLower().Contains(searchLower)) ||
                     (d.Course != null && d.Course.ToLower().Contains(searchLower)) ||
@@ -84,20 +84,20 @@ namespace Web_health_app.ApiService.Repository
             if (!string.IsNullOrWhiteSpace(searchDto.SortBy))
             {
                 var sortDirection = searchDto.SortDirection?.ToLower() == "desc" ? "desc" : "asc";
-                
+
                 query = searchDto.SortBy.ToLower() switch
                 {
-                    "departmentcode" => sortDirection == "desc" ? 
-                        query.OrderByDescending(d => d.DepartmentCode) : 
+                    "departmentcode" => sortDirection == "desc" ?
+                        query.OrderByDescending(d => d.DepartmentCode) :
                         query.OrderBy(d => d.DepartmentCode),
-                    "battalion" => sortDirection == "desc" ? 
-                        query.OrderByDescending(d => d.Battalion) : 
+                    "battalion" => sortDirection == "desc" ?
+                        query.OrderByDescending(d => d.Battalion) :
                         query.OrderBy(d => d.Battalion),
-                    "course" => sortDirection == "desc" ? 
-                        query.OrderByDescending(d => d.Course) : 
+                    "course" => sortDirection == "desc" ?
+                        query.OrderByDescending(d => d.Course) :
                         query.OrderBy(d => d.Course),
-                    "charactercode" => sortDirection == "desc" ? 
-                        query.OrderByDescending(d => d.CharacterCode) : 
+                    "charactercode" => sortDirection == "desc" ?
+                        query.OrderByDescending(d => d.CharacterCode) :
                         query.OrderBy(d => d.CharacterCode),
                     _ => query.OrderBy(d => d.DepartmentCode)
                 };
@@ -141,23 +141,23 @@ namespace Web_health_app.ApiService.Repository
         }
 
         public async Task<(List<DepartmentSummaryDto> Departments, int TotalCount)> GetDepartmentsWithStudentCountAsync(
-            int pageNumber = 1, 
-            int pageSize = 20, 
+            int pageNumber = 1,
+            int pageSize = 20,
             string? searchTerm = null)
         {
             var query = from dept in _context.Departments
-                       join student in _context.Students on dept.DepartmentCode equals student.Department into studentGroup
-                       select new
-                       {
-                           Department = dept,
-                           StudentCount = studentGroup.Count()
-                       };
+                        join student in _context.Students on dept.DepartmentCode equals student.Department into studentGroup
+                        select new
+                        {
+                            Department = dept,
+                            StudentCount = studentGroup.Count()
+                        };
 
             // Apply search filter
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 var searchLower = searchTerm.ToLower();
-                query = query.Where(x => 
+                query = query.Where(x =>
                     x.Department.DepartmentCode.ToLower().Contains(searchLower) ||
                     (x.Department.Battalion != null && x.Department.Battalion.ToLower().Contains(searchLower)) ||
                     (x.Department.Course != null && x.Department.Course.ToLower().Contains(searchLower)) ||

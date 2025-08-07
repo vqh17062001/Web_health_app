@@ -38,7 +38,7 @@
         <div class="card-body">
             <EditForm Model="createStudentDto" OnValidSubmit="HandleValidSubmit" FormName="AddStudentForm">
                 <DataAnnotationsValidator />
-                
+
                 <!-- Basic Student Information Section -->
                 <div class="form-section">
                     <h3 class="section-title">
@@ -78,8 +78,8 @@
                                 <i class="fas fa-calendar-alt"></i>
                                 Ngày Sinh
                             </label>
-                            <InputDate class="form-control" @bind-Value="dobDate" 
-                                      max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                            <InputDate class="form-control" @bind-Value="dobDate"
+                                max="@DateTime.Today.ToString("yyyy-MM-dd")" />
                             <ValidationMessage For="@(() => createStudentDto.Dob)" class="validation-message" />
                         </div>
 
@@ -129,7 +129,7 @@
                             else
                             {
                                 <InputSelect class="form-select" @bind-Value="createStudentDto.Department"
-                                           @bind-Value:after="OnDepartmentChanged">
+                                    @bind-Value:after="OnDepartmentChanged">
                                     <option value="">-- Chọn khoa/viện --</option>
                                     @foreach (var department in availableDepartments)
                                     {
@@ -155,9 +155,9 @@
                                 Trạng Thái <span class="required">*</span>
                             </label>
                             <InputSelect class="form-select" @bind-Value="createStudentDto.Status">
-                               
+
                                 <option value="0">Do user tạo ra</option>
-                               
+
                                 <option value="-1">Tạm xóa</option>
                             </InputSelect>
                             <ValidationMessage For="@(() => createStudentDto.Status)" class="validation-message" />
@@ -178,8 +178,8 @@
                             }
                             else
                             {
-                                <InputSelect class="form-select" @bind-Value="selectedManagerId" 
-                                           @bind-Value:after="OnManagerChanged">
+                                <InputSelect class="form-select" @bind-Value="selectedManagerId"
+                                    @bind-Value:after="OnManagerChanged">
                                     <option value="">-- Chọn người quản lý --</option>
                                     @foreach (var manager in availableManagers)
                                     {
@@ -390,11 +390,11 @@
             }
 
             var response = await StudentApiClient.CreateStudentAsync(createStudentDto);
-            
+
             if (response.IsSuccess && response.Data != null)
             {
                 ShowAlert($"Tạo sinh viên thành công! Mã sinh viên: {response.Data.StudentId}", "success");
-                
+
                 // Wait for user to see the message then navigate
                 await Task.Delay(2000);
                 Navigation.NavigateTo("/studentmanage/mainviewstudent");
@@ -418,9 +418,9 @@
     private void ResetForm()
     {
         var currentCreatedBy = createStudentDto.CreatedBy; // Keep the current user ID
-        createStudentDto = new CreateStudentDto 
-        { 
-            Status = 1, 
+        createStudentDto = new CreateStudentDto
+        {
+            Status = 1,
             CreatedBy = currentCreatedBy
         };
         selectedManagerId = string.Empty;
@@ -435,9 +435,9 @@
         alertMessage = message;
         alertType = type;
         StateHasChanged();
-        
+
         // Auto-hide after 5 seconds
-        Task.Delay(5000).ContinueWith(_ => 
+        Task.Delay(5000).ContinueWith(_ =>
         {
             alertMessage = string.Empty;
             InvokeAsync(StateHasChanged);

@@ -12,8 +12,8 @@ namespace Web_health_app.ApiService.Repository
         /// <param name="searchTerm">Search term for filtering</param>
         /// <returns>Paginated list of departments</returns>
         Task<(List<DepartmentInfoDto> Departments, int TotalCount)> GetAllDepartmentsAsync(
-            int pageNumber = 1, 
-            int pageSize = 20, 
+            int pageNumber = 1,
+            int pageSize = 20,
             string? searchTerm = null);
 
         /// <summary>
@@ -39,8 +39,8 @@ namespace Web_health_app.ApiService.Repository
         /// <param name="searchTerm">Search term for filtering</param>
         /// <returns>Paginated list of departments with student count</returns>
         Task<(List<DepartmentSummaryDto> Departments, int TotalCount)> GetDepartmentsWithStudentCountAsync(
-            int pageNumber = 1, 
-            int pageSize = 20, 
+            int pageNumber = 1,
+            int pageSize = 20,
             string? searchTerm = null);
 
         /// <summary>

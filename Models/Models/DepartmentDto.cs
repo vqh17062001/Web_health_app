@@ -40,16 +40,16 @@ namespace Web_health_app.Models.Models
         private string GetFullDescription()
         {
             var parts = new List<string> { DepartmentCode };
-            
+
             if (!string.IsNullOrEmpty(Battalion))
                 parts.Add($"Tiểu đoàn: {Battalion}");
-                
+
             if (!string.IsNullOrEmpty(Course))
                 parts.Add($"Khóa: {Course}");
-                
+
             if (!string.IsNullOrEmpty(CharacterCode))
                 parts.Add($"Ký hiệu: {CharacterCode}");
-                
+
             return string.Join(" | ", parts);
         }
     }
@@ -87,16 +87,16 @@ namespace Web_health_app.Models.Models
         private string GetFullDescription()
         {
             var parts = new List<string> { DepartmentCode };
-            
+
             if (!string.IsNullOrEmpty(Battalion))
                 parts.Add($"Tiểu đoàn: {Battalion}");
-                
+
             if (!string.IsNullOrEmpty(Course))
                 parts.Add($"Khóa: {Course}");
-                
+
             if (!string.IsNullOrEmpty(CharacterCode))
                 parts.Add($"Ký hiệu: {CharacterCode}");
-                
+
             return string.Join(" | ", parts);
         }
     }

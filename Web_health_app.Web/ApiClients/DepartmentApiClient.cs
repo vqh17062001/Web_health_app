@@ -61,7 +61,7 @@ namespace Web_health_app.Web.ApiClients
                 var queryParams = new List<string>();
                 queryParams.Add($"pageNumber={pageNumber}");
                 queryParams.Add($"pageSize={pageSize}");
-                
+
                 if (!string.IsNullOrEmpty(searchTerm))
                 {
                     queryParams.Add($"searchTerm={Uri.EscapeDataString(searchTerm)}");
@@ -78,18 +78,18 @@ namespace Web_health_app.Web.ApiClients
                 }
 
                 var errorContent = await response.Content.ReadAsStringAsync();
-                return new ApiResponse<DepartmentsApiResponse> 
-                { 
-                    IsSuccess = false, 
-                    Message = $"Error: {response.StatusCode} - {errorContent}" 
+                return new ApiResponse<DepartmentsApiResponse>
+                {
+                    IsSuccess = false,
+                    Message = $"Error: {response.StatusCode} - {errorContent}"
                 };
             }
             catch (Exception ex)
             {
-                return new ApiResponse<DepartmentsApiResponse> 
-                { 
-                    IsSuccess = false, 
-                    Message = $"Exception: {ex.Message}" 
+                return new ApiResponse<DepartmentsApiResponse>
+                {
+                    IsSuccess = false,
+                    Message = $"Exception: {ex.Message}"
                 };
             }
         }
@@ -113,18 +113,18 @@ namespace Web_health_app.Web.ApiClients
                 }
 
                 var errorContent = await response.Content.ReadAsStringAsync();
-                return new ApiResponse<DepartmentsApiResponse> 
-                { 
-                    IsSuccess = false, 
-                    Message = $"Error: {response.StatusCode} - {errorContent}" 
+                return new ApiResponse<DepartmentsApiResponse>
+                {
+                    IsSuccess = false,
+                    Message = $"Error: {response.StatusCode} - {errorContent}"
                 };
             }
             catch (Exception ex)
             {
-                return new ApiResponse<DepartmentsApiResponse> 
-                { 
-                    IsSuccess = false, 
-                    Message = $"Exception: {ex.Message}" 
+                return new ApiResponse<DepartmentsApiResponse>
+                {
+                    IsSuccess = false,
+                    Message = $"Exception: {ex.Message}"
                 };
             }
         }
@@ -148,18 +148,18 @@ namespace Web_health_app.Web.ApiClients
                 }
 
                 var errorContent = await response.Content.ReadAsStringAsync();
-                return new ApiResponse<DepartmentInfoDto> 
-                { 
-                    IsSuccess = false, 
-                    Message = $"Error: {response.StatusCode} - {errorContent}" 
+                return new ApiResponse<DepartmentInfoDto>
+                {
+                    IsSuccess = false,
+                    Message = $"Error: {response.StatusCode} - {errorContent}"
                 };
             }
             catch (Exception ex)
             {
-                return new ApiResponse<DepartmentInfoDto> 
-                { 
-                    IsSuccess = false, 
-                    Message = $"Exception: {ex.Message}" 
+                return new ApiResponse<DepartmentInfoDto>
+                {
+                    IsSuccess = false,
+                    Message = $"Exception: {ex.Message}"
                 };
             }
         }
@@ -183,18 +183,18 @@ namespace Web_health_app.Web.ApiClients
                 }
 
                 var errorContent = await response.Content.ReadAsStringAsync();
-                return new ApiResponse<List<DepartmentInfoDto>> 
-                { 
-                    IsSuccess = false, 
-                    Message = $"Error: {response.StatusCode} - {errorContent}" 
+                return new ApiResponse<List<DepartmentInfoDto>>
+                {
+                    IsSuccess = false,
+                    Message = $"Error: {response.StatusCode} - {errorContent}"
                 };
             }
             catch (Exception ex)
             {
-                return new ApiResponse<List<DepartmentInfoDto>> 
-                { 
-                    IsSuccess = false, 
-                    Message = $"Exception: {ex.Message}" 
+                return new ApiResponse<List<DepartmentInfoDto>>
+                {
+                    IsSuccess = false,
+                    Message = $"Exception: {ex.Message}"
                 };
             }
         }
@@ -211,7 +211,7 @@ namespace Web_health_app.Web.ApiClients
                 var queryParams = new List<string>();
                 queryParams.Add($"pageNumber={pageNumber}");
                 queryParams.Add($"pageSize={pageSize}");
-                
+
                 if (!string.IsNullOrEmpty(searchTerm))
                 {
                     queryParams.Add($"searchTerm={Uri.EscapeDataString(searchTerm)}");
@@ -228,18 +228,18 @@ namespace Web_health_app.Web.ApiClients
                 }
 
                 var errorContent = await response.Content.ReadAsStringAsync();
-                return new ApiResponse<object> 
-                { 
-                    IsSuccess = false, 
-                    Message = $"Error: {response.StatusCode} - {errorContent}" 
+                return new ApiResponse<object>
+                {
+                    IsSuccess = false,
+                    Message = $"Error: {response.StatusCode} - {errorContent}"
                 };
             }
             catch (Exception ex)
             {
-                return new ApiResponse<object> 
-                { 
-                    IsSuccess = false, 
-                    Message = $"Exception: {ex.Message}" 
+                return new ApiResponse<object>
+                {
+                    IsSuccess = false,
+                    Message = $"Exception: {ex.Message}"
                 };
             }
         }
@@ -263,18 +263,18 @@ namespace Web_health_app.Web.ApiClients
                 }
 
                 var errorContent = await response.Content.ReadAsStringAsync();
-                return new ApiResponse<DepartmentStatisticsDto> 
-                { 
-                    IsSuccess = false, 
-                    Message = $"Error: {response.StatusCode} - {errorContent}" 
+                return new ApiResponse<DepartmentStatisticsDto>
+                {
+                    IsSuccess = false,
+                    Message = $"Error: {response.StatusCode} - {errorContent}"
                 };
             }
             catch (Exception ex)
             {
-                return new ApiResponse<DepartmentStatisticsDto> 
-                { 
-                    IsSuccess = false, 
-                    Message = $"Exception: {ex.Message}" 
+                return new ApiResponse<DepartmentStatisticsDto>
+                {
+                    IsSuccess = false,
+                    Message = $"Exception: {ex.Message}"
                 };
             }
         }
@@ -298,18 +298,18 @@ namespace Web_health_app.Web.ApiClients
                 }
 
                 var errorContent = await response.Content.ReadAsStringAsync();
-                return new ApiResponse<List<string>> 
-                { 
-                    IsSuccess = false, 
-                    Message = $"Error: {response.StatusCode} - {errorContent}" 
+                return new ApiResponse<List<string>>
+                {
+                    IsSuccess = false,
+                    Message = $"Error: {response.StatusCode} - {errorContent}"
                 };
             }
             catch (Exception ex)
             {
-                return new ApiResponse<List<string>> 
-                { 
-                    IsSuccess = false, 
-                    Message = $"Exception: {ex.Message}" 
+                return new ApiResponse<List<string>>
+                {
+                    IsSuccess = false,
+                    Message = $"Exception: {ex.Message}"
                 };
             }
         }
@@ -333,18 +333,18 @@ namespace Web_health_app.Web.ApiClients
                 }
 
                 var errorContent = await response.Content.ReadAsStringAsync();
-                return new ApiResponse<List<string>> 
-                { 
-                    IsSuccess = false, 
-                    Message = $"Error: {response.StatusCode} - {errorContent}" 
+                return new ApiResponse<List<string>>
+                {
+                    IsSuccess = false,
+                    Message = $"Error: {response.StatusCode} - {errorContent}"
                 };
             }
             catch (Exception ex)
             {
-                return new ApiResponse<List<string>> 
-                { 
-                    IsSuccess = false, 
-                    Message = $"Exception: {ex.Message}" 
+                return new ApiResponse<List<string>>
+                {
+                    IsSuccess = false,
+                    Message = $"Exception: {ex.Message}"
                 };
             }
         }
