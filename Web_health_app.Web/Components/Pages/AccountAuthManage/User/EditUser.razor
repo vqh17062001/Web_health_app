@@ -12,6 +12,7 @@
 @inject RoleApiClient RoleApi
 @inject RoleUserApiClient RoleUserApi
 @inject GroupApiClient GroupApi
+@inject DepartmentApiClient DepartmentApi
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @implements IDisposable
@@ -160,14 +161,29 @@
                                     <i class="fas fa-building"></i>
                                     Phòng ban
                                 </label>
-                                <select id="department" class="form-select" @bind="updateUserDto.Department">
-                                    <option value="">Chọn phòng ban</option>
-                                    <option value="it">Công nghệ thông tin</option>
-                                    <option value="hr">Nhân sự</option>
-                                    <option value="finance">Tài chính</option>
-                                    <option value="marketing">Marketing</option>
-                                    <option value="operations">Vận hành</option>
+                                <select id="department" class="form-select" @bind="updateUserDto.Department" disabled="@isLoadingDepartments">
+                                    <option value="" disabled="@(!string.IsNullOrEmpty(updateUserDto.Department))" hidden="@(!string.IsNullOrEmpty(updateUserDto.Department))">
+                                        @(isLoadingDepartments ? "Đang tải phòng ban..." : "Chọn phòng ban (tùy chọn)")
+                                    </option>
+                                    @if (!isLoadingDepartments)
+                                    {
+                                        @foreach (var dept in availableDepartments)
+                                        {
+                                            <option value="@dept.DepartmentCode" selected="@(updateUserDto.Department == dept.DepartmentCode)">@dept.DisplayName</option>
+                                        }
+                                        if (!string.IsNullOrEmpty(updateUserDto.Department) && availableDepartments.All(d => d.DepartmentCode != updateUserDto.Department))
+                                        {
+                                            <option value="@updateUserDto.Department" selected>@updateUserDto.Department (không còn trong danh sách)</option>
+                                        }
+                                    }
                                 </select>
+                                <small class="form-text text-muted">
+                                    Giá trị lưu trữ: mã phòng ban.
+                                    @if(!string.IsNullOrEmpty(updateUserDto.Department))
+                                    {
+                                        <span> Hiện tại: <strong>@GetCurrentDepartmentDisplay()</strong></span>
+                                    }
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -357,6 +373,7 @@
     private bool isLoadingRoles = false;
     private bool isLoadingGroups = false;
     private bool isLoadingManagers = false;
+    private bool isLoadingDepartments = false;
     private bool isSaving = false;
 
     // Form validation
@@ -372,6 +389,7 @@
         }
 
         await LoadUserData(userGuid);
+    await LoadDepartments();
         await LoadAvailableRoles();
         await LoadAvailableGroups();
         await LoadCurrentUserRoles(userGuid);
@@ -420,6 +438,53 @@
             isLoading = false;
             StateHasChanged();
         }
+    }
+
+    // Departments
+    private List<DepartmentInfoDto> availableDepartments = new();
+    private async Task LoadDepartments()
+    {
+        try
+        {
+            isLoadingDepartments = true;
+            StateHasChanged();
+            var response = await DepartmentApi.GetAllDepartmentsSimpleAsync();
+            if (response.IsSuccess && response.Data != null)
+            {
+                availableDepartments = response.Data;
+                // Nếu người dùng đã có Department hiện tại, đảm bảo binding khớp theo mã
+                if (!string.IsNullOrEmpty(updateUserDto.Department))
+                {
+                    // Thử tìm theo mã (case-insensitive)
+                    var match = availableDepartments.FirstOrDefault(d => string.Equals(d.DepartmentCode, updateUserDto.Department, StringComparison.OrdinalIgnoreCase));
+                    if (match != null && match.DepartmentCode != updateUserDto.Department)
+                    {
+                        updateUserDto.Department = match.DepartmentCode; // Đồng bộ hóa mã chuẩn
+                    }
+                }
+            }
+            else
+            {
+                availableDepartments = new();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"Error loading departments: {ex.Message}");
+            availableDepartments = new();
+        }
+        finally
+        {
+            isLoadingDepartments = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetCurrentDepartmentDisplay()
+    {
+        if (string.IsNullOrEmpty(updateUserDto.Department)) return "(Trống)";
+        var dept = availableDepartments.FirstOrDefault(d => string.Equals(d.DepartmentCode, updateUserDto.Department, StringComparison.OrdinalIgnoreCase));
+        return dept != null ? dept.DisplayName : updateUserDto.Department;
     }
 
     private async Task LoadAvailableRoles()
