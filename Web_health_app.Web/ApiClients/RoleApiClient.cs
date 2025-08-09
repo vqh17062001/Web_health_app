@@ -534,6 +534,44 @@ namespace Web_health_app.Web.ApiClients
                 };
             }
         }
+
+        /// <summary>
+        /// Search roles with advanced filtering
+        /// </summary>
+        /// <param name="searchDto">Search criteria</param>
+        /// <param name="pageNumber">Page number (default: 1)</param>
+        /// <param name="pageSize">Page size (default: 10)</param>
+        /// <returns>Filtered roles response</returns>
+        public async Task<ApiResponse<RolesApiResponse?>> SearchRolesAsync(RoleSearchDto searchDto, int pageNumber = 1, int pageSize = 10)
+        {
+            try
+            {
+                await SetAuthorizeHeader();
+
+                var response = await _httpClient.PostAsJsonAsync($"api/Role/search?pageNumber={pageNumber}&pageSize={pageSize}", searchDto);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<RolesApiResponse>();
+                    return new ApiResponse<RolesApiResponse>
+                    {
+                        IsSuccess = true,
+                        Message = "Users retrieved successfully",
+                        Data = result
+                    };
+                }
+                else
+                {
+                    Console.WriteLine($"Error searching roles: {response.StatusCode} - {response.ReasonPhrase}");
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in SearchRolesAsync: {ex.Message}");
+                return null;
+            }
+        }
     }
 
     // Supporting classes for API responses

@@ -27,32 +27,200 @@
             <div class="col-12">
                 <h3 class="mb-4">Quản lý Phân quyền và Truy cập</h3>
 
-                <!-- Filter and Search Bar -->
-                <div class="card mb-4">
-                    <div class="card-body">
+                <!-- Advanced Filter and Search Bar -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-light">
                         <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-filter me-2 text-primary"></i>
+                                    Bộ lọc và tìm kiếm nâng cao
+                                    @if (HasActiveFilters())
+                                    {
+                                        <span class="badge bg-primary ms-2">@GetActiveFiltersCount()</span>
+                                    }
+                                </h5>
+                            </div>
+                            <div class="col-md-6 text-end">
+                         
+                                
+                              
+                                <button type="button" class="btn btn-outline-primary btn-sm" @onclick="ToggleAdvancedFilter">
+                                    <i class="fas @(showAdvancedFilter ? "fa-chevron-up" : "fa-chevron-down") me-1"></i>
+                                    @(showAdvancedFilter ? "Ẩn" : "Hiện") bộ lọc nâng cao
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm me-2" @onclick="ResetFilters">
+                                    <i class="fas fa-undo me-1"></i>Đặt lại
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Active Filter Tags -->
+                        @if (HasActiveFilters())
+                        {
+                            <div class="mt-3">
+                                <small class="text-muted">Bộ lọc đang áp dụng:</small>
+                                <div class="d-flex flex-wrap mt-1">
+                                    @foreach (var filter in GetActiveFilterTags())
+                                    {
+                                        <span class="badge bg-info me-2 mb-1 d-flex align-items-center">
+                                            @filter.Label
+                                            <button type="button" class="btn-close btn-close-white ms-2" style="font-size: 0.6em;" 
+                                                    @onclick="() => RemoveFilterTag(filter)" title="Xóa bộ lọc này"></button>
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div class="card-body">
+                        <!-- Basic Search Row -->
+                        <div class="row align-items-center mb-3">
                             <div class="col-md-3">
-                                <label for="filterSelect" class="form-label">Lọc theo:</label>
-                                <select id="filterSelect" class="form-select" @onchange="OnFilterChanged">
+                                <label for="filterSelect" class="form-label">Loại dữ liệu:</label>
+                                <select id="filterSelect" class="form-select" @bind="currentView" @bind:after="OnViewChanged">
                                     <option value="users">Người dùng</option>
                                     <option value="roles">Vai trò</option>
                                     <option value="usergroups">Nhóm người dùng</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label for="searchInput" class="form-label">Tìm kiếm:</label>
+                                <label for="searchInput" class="form-label">Tìm kiếm nhanh:</label>
                                 <input type="text" id="searchInput" class="form-control"
                                     placeholder="Nhập từ khóa tìm kiếm..." @bind="searchTerm"
                                     @oninput="OnSearchChanged">
                             </div>
+                           
                             <div class="col-md-3">
                                 <label class="form-label">&nbsp;</label>
-                                <button type="button" class="btn btn-primary w-100 d-block" @onclick="NavigateToAddPage"
-                                    disabled="@isLoading" title="@GetAddButtonTooltip()">
-                                    <i class="fas fa-plus me-2"></i>@GetAddButtonText()
-                                </button>
+                                @if (isLoading)
+                                {
+                                    <button class="btn btn-primary w-100 d-block" disabled>
+                                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                        Đang tải...
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn-primary w-100 d-block" @onclick="NavigateToAddPage"
+                                            title="@GetAddButtonTooltip()">
+                                        <i class="fas fa-plus me-2"></i>@GetAddButtonText()
+                                    </button>
+                                }
                             </div>
                         </div>
+
+                        <!-- Advanced Filter Row (Collapsible) -->
+                        @if (showAdvancedFilter)
+                        {
+                            <div class="advanced-filters">
+                                <hr class="my-3">
+                                @if (currentView == "users")
+                                {
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Từ khóa tìm kiếm:</label>
+                                            <input type="text" class="form-control" @bind="userSearchDto.SearchTerm" 
+                                                   placeholder="Tên người dùng, họ tên...">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Phòng ban:</label>
+                                            <input type="text" class="form-control" @bind="userSearchDto.Department" 
+                                                   placeholder="Nhập tên phòng ban">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Trạng thái:</label>
+                                            <select class="form-select" @bind="userSearchDto.UserStatus">
+                                                <option value="">Tất cả</option>
+                                                <option value="0">Cần đổi MK</option>
+                                                <option value="1">Hoạt động</option>
+                                                <option value="2">Tạm khóa</option>
+                                                <option value="3">Cần reset MK</option>
+                                                <option value="-1">Khóa vĩnh viễn</option>
+                                                <option value="-2">Đã xóa</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mt-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Từ ngày tạo:</label>
+                                            <input type="date" class="form-control" @bind="userCreatedFromDate">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Đến ngày tạo:</label>
+                                            <input type="date" class="form-control" @bind="userCreatedToDate">
+                                        </div>
+                                    </div>
+                                }
+                                else if (currentView == "roles")
+                                {
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Từ khóa tìm kiếm:</label>
+                                            <input type="text" class="form-control" @bind="roleSearchDto.SearchTerm" 
+                                                   placeholder="Tên vai trò...">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Trạng thái:</label>
+                                            <select class="form-select" @bind="roleIsActiveString">
+                                                <option value="">Tất cả</option>
+                                                <option value="true">Hoạt động</option>
+                                                <option value="false">Không hoạt động</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                }
+                                else if (currentView == "usergroups")
+                                {
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Từ khóa tìm kiếm:</label>
+                                            <input type="text" class="form-control" @bind="groupSearchDto.SearchTerm" 
+                                                   placeholder="Tên nhóm...">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Trạng thái:</label>
+                                            <select class="form-select" @bind="groupIsActiveString">
+                                                <option value="">Tất cả</option>
+                                                <option value="true">Hoạt động</option>
+                                                <option value="false">Không hoạt động</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Time Active ID:</label>
+                                            <input type="text" class="form-control" @bind="groupSearchDto.TimeActiveId" 
+                                                   placeholder="Time Active ID">
+                                        </div>
+                                    </div>
+
+                                    <div class="row mt-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Từ ngày tạo:</label>
+                                            <input type="date" class="form-control" @bind="groupCreatedFromDate">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Đến ngày tạo:</label>
+                                            <input type="date" class="form-control" @bind="groupCreatedToDate">
+                                        </div>
+                                    </div>
+                                }
+                                
+                                <!-- Filter Action Buttons -->
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn btn-primary" @onclick="ApplyFilters">
+                                                <i class="fas fa-search me-1"></i>Áp dụng
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary" @onclick="ResetFilters">
+                                                <i class="fas fa-undo me-1"></i>Đặt lại
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -441,10 +609,11 @@
 </div>
 
 @code {
-    // Properties for data binding
+    // Data properties
     private List<UserInfoDto>? users = new();
     private List<RoleInfoDto>? roles = new();
     private List<GroupInfoDto>? groups = new();
+    private List<GroupInfoDto>? availableGroups = new();
     private string currentView = "users";
     private string searchTerm = "";
     private bool isLoading = false;
@@ -453,9 +622,86 @@
     private GroupsPaginationInfo? groupsPagination;
     private Timer? searchTimer;
 
+    // Advanced filter properties
+    private bool showAdvancedFilter = false;
+    private UserSearchDto userSearchDto = new UserSearchDto
+    {
+        SortBy = "CreateAt",
+        SortDirection = "desc"
+    };
+    private RoleSearchDto roleSearchDto = new RoleSearchDto
+    {
+        SortBy = "RoleId",
+        SortDirection = "asc"
+    };
+    private GroupSearchDto groupSearchDto = new GroupSearchDto
+    {
+        SortBy = "GroupId",
+        SortDirection = "asc"
+    };
+
+    // Date helpers for date inputs
+    private DateTime? userCreatedFromDate;
+    private DateTime? userCreatedToDate;
+    private DateTime? groupCreatedFromDate;
+    private DateTime? groupCreatedToDate;
+
+    // Helper properties for string binding with select elements
+    private string roleIsActiveString
+    {
+        get => roleSearchDto.IsActive?.ToString().ToLower() ?? "";
+        set
+        {
+            if (string.IsNullOrEmpty(value))
+                roleSearchDto.IsActive = null;
+            else if (bool.TryParse(value, out bool result))
+                roleSearchDto.IsActive = result;
+        }
+    }
+
+    private string groupIsActiveString
+    {
+        get => groupSearchDto.IsActive?.ToString().ToLower() ?? "";
+        set
+        {
+            if (string.IsNullOrEmpty(value))
+                groupSearchDto.IsActive = null;
+            else if (bool.TryParse(value, out bool result))
+                groupSearchDto.IsActive = result;
+        }
+    }
+
+    public class FilterTag
+    {
+        public string Label { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+    }
+
     protected override async Task OnInitializedAsync()
     {
-        await LoadUsers();
+        await LoadCurrentView();
+    }
+
+    private async Task LoadCurrentView()
+    {
+        switch (currentView)
+        {
+            case "users":
+                await LoadUsers();
+                break;
+            case "roles":
+                await LoadRoles();
+                break;
+            case "usergroups":
+                await LoadGroups();
+                break;
+        }
+    }
+
+    private async Task OnViewChanged()
+    {
+        await LoadCurrentView();
+        StateHasChanged();
     }
 
     private async Task LoadUsers(int pageNumber = 1, string? searchTerm = null)
@@ -741,12 +987,12 @@
         }
     }
 
-    private async Task ViewUserDetail(Guid userId)
-    {
-        // Navigate to user detail page or open modal
-        // This can be implemented based on your routing structure
-        await JSRuntime.InvokeVoidAsync("console.log", $"View user detail: {userId}");
-    }
+    // private async Task ViewUserDetail(Guid userId)
+    // {
+    //     Navigate to user detail page or open modal
+    //     This can be implemented based on your routing structure
+    //     await JSRuntime.InvokeVoidAsync("console.log", $"View user detail: {userId}");
+    // }
 
     private void EditUser(Guid userId)
     {
@@ -783,20 +1029,20 @@
     }
 
     // Role-related methods
-    private async Task ViewRoleDetail(string roleId)
-    {
-        // Navigate to role detail page or open modal
-        await JSRuntime.InvokeVoidAsync("console.log", $"View role detail: {roleId}");
-    }
+    // private async Task ViewRoleDetail(string roleId)
+    // {
+    //     Navigate to role detail page or open modal
+    //     await JSRuntime.InvokeVoidAsync("console.log", $"View role detail: {roleId}");
+    // }
 
-    private async Task EditRoleLink(string roleId)
+    private void EditRoleLink(string roleId)
     {
         // Navigate to edit role page or open modal
         Navigation.NavigateTo($"/accountAuthManage/editrole/{roleId}");
 
     }
 
-    private async Task ViewUsersInRole(string roleId)
+    private void ViewUsersInRole(string roleId)
     {
         // Navigate to users in role page or open modal    /accountAuthManage/role/{RoleId}/users
         Navigation.NavigateTo($"/accountAuthManage/role/{roleId}/users");
@@ -832,11 +1078,11 @@
     }
 
     // Group-related methods
-    private async Task ViewGroupDetail(string groupId)
-    {
-        // Navigate to group detail page or open modal
-        await JSRuntime.InvokeVoidAsync("console.log", $"View group detail: {groupId}");
-    }
+    // private async Task ViewGroupDetail(string groupId)
+    // {
+    //     Navigate to group detail page or open modal
+    //     await JSRuntime.InvokeVoidAsync("console.log", $"View group detail: {groupId}");
+    // }
 
     private void EditGroup(string groupId)
     {
@@ -844,7 +1090,7 @@
         Navigation.NavigateTo($"/accountAuthManage/editgroup/{groupId}");
     }
 
-    private async Task ViewUsersInGroup(string groupId)
+    private void ViewUsersInGroup(string groupId)
     {
         // Navigate to users in group page
         Navigation.NavigateTo($"/accountAuthManage/group/{groupId}/users");
@@ -876,6 +1122,450 @@
                 await JSRuntime.InvokeVoidAsync("alert", $"Lỗi: {ex.Message}");
             }
         }
+    }
+
+    // Advanced filter methods
+    private bool HasActiveFilters()
+    {
+        switch (currentView)
+        {
+            case "users":
+                return !string.IsNullOrEmpty(userSearchDto.SearchTerm) ||
+                       userSearchDto.UserStatus.HasValue ||
+                       !string.IsNullOrEmpty(userSearchDto.Department) ||
+                       !string.IsNullOrEmpty(userSearchDto.GroupId) ||
+                       !string.IsNullOrEmpty(userSearchDto.CreatedFrom) ||
+                       !string.IsNullOrEmpty(userSearchDto.CreatedTo);
+            case "roles":
+                return !string.IsNullOrEmpty(roleSearchDto.SearchTerm) ||
+                       roleSearchDto.IsActive.HasValue ||
+                       roleSearchDto.MinUserCount.HasValue ||
+                       roleSearchDto.MaxUserCount.HasValue;
+            case "usergroups":
+                return !string.IsNullOrEmpty(groupSearchDto.SearchTerm) ||
+                       groupSearchDto.IsActive.HasValue ||
+                       !string.IsNullOrEmpty(groupSearchDto.TimeActiveId) ||
+                       groupSearchDto.CreatedFrom.HasValue ||
+                       groupSearchDto.CreatedTo.HasValue;
+            default:
+                return false;
+        }
+    }
+
+    private int GetActiveFiltersCount()
+    {
+        switch (currentView)
+        {
+            case "users":
+                return (string.IsNullOrEmpty(userSearchDto.SearchTerm) ? 0 : 1) +
+                       (userSearchDto.UserStatus.HasValue ? 1 : 0) +
+                       (string.IsNullOrEmpty(userSearchDto.Department) ? 0 : 1) +
+                       (string.IsNullOrEmpty(userSearchDto.GroupId) ? 0 : 1) +
+                       (string.IsNullOrEmpty(userSearchDto.CreatedFrom) ? 0 : 1) +
+                       (string.IsNullOrEmpty(userSearchDto.CreatedTo) ? 0 : 1);
+            case "roles":
+                return (string.IsNullOrEmpty(roleSearchDto.SearchTerm) ? 0 : 1) +
+                       (roleSearchDto.IsActive.HasValue ? 1 : 0) +
+                       (roleSearchDto.MinUserCount.HasValue ? 1 : 0) +
+                       (roleSearchDto.MaxUserCount.HasValue ? 1 : 0);
+            case "usergroups":
+                return (string.IsNullOrEmpty(groupSearchDto.SearchTerm) ? 0 : 1) +
+                       (groupSearchDto.IsActive.HasValue ? 1 : 0) +
+                       (string.IsNullOrEmpty(groupSearchDto.TimeActiveId) ? 0 : 1) +
+                       (groupSearchDto.CreatedFrom.HasValue ? 1 : 0) +
+                       (groupSearchDto.CreatedTo.HasValue ? 1 : 0);
+            default:
+                return 0;
+        }
+    }
+
+    private List<FilterTag> GetActiveFilterTags()
+    {
+        var tags = new List<FilterTag>();
+        
+        switch (currentView)
+        {
+            case "users":
+                if (!string.IsNullOrEmpty(userSearchDto.SearchTerm))
+                    tags.Add(new FilterTag { Label = $"Từ khóa: {userSearchDto.SearchTerm}", Type = "searchterm" });
+                if (userSearchDto.UserStatus.HasValue)
+                    tags.Add(new FilterTag { Label = $"Trạng thái: {userSearchDto.UserStatus.Value}", Type = "status" });
+                if (!string.IsNullOrEmpty(userSearchDto.Department))
+                    tags.Add(new FilterTag { Label = $"Phòng ban: {userSearchDto.Department}", Type = "department" });
+                if (!string.IsNullOrEmpty(userSearchDto.GroupId))
+                    tags.Add(new FilterTag { Label = $"Nhóm: {userSearchDto.GroupId}", Type = "group" });
+                if (!string.IsNullOrEmpty(userSearchDto.CreatedFrom))
+                    tags.Add(new FilterTag { Label = $"Từ ngày: {userSearchDto.CreatedFrom}", Type = "datefrom" });
+                if (!string.IsNullOrEmpty(userSearchDto.CreatedTo))
+                    tags.Add(new FilterTag { Label = $"Đến ngày: {userSearchDto.CreatedTo}", Type = "dateto" });
+                break;
+            case "roles":
+                if (!string.IsNullOrEmpty(roleSearchDto.SearchTerm))
+                    tags.Add(new FilterTag { Label = $"Từ khóa: {roleSearchDto.SearchTerm}", Type = "searchterm" });
+                if (roleSearchDto.IsActive.HasValue)
+                    tags.Add(new FilterTag { Label = $"Trạng thái: {(roleSearchDto.IsActive.Value ? "Hoạt động" : "Không hoạt động")}", Type = "status" });
+                if (roleSearchDto.MinUserCount.HasValue)
+                    tags.Add(new FilterTag { Label = $"Tối thiểu user: {roleSearchDto.MinUserCount.Value}", Type = "minuser" });
+                if (roleSearchDto.MaxUserCount.HasValue)
+                    tags.Add(new FilterTag { Label = $"Tối đa user: {roleSearchDto.MaxUserCount.Value}", Type = "maxuser" });
+                break;
+            case "usergroups":
+                if (!string.IsNullOrEmpty(groupSearchDto.SearchTerm))
+                    tags.Add(new FilterTag { Label = $"Từ khóa: {groupSearchDto.SearchTerm}", Type = "searchterm" });
+                if (groupSearchDto.IsActive.HasValue)
+                    tags.Add(new FilterTag { Label = $"Trạng thái: {(groupSearchDto.IsActive.Value ? "Hoạt động" : "Không hoạt động")}", Type = "status" });
+                if (!string.IsNullOrEmpty(groupSearchDto.TimeActiveId))
+                    tags.Add(new FilterTag { Label = $"Thời gian hoạt động: {groupSearchDto.TimeActiveId}", Type = "timeactive" });
+                if (groupSearchDto.CreatedFrom.HasValue)
+                    tags.Add(new FilterTag { Label = $"Từ ngày: {groupSearchDto.CreatedFrom.Value:dd/MM/yyyy}", Type = "datefrom" });
+                if (groupSearchDto.CreatedTo.HasValue)
+                    tags.Add(new FilterTag { Label = $"Đến ngày: {groupSearchDto.CreatedTo.Value:dd/MM/yyyy}", Type = "dateto" });
+                break;
+        }
+
+        return tags;
+    }
+
+    
+
+    private async Task ResetFilters()
+    {
+        switch (currentView)
+        {
+            case "users":
+                ResetUserFilters();
+                break;
+            case "roles":
+                ResetRoleFilters();
+                break;
+            case "usergroups":
+                ResetGroupFilters();
+                break;
+        }
+
+        await ApplyFilters();
+    }
+
+    private void ResetUserFilters()
+    {
+        userSearchDto = new UserSearchDto
+        {
+            SortBy = "CreateAt",
+            SortDirection = "desc"
+        };
+        userCreatedFromDate = null;
+        userCreatedToDate = null;
+    }
+
+    private void ResetRoleFilters()
+    {
+        roleSearchDto = new RoleSearchDto
+        {
+            SortBy = "RoleId",
+            SortDirection = "asc"
+        };
+    }
+
+    private void ResetGroupFilters()
+    {
+        groupSearchDto = new GroupSearchDto
+        {
+            SortBy = "GroupId",
+            SortDirection = "asc"
+        };
+        groupCreatedFromDate = null;
+        groupCreatedToDate = null;
+    }
+
+    private void ToggleAdvancedFilter()
+    {
+        showAdvancedFilter = !showAdvancedFilter;
+        StateHasChanged();
+    }
+
+    private async Task ApplyFilters()
+    {
+        switch (currentView)
+        {
+            case "users":
+                // Nếu có filter nâng cao, dùng SearchUsersAsync, nếu không dùng GetAllUsersAsync với searchTerm
+                if (HasActiveFilters())
+                {
+                    await LoadUsersWithAdvancedFilter();
+                }
+                else
+                {
+                    await LoadUsers(1, searchTerm);
+                }
+                break;
+            case "roles":
+                if (HasActiveFilters())
+                {
+                    await LoadRolesWithAdvancedFilter();
+                }
+                else
+                {
+                    await LoadRoles(1, searchTerm);
+                }
+                break;
+            case "usergroups":
+                if (HasActiveFilters())
+                {
+                    await LoadGroupsWithAdvancedFilter();
+                }
+                else
+                {
+                    await LoadGroups(1, searchTerm);
+                }
+                break;
+        }
+    }
+
+    private async Task LoadUsersWithAdvancedFilter()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            var response = await UserApi.SearchUsersAsync(userSearchDto);
+
+            if (response != null)
+            {
+                users = response.Data.Users;
+                pagination = response.Data.Pagination;
+            }
+            else
+            {
+                users = new List<UserInfoDto>();
+                await JSRuntime.InvokeVoidAsync("console.error", "Failed to load users: No response");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception loading users: {ex.Message}");
+            users = new List<UserInfoDto>();
+            await JSRuntime.InvokeVoidAsync("console.error", $"Exception loading users: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadRolesWithAdvancedFilter()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            var response = await RoleApi.SearchRolesAsync(roleSearchDto);
+
+            if (response != null)
+            {
+                roles = response.Data.Roles;
+                rolesPagination = response.Data.Pagination;
+                pagination = new UsersPaginationInfo
+                {
+                    CurrentPage = rolesPagination.CurrentPage,
+                    PageSize = rolesPagination.PageSize,
+                    TotalCount = rolesPagination.TotalCount,
+                    TotalPages = rolesPagination.TotalPages,
+                    HasNextPage = rolesPagination.HasNextPage,
+                    HasPreviousPage = rolesPagination.HasPreviousPage
+                };
+            }
+            else
+            {
+                roles = new List<RoleInfoDto>();
+                await JSRuntime.InvokeVoidAsync("console.error", "Failed to load roles: No response");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception loading roles: {ex.Message}");
+            roles = new List<RoleInfoDto>();
+            await JSRuntime.InvokeVoidAsync("console.error", $"Exception loading roles: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadGroupsWithAdvancedFilter()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            var response = await GroupApi.SearchGroupsAsync(groupSearchDto);
+
+            if (response.IsSuccess && response.Data != null)
+            {
+                groups = response.Data.Groups;
+                groupsPagination = response.Data.Pagination;
+                pagination = new UsersPaginationInfo
+                {
+                    CurrentPage = groupsPagination.CurrentPage,
+                    PageSize = groupsPagination.PageSize,
+                    TotalCount = groupsPagination.TotalCount,
+                    TotalPages = groupsPagination.TotalPages,
+                    HasNextPage = groupsPagination.HasNextPage,
+                    HasPreviousPage = groupsPagination.HasPreviousPage
+                };
+            }
+            else
+            {
+                groups = new List<GroupInfoDto>();
+                await JSRuntime.InvokeVoidAsync("console.error", $"Failed to load groups: {response.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception loading groups: {ex.Message}");
+            groups = new List<GroupInfoDto>();
+            await JSRuntime.InvokeVoidAsync("console.error", $"Exception loading groups: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    // Date change handlers
+    private void OnUserCreatedFromDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var date))
+        {
+            userCreatedFromDate = date;
+            userSearchDto.CreatedFrom = date.ToString("yyyy-MM-dd");
+        }
+        else
+        {
+            userCreatedFromDate = null;
+            userSearchDto.CreatedFrom = null;
+        }
+    }
+
+    private void OnUserCreatedToDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var date))
+        {
+            userCreatedToDate = date;
+            userSearchDto.CreatedTo = date.ToString("yyyy-MM-dd");
+        }
+        else
+        {
+            userCreatedToDate = null;
+            userSearchDto.CreatedTo = null;
+        }
+    }
+
+    private void OnGroupCreatedFromDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var date))
+        {
+            groupCreatedFromDate = date;
+            groupSearchDto.CreatedFrom = date;
+        }
+        else
+        {
+            groupCreatedFromDate = null;
+            groupSearchDto.CreatedFrom = null;
+        }
+    }
+
+    private void OnGroupCreatedToDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var date))
+        {
+            groupCreatedToDate = date;
+            groupSearchDto.CreatedTo = date;
+        }
+        else
+        {
+            groupCreatedToDate = null;
+            groupSearchDto.CreatedTo = null;
+        }
+    }
+
+    private async Task RemoveFilterTag(FilterTag tag)
+    {
+        switch (currentView)
+        {
+            case "users":
+                switch (tag.Type)
+                {
+                    case "searchterm":
+                        userSearchDto.SearchTerm = null;
+                        break;
+                    case "status":
+                        userSearchDto.UserStatus = null;
+                        break;
+                    case "department":
+                        userSearchDto.Department = null;
+                        break;
+                    case "group":
+                        userSearchDto.GroupId = null;
+                        break;
+                    case "datefrom":
+                        userSearchDto.CreatedFrom = null;
+                        userCreatedFromDate = null;
+                        break;
+                    case "dateto":
+                        userSearchDto.CreatedTo = null;
+                        userCreatedToDate = null;
+                        break;
+                }
+                break;
+            case "roles":
+                switch (tag.Type)
+                {
+                    case "searchterm":
+                        roleSearchDto.SearchTerm = null;
+                        break;
+                    case "status":
+                        roleSearchDto.IsActive = null;
+                        break;
+                    case "minuser":
+                        roleSearchDto.MinUserCount = null;
+                        break;
+                    case "maxuser":
+                        roleSearchDto.MaxUserCount = null;
+                        break;
+                }
+                break;
+            case "usergroups":
+                switch (tag.Type)
+                {
+                    case "searchterm":
+                        groupSearchDto.SearchTerm = null;
+                        break;
+                    case "status":
+                        groupSearchDto.IsActive = null;
+                        break;
+                    case "timeactive":
+                        groupSearchDto.TimeActiveId = null;
+                        break;
+                    case "datefrom":
+                        groupSearchDto.CreatedFrom = null;
+                        groupCreatedFromDate = null;
+                        break;
+                    case "dateto":
+                        groupSearchDto.CreatedTo = null;
+                        groupCreatedToDate = null;
+                        break;
+                }
+                break;
+        }
+
+        await ApplyFilters();
     }
 
     public void Dispose()

@@ -83,6 +83,15 @@ namespace Web_health_app.ApiService.Repository
         Task<bool> FirstChangePasswordAsync(ChangePasswordModel changePasswordModel);
 
         /// <summary>
+        /// Search users with advanced filtering
+        /// </summary>
+        /// <param name="searchDto">Search criteria</param>
+        /// <param name="pageNumber">Page number (starting from 1)</param>
+        /// <param name="pageSize">Number of items per page</param>
+        /// <returns>Paginated list of filtered users</returns>
+        Task<(List<UserInfoDto> Users, int TotalCount)> SearchUsersAsync(UserSearchDto searchDto, int pageNumber = 1, int pageSize = 10);
+
+        /// <summary>
 
         Task<List<UserInfoDto>> GetUserWithCompareSecurityLevel(int level, bool lessThen = true);
     }

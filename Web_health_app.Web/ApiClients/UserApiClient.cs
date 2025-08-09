@@ -524,7 +524,8 @@ namespace Web_health_app.Web.ApiClients
         }
 
 
-        public async Task<ActionResult<bool>> FirstChangePassword(ChangePasswordModel changePasswordModel) {
+        public async Task<ActionResult<bool>> FirstChangePassword(ChangePasswordModel changePasswordModel)
+        {
 
 
             await SetAuthorizeHeader();
@@ -547,14 +548,15 @@ namespace Web_health_app.Web.ApiClients
 
 
             }
-            catch(Exception ex) { 
+            catch (Exception ex)
+            {
 
                 return false; // Error occurred while changing password
 
             }
-        
-        
-        
+
+
+
         }
 
 
@@ -590,6 +592,54 @@ namespace Web_health_app.Web.ApiClients
 
 
         }
+
+        /// <summary>
+        /// Search users with advanced filtering
+        /// </summary>
+        /// <param name="searchDto">Search criteria</param>
+        /// <param name="pageNumber">Page number (default: 1)</param>
+        /// <param name="pageSize">Page size (default: 10)</param>
+        /// <returns>Filtered users response</returns>
+        public async Task<ApiResponse<UsersApiResponse?>> SearchUsersAsync(UserSearchDto searchDto , int pageNumber = 1, int pageSize = 10)
+        {
+            try
+            {
+                await SetAuthorizeHeader();
+
+              
+                var response = await _httpClient.PostAsJsonAsync($"api/User/search?pageNumber={pageNumber}&pageSize={pageSize}",  searchDto);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<UsersApiResponse>();
+
+                    return new ApiResponse<UsersApiResponse>
+                    {
+                        IsSuccess = true,
+                        Message = "Users retrieved successfully",
+                        Data = result
+                    };
+                }
+                else
+                {
+                    Console.WriteLine($"Error searching users: {response.StatusCode} - {response.ReasonPhrase}");
+                    return null;
+                }
+
+
+
+               
+
+                
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in SearchUsersAsync: {ex.Message}");
+                return null;
+            }
+        }
+
+
     }
 
     // Supporting classes for API responses

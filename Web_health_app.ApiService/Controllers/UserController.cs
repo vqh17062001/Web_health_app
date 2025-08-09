@@ -116,9 +116,11 @@ namespace Web_health_app.ApiService.Controllers
 
         [HttpPost("firstchangepassword")]
         [AllowAnonymous]
-        public async Task<ActionResult<bool>> ChangePasswordUser([FromBody] ChangePasswordModel changePasswordModel) {
+        public async Task<ActionResult<bool>> ChangePasswordUser([FromBody] ChangePasswordModel changePasswordModel)
+        {
 
-            try {
+            try
+            {
 
 
 
@@ -128,8 +130,9 @@ namespace Web_health_app.ApiService.Controllers
                 return result;
 
             }
-            catch (Exception ex) { 
-            
+            catch (Exception ex)
+            {
+
                 return StatusCode(500, new { message = "An error occurred while retrieving user", error = ex.Message });
 
 
@@ -351,7 +354,7 @@ namespace Web_health_app.ApiService.Controllers
 
 
 
-        
+
 
         /// <summary>
         /// Get current user information from JWT token
@@ -381,10 +384,53 @@ namespace Web_health_app.ApiService.Controllers
                 return StatusCode(500, new { message = "An error occurred while retrieving current user", error = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Search users with advanced filtering
+        /// </summary>
+        /// <param name="searchDto">Search criteria</param>
+        /// <param name="pageNumber">Page number (default: 1)</param>
+        /// <param name="pageSize">Page size (default: 10)</param>
+        /// <returns>Filtered list of users</returns>
+        [HttpPost("search")]
+        [Authorize(Roles = "READ.USERS")]
+        public async Task<ActionResult> SearchUsers(
+            [FromBody] UserSearchDto searchDto,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                if (pageNumber < 1) pageNumber = 1;
+                if (pageSize < 1 || pageSize > 100) pageSize = 10;
+
+                var (users, totalCount) = await _userRepository.SearchUsersAsync(searchDto, pageNumber, pageSize);
+
+                var response = new 
+                {
+                    users = users,
+                    pagination = new
+                    {
+                        currentPage = pageNumber,
+                        pageSize = pageSize,
+                        totalCount = totalCount,
+                        totalPages = (int)Math.Ceiling((double)totalCount / pageSize),
+                        hasNextPage = pageNumber < (int)Math.Ceiling((double)totalCount / pageSize),
+                        hasPreviousPage = pageNumber > 1
+                    }
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while searching users", error = ex.Message });
+            }
+        }
     }
 
     /// <summary>
     /// DTO for changing password
     /// </summary>
-   
+
 }

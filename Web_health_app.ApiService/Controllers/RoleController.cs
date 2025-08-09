@@ -367,5 +367,48 @@ namespace Web_health_app.ApiService.Controllers
                 return StatusCode(500, new { message = "An error occurred while retrieving users in role", error = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Search roles with advanced filtering
+        /// </summary>
+        /// <param name="searchDto">Search criteria</param>
+        /// <param name="pageNumber">Page number (default: 1)</param>
+        /// <param name="pageSize">Page size (default: 10)</param>
+        /// <returns>Filtered list of roles</returns>
+        [HttpPost("search")]
+        [Authorize(Roles = "READ.ROLES")]
+        public async Task<ActionResult> SearchRoles(
+            [FromBody] RoleSearchDto searchDto,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                if (pageNumber < 1) pageNumber = 1;
+                if (pageSize < 1 || pageSize > 100) pageSize = 10;
+
+                var (roles, totalCount) = await _roleRepository.SearchRolesAsync(searchDto, pageNumber, pageSize);
+
+                var response = new
+                {
+                    roles = roles,
+                    pagination = new
+                    {
+                        currentPage = pageNumber,
+                        pageSize = pageSize,
+                        totalCount = totalCount,
+                        totalPages = (int)Math.Ceiling((double)totalCount / pageSize),
+                        hasNextPage = pageNumber < (int)Math.Ceiling((double)totalCount / pageSize),
+                        hasPreviousPage = pageNumber > 1
+                    }
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while searching roles", error = ex.Message });
+            }
+        }
     }
 }

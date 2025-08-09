@@ -61,6 +61,59 @@ namespace Web_health_app.Models.Models
         public List<string> PermissionIds { get; set; } = new List<string>();
     }
 
+    public class RoleSearchDto
+    {
+        /// <summary>
+        /// General search term for role ID or role name
+        /// </summary>
+        public string? SearchTerm { get; set; }
+
+        /// <summary>
+        /// Filter by active status
+        /// </summary>
+        public bool? IsActive { get; set; }
+
+        /// <summary>
+        /// Filter by minimum user count
+        /// </summary>
+        public int? MinUserCount { get; set; }
+
+        /// <summary>
+        /// Filter by maximum user count
+        /// </summary>
+        public int? MaxUserCount { get; set; }
+
+        /// <summary>
+        /// Filter by minimum permission count
+        /// </summary>
+        public int? MinPermissionCount { get; set; }
+
+        /// <summary>
+        /// Filter by maximum permission count
+        /// </summary>
+        public int? MaxPermissionCount { get; set; }
+
+        /// <summary>
+        /// Filter by specific permissions (comma-separated)
+        /// </summary>
+        public string? HasPermissions { get; set; }
+
+        /// <summary>
+        /// Filter by roles with no users
+        /// </summary>
+        public bool? IsEmpty { get; set; }
+
+        /// <summary>
+        /// Sort field
+        /// </summary>
+        public string SortBy { get; set; } = "RoleId";
+
+        /// <summary>
+        /// Sort direction (asc/desc)
+        /// </summary>
+        public string SortDirection { get; set; } = "asc";
+    }
+
     /// <summary>
     /// DTO for role with user count (inherits UserCount from RoleInfoDto)
     /// </summary>

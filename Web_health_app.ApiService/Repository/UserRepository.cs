@@ -43,13 +43,14 @@ namespace Web_health_app.ApiService.Repository
                             (u.Department != null && u.Department.Contains(searchTerm)));
                     }
                 }
-                else {
+                else
+                {
                     query = query
                    .Where(u => u.UserStatus != -2 && u.UserStatus != -1);// Exclude deleted users
-                   
+
                 }
 
-                    var totalCount = await query.CountAsync();
+                var totalCount = await query.CountAsync();
 
                 var users = await query
                     .OrderBy(u => u.CreateAt)
@@ -331,11 +332,12 @@ namespace Web_health_app.ApiService.Repository
         }
 
 
-        public async Task<List<UserInfoDto>> GetUserWithCompareSecurityLevel(int level, bool lessThen = true) {
+        public async Task<List<UserInfoDto>> GetUserWithCompareSecurityLevel(int level, bool lessThen = true)
+        {
             try
             {
 
-             
+
                 if (lessThen)
                 {
 
@@ -405,14 +407,15 @@ namespace Web_health_app.ApiService.Repository
         {
             try
             {
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == changePasswordModel.Username );
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == changePasswordModel.Username);
                 if (user == null)
                 {
                     return false;
                 }
-                if (!PasswordHasher.VerifyPassword(changePasswordModel.CurrentPassword, user.PasswordHash)) { 
-                
-                return false; // Verify current password
+                if (!PasswordHasher.VerifyPassword(changePasswordModel.CurrentPassword, user.PasswordHash))
+                {
+
+                    return false; // Verify current password
                 }
 
                 user.PasswordHash = PasswordHasher.HashPassword(changePasswordModel.NewPassword); // Note: Should hash password in production
@@ -428,11 +431,12 @@ namespace Web_health_app.ApiService.Repository
         }
 
 
-        public async Task<bool> FirstChangePasswordAsync(ChangePasswordModel changePasswordModel) {
+        public async Task<bool> FirstChangePasswordAsync(ChangePasswordModel changePasswordModel)
+        {
 
             try
             {
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == changePasswordModel.Username && u.PasswordHash  == changePasswordModel.CurrentPassword );
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == changePasswordModel.Username && u.PasswordHash == changePasswordModel.CurrentPassword);
                 if (user == null)
                 {
                     return false;
@@ -449,6 +453,179 @@ namespace Web_health_app.ApiService.Repository
                 throw new Exception("Error changing user password", ex);
             }
 
+        }
+
+        public async Task<(List<UserInfoDto> Users, int TotalCount)> SearchUsersAsync(UserSearchDto searchDto, int pageNumber = 1, int pageSize = 10)
+        {
+            try
+            {
+                var query = _context.Users
+                    .Include(u => u.Group)
+                    .Include(u => u.ManageByNavigation)
+                    .Where(u => u.UserStatus != -2) // Exclude deleted users
+                    .AsQueryable();
+
+                // Apply search filters
+                if (!string.IsNullOrWhiteSpace(searchDto.SearchTerm))
+                {
+                    query = query.Where(u =>
+                        u.UserName.Contains(searchDto.SearchTerm) ||
+                        (u.FullName != null && u.FullName.Contains(searchDto.SearchTerm)) ||
+                        (u.PhoneNumber != null && u.PhoneNumber.Contains(searchDto.SearchTerm)) ||
+                        (u.Department != null && u.Department.Contains(searchDto.SearchTerm)));
+                }
+
+                if (searchDto.UserStatus.HasValue)
+                {
+                    query = query.Where(u => u.UserStatus == searchDto.UserStatus.Value);
+                }
+
+                if (!string.IsNullOrWhiteSpace(searchDto.Department))
+                {
+                    query = query.Where(u => u.Department != null && u.Department.Contains(searchDto.Department));
+                }
+
+                if (!string.IsNullOrWhiteSpace(searchDto.GroupId))
+                {
+                    query = query.Where(u => u.GroupId == searchDto.GroupId);
+                }
+
+                if (searchDto.MinLevelSecurity.HasValue)
+                {
+                    query = query.Where(u => u.LevelSecurity >= searchDto.MinLevelSecurity.Value);
+                }
+
+                if (searchDto.MaxLevelSecurity.HasValue)
+                {
+                    query = query.Where(u => u.LevelSecurity <= searchDto.MaxLevelSecurity.Value);
+                }
+
+                if (searchDto.ManageBy.HasValue)
+                {
+                    query = query.Where(u => u.ManageBy == searchDto.ManageBy.Value);
+                }
+
+                if (!string.IsNullOrWhiteSpace(searchDto.CreatedFrom))
+                {
+                    if (DateTime.TryParse(searchDto.CreatedFrom, out var createdFromDate))
+                    {
+                        query = query.Where(u => u.CreateAt >= createdFromDate);
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(searchDto.CreatedTo))
+                {
+                    if (DateTime.TryParse(searchDto.CreatedTo, out var createdToDate))
+                    {
+                        query = query.Where(u => u.CreateAt <= createdToDate);
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(searchDto.UpdatedFrom))
+                {
+                    if (DateTime.TryParse(searchDto.UpdatedFrom, out var updatedFromDate))
+                    {
+                        query = query.Where(u => u.UpdateAt >= updatedFromDate);
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(searchDto.UpdatedTo))
+                {
+                    if (DateTime.TryParse(searchDto.UpdatedTo, out var updatedToDate))
+                    {
+                        query = query.Where(u => u.UpdateAt <= updatedToDate);
+                    }
+                }
+
+                if (searchDto.HasPhoneNumber.HasValue)
+                {
+                    if (searchDto.HasPhoneNumber.Value)
+                    {
+                        query = query.Where(u => !string.IsNullOrEmpty(u.PhoneNumber));
+                    }
+                    else
+                    {
+                        query = query.Where(u => string.IsNullOrEmpty(u.PhoneNumber));
+                    }
+                }
+
+                if (searchDto.HasManager.HasValue)
+                {
+                    if (searchDto.HasManager.Value)
+                    {
+                        query = query.Where(u => u.ManageBy.HasValue);
+                    }
+                    else
+                    {
+                        query = query.Where(u => !u.ManageBy.HasValue);
+                    }
+                }
+
+                // Apply sorting
+                switch (searchDto.SortBy?.ToLower())
+                {
+                    case "username":
+                        query = searchDto.SortDirection?.ToLower() == "desc"
+                            ? query.OrderByDescending(u => u.UserName)
+                            : query.OrderBy(u => u.UserName);
+                        break;
+                    case "fullname":
+                        query = searchDto.SortDirection?.ToLower() == "desc"
+                            ? query.OrderByDescending(u => u.FullName)
+                            : query.OrderBy(u => u.FullName);
+                        break;
+                    case "department":
+                        query = searchDto.SortDirection?.ToLower() == "desc"
+                            ? query.OrderByDescending(u => u.Department)
+                            : query.OrderBy(u => u.Department);
+                        break;
+                    case "createat":
+                        query = searchDto.SortDirection?.ToLower() == "desc"
+                            ? query.OrderByDescending(u => u.CreateAt)
+                            : query.OrderBy(u => u.CreateAt);
+                        break;
+                    case "levelsecurity":
+                        query = searchDto.SortDirection?.ToLower() == "desc"
+                            ? query.OrderByDescending(u => u.LevelSecurity)
+                            : query.OrderBy(u => u.LevelSecurity);
+                        break;
+                    default:
+                        query = searchDto.SortDirection?.ToLower() == "desc"
+                            ? query.OrderByDescending(u => u.CreateAt)
+                            : query.OrderBy(u => u.CreateAt);
+                        break;
+                }
+
+                var totalCount = await query.CountAsync();
+
+                var users = await query
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(u => new UserInfoDto
+                    {
+                        UserId = u.UserId,
+                        UserName = u.UserName,
+                        FullName = u.FullName,
+                        PhoneNumber = u.PhoneNumber,
+                        Department = u.Department,
+                        UserStatus = u.UserStatus,
+                        UserStatusString = u.GetUserStatusString(),
+                        ManageBy = u.ManageBy,
+                        ManagerName = u.ManageByNavigation != null ? u.ManageByNavigation.FullName ?? u.ManageByNavigation.UserName : null,
+                        LevelSecurity = u.LevelSecurity,
+                        CreateAt = u.CreateAt,
+                        UpdateAt = u.UpdateAt,
+                        GroupId = u.GroupId,
+                        GroupName = u.Group != null ? u.Group.GroupName : null
+                    })
+                    .ToListAsync();
+
+                return (users, totalCount);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error searching users", ex);
+            }
         }
 
     }

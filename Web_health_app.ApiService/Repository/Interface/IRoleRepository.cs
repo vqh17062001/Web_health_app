@@ -95,5 +95,14 @@ namespace Web_health_app.ApiService.Repository
         /// <param name="roleId">Role ID</param>
         /// <returns>List of user information assigned to the role</returns>
         Task<List<UserInfoDto>> GetUsersInRoleAsync(string roleId);
+
+        /// <summary>
+        /// Search roles with advanced filtering
+        /// </summary>
+        /// <param name="searchDto">Search criteria</param>
+        /// <param name="pageNumber">Page number (starting from 1)</param>
+        /// <param name="pageSize">Number of items per page</param>
+        /// <returns>Paginated list of filtered roles</returns>
+        Task<(List<RoleInfoDto> Roles, int TotalCount)> SearchRolesAsync(RoleSearchDto searchDto, int pageNumber = 1, int pageSize = 10);
     }
 }

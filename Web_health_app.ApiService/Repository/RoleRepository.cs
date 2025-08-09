@@ -392,5 +392,131 @@ namespace Web_health_app.ApiService.Repository
                 throw new Exception("Error retrieving users in role", ex);
             }
         }
+
+        public async Task<(List<RoleInfoDto> Roles, int TotalCount)> SearchRolesAsync(RoleSearchDto searchDto, int pageNumber = 1, int pageSize = 10)
+        {
+            try
+            {
+                var query = _context.Roles
+                    .Include(r => r.Permissions)
+                    .AsQueryable();
+
+                // Apply search filters
+                if (!string.IsNullOrWhiteSpace(searchDto.SearchTerm))
+                {
+                    query = query.Where(r =>
+                        r.RoleId.Contains(searchDto.SearchTerm) ||
+                        r.RoleName.Contains(searchDto.SearchTerm));
+                }
+
+                if (searchDto.IsActive.HasValue)
+                {
+                    query = query.Where(r => r.IsActive == searchDto.IsActive.Value);
+                }
+
+                // Apply user count filters
+                if (searchDto.MinUserCount.HasValue || searchDto.MaxUserCount.HasValue)
+                {
+                    var roleUserCounts = _context.RoleUsers
+                        .GroupBy(ru => ru.RoleId)
+                        .Select(g => new { RoleId = g.Key, UserCount = g.Count() })
+                        .AsQueryable();
+
+                    if (searchDto.MinUserCount.HasValue)
+                    {
+                        var validRoleIds = roleUserCounts
+                            .Where(ruc => ruc.UserCount >= searchDto.MinUserCount.Value)
+                            .Select(ruc => ruc.RoleId);
+                        query = query.Where(r => validRoleIds.Contains(r.RoleId));
+                    }
+
+                    if (searchDto.MaxUserCount.HasValue)
+                    {
+                        var validRoleIds = roleUserCounts
+                            .Where(ruc => ruc.UserCount <= searchDto.MaxUserCount.Value)
+                            .Select(ruc => ruc.RoleId);
+                        query = query.Where(r => validRoleIds.Contains(r.RoleId));
+                    }
+                }
+
+                // Apply permission count filters
+                if (searchDto.MinPermissionCount.HasValue)
+                {
+                    query = query.Where(r => r.Permissions.Count >= searchDto.MinPermissionCount.Value);
+                }
+
+                if (searchDto.MaxPermissionCount.HasValue)
+                {
+                    query = query.Where(r => r.Permissions.Count <= searchDto.MaxPermissionCount.Value);
+                }
+
+                // Filter by specific permissions
+                if (!string.IsNullOrWhiteSpace(searchDto.HasPermissions))
+                {
+                    var requiredPermissions = searchDto.HasPermissions.Split(',')
+                        .Select(p => p.Trim())
+                        .Where(p => !string.IsNullOrEmpty(p))
+                        .ToList();
+
+                    if (requiredPermissions.Any())
+                    {
+                        query = query.Where(r => r.Permissions.Any(p => requiredPermissions.Contains(p.PermissionId)));
+                    }
+                }
+
+                // Filter roles with no users
+                if (searchDto.IsEmpty.HasValue && searchDto.IsEmpty.Value)
+                {
+                    var rolesWithUsers = _context.RoleUsers.Select(ru => ru.RoleId).Distinct();
+                    query = query.Where(r => !rolesWithUsers.Contains(r.RoleId));
+                }
+
+                // Apply sorting
+                switch (searchDto.SortBy?.ToLower())
+                {
+                    case "rolename":
+                        query = searchDto.SortDirection?.ToLower() == "desc"
+                            ? query.OrderByDescending(r => r.RoleName)
+                            : query.OrderBy(r => r.RoleName);
+                        break;
+                    case "isactive":
+                        query = searchDto.SortDirection?.ToLower() == "desc"
+                            ? query.OrderByDescending(r => r.IsActive)
+                            : query.OrderBy(r => r.IsActive);
+                        break;
+                    case "permissioncount":
+                        query = searchDto.SortDirection?.ToLower() == "desc"
+                            ? query.OrderByDescending(r => r.Permissions.Count)
+                            : query.OrderBy(r => r.Permissions.Count);
+                        break;
+                    default:
+                        query = searchDto.SortDirection?.ToLower() == "desc"
+                            ? query.OrderByDescending(r => r.RoleId)
+                            : query.OrderBy(r => r.RoleId);
+                        break;
+                }
+
+                var totalCount = await query.CountAsync();
+
+                var roles = await query
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(r => new RoleInfoDto
+                    {
+                        RoleId = r.RoleId,
+                        RoleName = r.RoleName,
+                        IsActive = r.IsActive,
+                        Permissions = r.Permissions.Select(p => p.PermissionId).ToList(),
+                        UserCount = _context.RoleUsers.Count(ru => ru.RoleId == r.RoleId)
+                    })
+                    .ToListAsync();
+
+                return (roles, totalCount);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error searching roles", ex);
+            }
+        }
     }
 }
