@@ -230,12 +230,26 @@ namespace Web_health_app.Web.ApiClients
         /// <summary>
         /// Get student statistics
         /// </summary>
-        public async Task<ApiResponse<StudentStatisticsDto>> GetStudentStatisticsAsync(string manageId)
+        public async Task<ApiResponse<StudentStatisticsDto>> GetStudentStatisticsAsync(string manageId = null)
         {
             try
             {
                 await SetAuthorizeHeader();
-                var response = await _httpClient.GetAsync($"api/student/statistics?manageId={manageId}");
+
+                HttpResponseMessage response;
+                if (manageId != null)
+                {
+
+                    response = await _httpClient.GetAsync($"api/student/statistics?manageId={manageId}");
+
+                }
+                else { 
+                    response = await _httpClient.GetAsync($"api/student/statistics");
+
+                }
+
+
+
 
                 if (response.IsSuccessStatusCode)
                 {

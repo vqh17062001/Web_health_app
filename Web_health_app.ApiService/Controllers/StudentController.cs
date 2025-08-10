@@ -152,7 +152,8 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="studentId">Student ID</param>
         /// <returns>Student information</returns>
         [HttpGet("{studentId}")]
-        [Authorize(Roles = "READ.Students")]
+        [Authorize(Roles = "READ.Students,READ_SELF_MANAGED.Students")]
+
         public async Task<ActionResult<StudentInfoDto>> GetStudentById(string studentId)
         {
             try
@@ -242,7 +243,9 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="updateStudentDto">Updated student data</param>
         /// <returns>Updated student information</returns>
         [HttpPut("{studentId}")]
-        [Authorize(Roles = "UPDATE.Students")]
+       
+        [Authorize(Roles = "UPDATE.Students,UPDATE_SELF_MANAGED.Students")]
+
         public async Task<ActionResult<StudentInfoDto>> UpdateStudent(string studentId, [FromBody] UpdateStudentDto updateStudentDto)
         {
             try
@@ -277,7 +280,9 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="studentId">Student ID</param>
         /// <returns>Success message</returns>
         [HttpDelete("{studentId}")]
-        [Authorize(Roles = "DELETE.Students")]
+       
+        [Authorize(Roles = "DELETE.Students,DELETE_SELF_MANAGED.Students")]
+
         public async Task<ActionResult> DeleteStudent(string studentId)
         {
             try
@@ -442,7 +447,7 @@ namespace Web_health_app.ApiService.Controllers
         /// <returns>Student statistics summary</returns>
         [HttpGet("statistics")]
         [Authorize(Roles = "READ.Students,READ_SELF_MANAGED.Students")]
-        public async Task<ActionResult<StudentStatisticsDto>> GetStudentStatistics([FromQuery]string manageId)
+        public async Task<ActionResult<StudentStatisticsDto>> GetStudentStatistics([FromQuery]string manageId =null)
         {
             try
             {
