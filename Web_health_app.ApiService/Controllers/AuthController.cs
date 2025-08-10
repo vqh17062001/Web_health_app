@@ -107,6 +107,8 @@ namespace Web_health_app.ApiService.Controllers
             {
                 new Claim(ClaimTypes.Name, username),
                 new Claim("fullname", user?.FullName ?? "Unknown User"),
+                new Claim("userId", user?.UserId.ToString() ?? "Unknown User"),
+
                 
                 // Add other claims as needed
             };

@@ -538,40 +538,81 @@ namespace Web_health_app.ApiService.Repository
             }
         }
 
-        public async Task<StudentStatisticsDto> GetStudentStatisticsAsync()
+        public async Task<StudentStatisticsDto> GetStudentStatisticsAsync(string manageId = null)
         {
             try
             {
-                var totalStudents = await _context.Students.CountAsync();
-                var activeStudents = await _context.Students.CountAsync(s => s.Status >= 0);
-                var inactiveStudents = await _context.Students.CountAsync(s => s.Status < 0);
-                var studentsWithSyncData = await _context.Students.CountAsync(s => s.Status == 1 || s.Status == 10 || s.Status == 11);
-                var studentsOffline = await _context.Students.CountAsync(s => s.Status == 10);
-                var studentsOnline = await _context.Students.CountAsync(s => s.Status == 11);
-
-                var studentsByDepartment = await _context.Students
-                    .Where(s => s.Status >= 0 && !string.IsNullOrEmpty(s.Department))
-                    .GroupBy(s => s.Department)
-                    .Select(g => new { Department = g.Key, Count = g.Count() })
-                    .ToDictionaryAsync(x => x.Department!, x => x.Count);
-
-                var studentsByGender = await _context.Students
-                    .Where(s => s.Status >= 0 && !string.IsNullOrEmpty(s.Gender))
-                    .GroupBy(s => s.Gender)
-                    .Select(g => new { Gender = g.Key, Count = g.Count() })
-                    .ToDictionaryAsync(x => x.Gender!, x => x.Count);
-
-                return new StudentStatisticsDto
+                if (string.IsNullOrEmpty(manageId))
                 {
-                    TotalStudents = totalStudents,
-                    ActiveStudents = activeStudents,
-                    InactiveStudents = inactiveStudents,
-                    StudentsWithSyncData = studentsWithSyncData,
-                    StudentsOffline = studentsOffline,
-                    StudentsOnline = studentsOnline,
-                    StudentsByDepartment = studentsByDepartment,
-                    StudentsByGender = studentsByGender
-                };
+                    var totalStudents = await _context.Students.CountAsync();
+                    var activeStudents = await _context.Students.CountAsync(s => s.Status >= 0);
+                    var inactiveStudents = await _context.Students.CountAsync(s => s.Status < 0);
+                    var studentsWithSyncData = await _context.Students.CountAsync(s => s.Status == 1 || s.Status == 10 || s.Status == 11);
+                    var studentsOffline = await _context.Students.CountAsync(s => s.Status == 10);
+                    var studentsOnline = await _context.Students.CountAsync(s => s.Status == 11);
+
+                    var studentsByDepartment = await _context.Students
+                        .Where(s => s.Status >= 0 && !string.IsNullOrEmpty(s.Department))
+                        .GroupBy(s => s.Department)
+                        .Select(g => new { Department = g.Key, Count = g.Count() })
+                        .ToDictionaryAsync(x => x.Department!, x => x.Count);
+
+                    var studentsByGender = await _context.Students
+                        .Where(s => s.Status >= 0 && !string.IsNullOrEmpty(s.Gender))
+                        .GroupBy(s => s.Gender)
+                        .Select(g => new { Gender = g.Key, Count = g.Count() })
+                        .ToDictionaryAsync(x => x.Gender!, x => x.Count);
+
+                    return new StudentStatisticsDto
+                    {
+                        TotalStudents = totalStudents,
+                        ActiveStudents = activeStudents,
+                        InactiveStudents = inactiveStudents,
+                        StudentsWithSyncData = studentsWithSyncData,
+                        StudentsOffline = studentsOffline,
+                        StudentsOnline = studentsOnline,
+                        StudentsByDepartment = studentsByDepartment,
+                        StudentsByGender = studentsByGender
+                    };
+
+                }
+                else
+                {
+
+                    var guidManageId = Guid.Parse(manageId);
+
+                    var totalStudents = await _context.Students.CountAsync(s => s.ManageBy == guidManageId);
+                    var activeStudents = await _context.Students.CountAsync(s => s.Status >= 0 && s.ManageBy == guidManageId);
+                    var inactiveStudents = await _context.Students.CountAsync(s => s.Status < 0 && s.ManageBy == guidManageId);
+                    var studentsWithSyncData = await _context.Students.CountAsync(s => (s.Status == 1 || s.Status == 10 || s.Status == 11) && s.ManageBy == guidManageId);
+                    var studentsOffline = await _context.Students.CountAsync(s => s.Status == 10 && s.ManageBy == guidManageId);
+                    var studentsOnline = await _context.Students.CountAsync(s => s.Status == 11 && s.ManageBy == guidManageId);
+
+                    var studentsByDepartment = await _context.Students
+                        .Where(s => s.Status >= 0 && !string.IsNullOrEmpty(s.Department) && s.ManageBy == guidManageId)
+                        .GroupBy(s => s.Department)
+                        .Select(g => new { Department = g.Key, Count = g.Count() })
+                        .ToDictionaryAsync(x => x.Department!, x => x.Count);
+
+                    var studentsByGender = await _context.Students
+                        .Where(s => s.Status >= 0 && !string.IsNullOrEmpty(s.Gender) && s.ManageBy == guidManageId)
+                        .GroupBy(s => s.Gender)
+                        .Select(g => new { Gender = g.Key, Count = g.Count() })
+                        .ToDictionaryAsync(x => x.Gender!, x => x.Count);
+
+                    return new StudentStatisticsDto
+                    {
+                        TotalStudents = totalStudents,
+                        ActiveStudents = activeStudents,
+                        InactiveStudents = inactiveStudents,
+                        StudentsWithSyncData = studentsWithSyncData,
+                        StudentsOffline = studentsOffline,
+                        StudentsOnline = studentsOnline,
+                        StudentsByDepartment = studentsByDepartment,
+                        StudentsByGender = studentsByGender
+                    };
+                }
+
             }
             catch (Exception ex)
             {

@@ -97,7 +97,7 @@ namespace Web_health_app.ApiService.Repository
         /// Get student statistics
         /// </summary>
         /// <returns>Student statistics summary</returns>
-        Task<StudentStatisticsDto> GetStudentStatisticsAsync();
+        Task<StudentStatisticsDto> GetStudentStatisticsAsync( string manageId);
 
         /// <summary>
         /// Bulk create students

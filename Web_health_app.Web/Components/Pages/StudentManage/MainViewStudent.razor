@@ -1,5 +1,6 @@
 ﻿@page "/studentmanage/mainviewstudent"
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using Web_health_app.Web.Components.Layout
 @using Web_health_app.Models.Models
 @using Web_health_app.Web.ApiClients
@@ -385,11 +386,15 @@
                                             </button>
                                             <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton_@student.StudentId">
                                                 <li><a class="dropdown-item" href="/studentmanage/detail/@student.StudentId"><i class="fas fa-eye me-2"></i>Xem chi tiết</a></li>
+                                                <AuthorizeView Roles="UPDATE.Students">
                                                 <li><a class="dropdown-item" href="/studentmanage/edit/@student.StudentId"><i class="fas fa-edit me-2"></i>Chỉnh sửa</a></li>
+                                                </AuthorizeView>
                                                 <li>
                                                     <hr class="dropdown-divider">
                                                 </li>
+                                                <AuthorizeView Roles="DELETE.Students">
                                                 <li><a class="dropdown-item text-danger" href="#" @onclick="() => DeleteStudent(student.StudentId)" @onclick:preventDefault="true"><i class="fas fa-trash me-2"></i>Xóa</a></li>
+                                                </AuthorizeView>
                                             </ul>
                                         </div>
                                     </div>
@@ -583,17 +588,44 @@
     private int currentPage = 1;
     private int pageSize = 12;
 
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
+
+    private bool isAllRead, isOnlyManage;
+
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(
-            LoadStudents(),
-            LoadStatistics(),
-            LoadManagers(),
-            LoadDepartments()
-        );
+
+        var user = (await AuthStateTask).User;
+        isAllRead = user.IsInRole("READ.Students");
+        isOnlyManage = user.IsInRole("READ_SELF_MANAGED.Students");
+
+        if (isAllRead)
+        {
+
+            await Task.WhenAll(
+                LoadStudents(),
+                LoadStatistics(),
+                LoadManagers(),
+                LoadDepartments()
+            );
+        }
+        else if (isOnlyManage)
+
+        {
+            await Task.WhenAll(
+                LoadStudents(user.FindFirst("userId").Value),
+                LoadStatistics(user.FindFirst("userId").Value),
+                LoadManagers(),
+                LoadDepartments()
+            );
+
+        }
+
     }
 
-    private async Task LoadStudents()
+    private async Task LoadStudents(string currenUserId = null)
     {
         isLoading = true;
         StateHasChanged();
@@ -603,6 +635,13 @@
             // Use advanced search if any advanced filters are set
             if (HasAdvancedFilters())
             {
+                if (isOnlyManage) { 
+
+                    var user = (await AuthStateTask).User;
+                    searchDto.ManageBy = Guid.Parse(user.FindFirst("userId").Value); 
+                
+                }
+
                 var response = await StudentApiClient.SearchStudentsAsync(searchDto);
                 if (response.IsSuccess && response.Data != null)
                 {
@@ -619,7 +658,21 @@
             {
                 // Use simple search for backward compatibility
                 var includeInactive = filterType == "all" || filterType == "inactive";
-                var response = await StudentApiClient.GetAllStudentsAsync(currentPage, pageSize, searchTerm, includeInactive);
+
+                Web.ApiClients.ApiResponse<StudentsApiResponse> response;
+                if (currenUserId != null)
+
+                {
+                    response = await StudentApiClient.GetStudentWithManageIDsAsync(currentPage, pageSize, searchTerm, includeInactive, currenUserId);
+
+                }
+                else
+                {
+                    response = await StudentApiClient.GetAllStudentsAsync(currentPage, pageSize, searchTerm, includeInactive);
+
+                }
+
+
                 if (response.IsSuccess && response.Data != null)
                 {
                     students = response.Data.Students ?? new List<StudentInfoDto>();
@@ -644,11 +697,11 @@
         }
     }
 
-    private async Task LoadStatistics()
+    private async Task LoadStatistics(string manageId= null)
     {
         try
         {
-            var response = await StudentApiClient.GetStudentStatisticsAsync();
+            var response = await StudentApiClient.GetStudentStatisticsAsync(manageId);
             if (response.IsSuccess && response.Data != null)
             {
                 statistics = response.Data;

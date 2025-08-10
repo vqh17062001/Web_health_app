@@ -99,6 +99,56 @@ namespace Web_health_app.Web.ApiClients
             }
         }
 
+
+        public async Task<ApiResponse<StudentsApiResponse>> GetStudentWithManageIDsAsync(int pageNumber = 1, int pageSize = 20, string? searchTerm = null, bool includeInactive = false, string manageId =null)
+        {
+            try
+            {
+                await SetAuthorizeHeader();
+
+                var queryParams = new List<string>
+                {
+                    $"pageNumber={pageNumber}",
+                    $"pageSize={pageSize}",
+                    $"includeInactive={includeInactive}",
+                    $"managerID={manageId}"
+
+                };
+
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    queryParams.Add($"searchTerm={Uri.EscapeDataString(searchTerm)}");
+                }
+
+                var queryString = string.Join("&", queryParams);
+                var response = await _httpClient.GetAsync($"api/student/StudentWithManager?{queryString}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var result = JsonSerializer.Deserialize<StudentsApiResponse>(content, _jsonOptions);
+                    return new ApiResponse<StudentsApiResponse> { IsSuccess = true, Data = result };
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    return new ApiResponse<StudentsApiResponse>
+                    {
+                        IsSuccess = false,
+                        Message = $"API Error: {response.StatusCode} - {errorContent}"
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<StudentsApiResponse>
+                {
+                    IsSuccess = false,
+                    Message = $"Exception: {ex.Message}"
+                };
+            }
+        }
+
         /// <summary>
         /// Get student by ID
         /// </summary>
@@ -180,12 +230,12 @@ namespace Web_health_app.Web.ApiClients
         /// <summary>
         /// Get student statistics
         /// </summary>
-        public async Task<ApiResponse<StudentStatisticsDto>> GetStudentStatisticsAsync()
+        public async Task<ApiResponse<StudentStatisticsDto>> GetStudentStatisticsAsync(string manageId)
         {
             try
             {
                 await SetAuthorizeHeader();
-                var response = await _httpClient.GetAsync("api/student/statistics");
+                var response = await _httpClient.GetAsync($"api/student/statistics?manageId={manageId}");
 
                 if (response.IsSuccessStatusCode)
                 {

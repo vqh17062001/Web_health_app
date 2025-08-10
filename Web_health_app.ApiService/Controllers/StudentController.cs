@@ -64,7 +64,7 @@ namespace Web_health_app.ApiService.Controllers
         }
 
         [HttpGet("StudentWithManager")]
-        [Authorize(Roles = "READ.Students")]
+        [Authorize(Roles = "READ_SELF_MANAGED.Students")]
         public async Task<ActionResult<StudentsApiResponse>> GetAllStudentsManaged(
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 20,
@@ -110,7 +110,9 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="searchDto">Search criteria</param>
         /// <returns>Filtered list of students</returns>
         [HttpPost("search")]
-        [Authorize(Roles = "READ.Students")]
+  
+        [Authorize(Roles = "READ.Students,READ_SELF_MANAGED.Students")]
+
         public async Task<ActionResult<StudentsApiResponse>> SearchStudents([FromBody] StudentSearchDto searchDto)
         {
             try
@@ -439,12 +441,12 @@ namespace Web_health_app.ApiService.Controllers
         /// </summary>
         /// <returns>Student statistics summary</returns>
         [HttpGet("statistics")]
-        [Authorize(Roles = "READ.Students")]
-        public async Task<ActionResult<StudentStatisticsDto>> GetStudentStatistics()
+        [Authorize(Roles = "READ.Students,READ_SELF_MANAGED.Students")]
+        public async Task<ActionResult<StudentStatisticsDto>> GetStudentStatistics([FromQuery]string manageId)
         {
             try
             {
-                var statistics = await _studentRepository.GetStudentStatisticsAsync();
+                var statistics = await _studentRepository.GetStudentStatisticsAsync(manageId);
                 return Ok(statistics);
             }
             catch (Exception ex)
