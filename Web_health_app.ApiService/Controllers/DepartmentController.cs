@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Web_health_app.ApiService.Repository;
+using Web_health_app.ApiService.Repository.Interface;
 using Web_health_app.Models.Models;
 
 namespace Web_health_app.ApiService.Controllers

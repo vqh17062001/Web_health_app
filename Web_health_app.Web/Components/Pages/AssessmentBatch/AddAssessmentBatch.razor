@@ -1,11 +1,22 @@
 ﻿@page "/assessmentbatch/add"
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Authorization
 @using Web_health_app.Web.Components.Layout
+@using Web_health_app.Models.Models
+@using Web_health_app.Web.ApiClients
+@inject AssessmentBatchApiClient AssessmentBatchApiClient
+@inject UserApiClient UserApiClient
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 @layout EmptyLayout
-@attribute [Authorize(Roles = "AddAssessmentBatch")]
+@attribute [Authorize(Roles = "CREATE.AssessmentBatch")]
 
 <link href="/css/AssessmentBatch/add-assessment-batch.css" rel="stylesheet" />
+<link href="/css/AssessmentBatch/add-assessment-batch-new.css" rel="stylesheet" />
+<script src="/js/assessment-batch.js"></script>
 
 <div class="add-assessment-container">
     <div class="add-assessment-card">
@@ -27,7 +38,29 @@
 
         <!-- Form Body -->
         <div class="card-body">
-            <form class="add-assessment-form">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    @errorMessage
+                    <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(successMessage))
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>
+                    @successMessage
+                    <button type="button" class="btn-close" @onclick="() => successMessage = string.Empty"></button>
+                </div>
+            }
+
+            <EditForm id="assessment-form" Model="createAssessmentBatch" OnValidSubmit="HandleSubmit"
+                class="add-assessment-form">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger mb-3" />
+
                 <!-- Basic Information Section -->
                 <div class="form-section">
                     <h3 class="section-title">
@@ -39,11 +72,12 @@
                         <div class="form-group full-width">
                             <label class="form-label">
                                 <i class="fas fa-tag"></i>
-                                Tên Đợt Kiểm Tra <span class="required">*</span>
+                                Mã đợt kiểm tra <span class="required">*</span>
                             </label>
-                            <input type="text" class="form-control" id="assessmentName" name="assessmentName"
-                                   placeholder="Nhập tên đợt kiểm tra (VD: Kiểm tra thể lực học kỳ I 2024)" 
-                                   maxlength="200" required />
+                            <InputText @bind-Value="createAssessmentBatch.CodeName" class="form-control"
+                                placeholder="Nhập tên đợt kiểm tra (VD:Kiem tra the luc thang 5 nam 2025)"
+                                maxlength="100" />
+                            <ValidationMessage For="@(() => createAssessmentBatch.CodeName)" />
                         </div>
                     </div>
 
@@ -53,40 +87,9 @@
                                 <i class="fas fa-align-left"></i>
                                 Mô Tả Chi Tiết
                             </label>
-                            <textarea class="form-control" id="description" name="description" rows="4"
-                                      placeholder="Mô tả mục đích, nội dung và yêu cầu của đợt kiểm tra..."></textarea>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-list-ul"></i>
-                                Loại Kiểm Tra <span class="required">*</span>
-                            </label>
-                            <select class="form-select" id="assessmentType" name="assessmentType" required>
-                                <option value="">-- Chọn loại kiểm tra --</option>
-                                <option value="comprehensive">Đánh Giá Tổng Hợp</option>
-                                <option value="physical">Thể Lực Cơ Bản</option>
-                                <option value="endurance">Sức Bền Tim Mạch</option>
-                                <option value="strength">Sức Mạnh Cơ Bắp</option>
-                                <option value="flexibility">Độ Dẻo Dai</option>
-                                <option value="health">Chỉ Số Sức Khỏe</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-layer-group"></i>
-                                Mức Độ Ưu Tiên <span class="required">*</span>
-                            </label>
-                            <select class="form-select" id="priority" name="priority" required>
-                                <option value="">-- Chọn mức độ --</option>
-                                <option value="low">Thấp</option>
-                                <option value="medium">Trung Bình</option>
-                                <option value="high">Cao</option>
-                                <option value="critical">Quan Trọng</option>
-                            </select>
+                            <InputTextArea @bind-Value="createAssessmentBatch.Description" class="form-control" rows="4"
+                                placeholder="Mô tả mục đích, nội dung và yêu cầu của đợt kiểm tra..." />
+                            <ValidationMessage For="@(() => createAssessmentBatch.Description)" />
                         </div>
                     </div>
                 </div>
@@ -95,7 +98,7 @@
                 <div class="form-section">
                     <h3 class="section-title">
                         <i class="fas fa-calendar-alt"></i>
-                        Lịch Trình Thực Hiện
+                        Lịch Trình Và Người Thực Hiện
                     </h3>
 
                     <div class="form-row">
@@ -104,442 +107,116 @@
                                 <i class="fas fa-play-circle"></i>
                                 Ngày Bắt Đầu <span class="required">*</span>
                             </label>
-                            <input type="date" class="form-control" id="startDate" name="startDate" required />
+                            <InputDate @bind-Value="createAssessmentBatch.StartDate" class="form-control" />
+                            <ValidationMessage For="@(() => createAssessmentBatch.StartDate)" />
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">
-                                <i class="fas fa-stop-circle"></i>
-                                Ngày Kết Thúc <span class="required">*</span>
+                                <i class="fas fa-user-tie"></i>
+                                Người Quản Lý <span class="required">*</span>
                             </label>
-                            <input type="date" class="form-control" id="endDate" name="endDate" required />
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-clock"></i>
-                                Thời Gian Bắt Đầu
-                            </label>
-                            <input type="time" class="form-control" id="startTime" name="startTime" />
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-hourglass-end"></i>
-                                Thời Gian Kết Thúc
-                            </label>
-                            <input type="time" class="form-control" id="endTime" name="endTime" />
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-calendar-week"></i>
-                                Ngày Trong Tuần
-                            </label>
-                            <div class="checkbox-group">
-                                <label class="checkbox-item">
-                                    <input type="checkbox" name="weekdays" value="monday" />
-                                    <span class="checkbox-label">Thứ 2</span>
-                                </label>
-                                <label class="checkbox-item">
-                                    <input type="checkbox" name="weekdays" value="tuesday" />
-                                    <span class="checkbox-label">Thứ 3</span>
-                                </label>
-                                <label class="checkbox-item">
-                                    <input type="checkbox" name="weekdays" value="wednesday" />
-                                    <span class="checkbox-label">Thứ 4</span>
-                                </label>
-                                <label class="checkbox-item">
-                                    <input type="checkbox" name="weekdays" value="thursday" />
-                                    <span class="checkbox-label">Thứ 5</span>
-                                </label>
-                                <label class="checkbox-item">
-                                    <input type="checkbox" name="weekdays" value="friday" />
-                                    <span class="checkbox-label">Thứ 6</span>
-                                </label>
-                                <label class="checkbox-item">
-                                    <input type="checkbox" name="weekdays" value="saturday" />
-                                    <span class="checkbox-label">Thứ 7</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-stopwatch"></i>
-                                Thời Gian Ước Tính (phút)
-                            </label>
-                            <input type="number" class="form-control" id="estimatedDuration" name="estimatedDuration"
-                                   placeholder="Nhập thời gian (phút)" min="15" max="480" />
+                            @if (availableManagers.Any())
+                            {
+                                <InputSelect @bind-Value="createAssessmentBatch.ManagerBy" class="form-select">
+                                    <option value="">-- Chọn người quản lý --</option>
+                                    @foreach (var manager in availableManagers)
+                                    {
+                                        <option value="@manager.UserId">
+                                            @if (!string.IsNullOrEmpty(manager.FullName))
+                                            {
+                                                @($"{manager.FullName} ({manager.UserName})")
+                                            }
+                                            else
+                                            {
+                                                @manager.UserName
+                                            }
+                                        </option>
+                                    }
+                                </InputSelect>
+                            }
+                            else
+                            {
+                                <div class="loading-placeholder">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    Đang tải danh sách người quản lý...
+                                </div>
+                            }
+                            <ValidationMessage For="@(() => createAssessmentBatch.ManagerBy)" />
                         </div>
                     </div>
                 </div>
 
-                <!-- Participants Management Section -->
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-users"></i>
-                        Đối Tượng Tham Gia
-                    </h3>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-graduation-cap"></i>
-                                Khối Lớp <span class="required">*</span>
-                            </label>
-                            <div class="checkbox-group">
-                                <label class="checkbox-item">
-                                    <input type="checkbox" name="grades" value="10" />
-                                    <span class="checkbox-label">Khối 10</span>
-                                </label>
-                                <label class="checkbox-item">
-                                    <input type="checkbox" name="grades" value="11" />
-                                    <span class="checkbox-label">Khối 11</span>
-                                </label>
-                                <label class="checkbox-item">
-                                    <input type="checkbox" name="grades" value="12" />
-                                    <span class="checkbox-label">Khối 12</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-venus-mars"></i>
-                                Giới Tính
-                            </label>
-                            <div class="checkbox-group">
-                                <label class="checkbox-item">
-                                    <input type="checkbox" name="gender" value="male" />
-                                    <span class="checkbox-label">Nam</span>
-                                </label>
-                                <label class="checkbox-item">
-                                    <input type="checkbox" name="gender" value="female" />
-                                    <span class="checkbox-label">Nữ</span>
-                                </label>
-                                <label class="checkbox-item">
-                                    <input type="checkbox" name="gender" value="all" checked />
-                                    <span class="checkbox-label">Tất cả</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-hashtag"></i>
-                                Số Lượng Dự Kiến
-                            </label>
-                            <input type="number" class="form-control" id="expectedParticipants" name="expectedParticipants"
-                                   placeholder="Nhập số lượng dự kiến" min="1" max="10000" />
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-user-check"></i>
-                                Điều Kiện Tham Gia
-                            </label>
-                            <select class="form-select" id="participationRequirement" name="participationRequirement">
-                                <option value="">-- Chọn điều kiện --</option>
-                                <option value="all">Tất cả học sinh</option>
-                                <option value="healthy">Chỉ học sinh khỏe mạnh</option>
-                                <option value="voluntary">Tự nguyện tham gia</option>
-                                <option value="selected">Được chọn lọc</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Test Configuration Section -->
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-clipboard-list"></i>
-                        Cấu Hình Bài Kiểm Tra
-                    </h3>
-
-                    <div class="tests-container">
-                        <div class="test-category">
-                            <h4 class="category-title">
-                                <i class="fas fa-heart"></i>
-                                Sức Bền Tim Mạch
-                            </h4>
-                            <div class="test-options">
-                                <label class="test-option">
-                                    <input type="checkbox" name="tests" value="run_12min" />
-                                    <span class="test-name">Chạy 12 phút</span>
-                                    <span class="test-description">Đo khả năng chạy trong 12 phút</span>
-                                </label>
-                                <label class="test-option">
-                                    <input type="checkbox" name="tests" value="run_1000m" />
-                                    <span class="test-name">Chạy 1000m</span>
-                                    <span class="test-description">Đo thời gian chạy 1000m</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="test-category">
-                            <h4 class="category-title">
-                                <i class="fas fa-dumbbell"></i>
-                                Sức Mạnh Cơ Bắp
-                            </h4>
-                            <div class="test-options">
-                                <label class="test-option">
-                                    <input type="checkbox" name="tests" value="push_ups" />
-                                    <span class="test-name">Hít đất</span>
-                                    <span class="test-description">Số lần hít đất trong 1 phút</span>
-                                </label>
-                                <label class="test-option">
-                                    <input type="checkbox" name="tests" value="sit_ups" />
-                                    <span class="test-name">Gập bụng</span>
-                                    <span class="test-description">Số lần gập bụng trong 1 phút</span>
-                                </label>
-                                <label class="test-option">
-                                    <input type="checkbox" name="tests" value="pull_ups" />
-                                    <span class="test-name">Kéo xà</span>
-                                    <span class="test-description">Số lần kéo xà đơn</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="test-category">
-                            <h4 class="category-title">
-                                <i class="fas fa-expand"></i>
-                                Độ Dẻo Dai
-                            </h4>
-                            <div class="test-options">
-                                <label class="test-option">
-                                    <input type="checkbox" name="tests" value="flexibility" />
-                                    <span class="test-name">Uốn dẻo thân mình</span>
-                                    <span class="test-description">Đo độ dẻo dai cột sống</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="test-category">
-                            <h4 class="category-title">
-                                <i class="fas fa-weight"></i>
-                                Chỉ Số Cơ Thể
-                            </h4>
-                            <div class="test-options">
-                                <label class="test-option">
-                                    <input type="checkbox" name="tests" value="bmi" />
-                                    <span class="test-name">BMI</span>
-                                    <span class="test-description">Chỉ số khối cơ thể</span>
-                                </label>
-                                <label class="test-option">
-                                    <input type="checkbox" name="tests" value="body_fat" />
-                                    <span class="test-name">Tỷ lệ mỡ cơ thể</span>
-                                    <span class="test-description">Đo tỷ lệ mỡ trong cơ thể</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Location & Equipment Section -->
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-map-marker-alt"></i>
-                        Địa Điểm và Thiết Bị
-                    </h3>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-building"></i>
-                                Địa Điểm Tổ Chức <span class="required">*</span>
-                            </label>
-                            <select class="form-select" id="location" name="location" required>
-                                <option value="">-- Chọn địa điểm --</option>
-                                <option value="gym">Phòng Gym</option>
-                                <option value="playground">Sân Chơi</option>
-                                <option value="sports_hall">Nhà Thể Thao</option>
-                                <option value="outdoor_field">Sân Ngoài Trời</option>
-                                <option value="swimming_pool">Bể Bơi</option>
-                                <option value="track_field">Sân Điền Kinh</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-map"></i>
-                                Địa Chỉ Chi Tiết
-                            </label>
-                            <input type="text" class="form-control" id="locationAddress" name="locationAddress"
-                                   placeholder="Nhập địa chỉ chi tiết của địa điểm" />
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group full-width">
-                            <label class="form-label">
-                                <i class="fas fa-tools"></i>
-                                Thiết Bị Cần Thiết
-                            </label>
-                            <div class="equipment-grid">
-                                <label class="equipment-item">
-                                    <input type="checkbox" name="equipment" value="stopwatch" />
-                                    <span class="equipment-name">Đồng hồ bấm giờ</span>
-                                </label>
-                                <label class="equipment-item">
-                                    <input type="checkbox" name="equipment" value="scale" />
-                                    <span class="equipment-name">Cân điện tử</span>
-                                </label>
-                                <label class="equipment-item">
-                                    <input type="checkbox" name="equipment" value="measuring_tape" />
-                                    <span class="equipment-name">Thước đo</span>
-                                </label>
-                                <label class="equipment-item">
-                                    <input type="checkbox" name="equipment" value="mat" />
-                                    <span class="equipment-name">Thảm tập</span>
-                                </label>
-                                <label class="equipment-item">
-                                    <input type="checkbox" name="equipment" value="pull_up_bar" />
-                                    <span class="equipment-name">Xà đơn</span>
-                                </label>
-                                <label class="equipment-item">
-                                    <input type="checkbox" name="equipment" value="cones" />
-                                    <span class="equipment-name">Cọc tiêu</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Supervisors and Instructions Section -->
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-user-tie"></i>
-                        Giám Sát và Hướng Dẫn
-                    </h3>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-user-graduate"></i>
-                                Giáo Viên Phụ Trách <span class="required">*</span>
-                            </label>
-                            <select class="form-select" id="supervisor" name="supervisor" required>
-                                <option value="">-- Chọn giáo viên --</option>
-                                <option value="teacher1">Thầy Nguyễn Văn A</option>
-                                <option value="teacher2">Cô Trần Thị B</option>
-                                <option value="teacher3">Thầy Lê Văn C</option>
-                                <option value="teacher4">Cô Phạm Thị D</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-users-cog"></i>
-                                Trợ Giáo
-                            </label>
-                            <select class="form-select" id="assistants" name="assistants" multiple>
-                                <option value="">-- Chọn trợ giáo --</option>
-                                <option value="assistant1">Anh Hoàng Văn E</option>
-                                <option value="assistant2">Chị Võ Thị F</option>
-                                <option value="assistant3">Anh Đặng Văn G</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group full-width">
-                            <label class="form-label">
-                                <i class="fas fa-clipboard-check"></i>
-                                Hướng Dẫn Đặc Biệt
-                            </label>
-                            <textarea class="form-control" id="specialInstructions" name="specialInstructions" rows="4"
-                                      placeholder="Ghi chú các hướng dẫn đặc biệt, biện pháp an toàn, quy trình thực hiện..."></textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Configuration Section -->
+                <!-- Status Section -->
                 <div class="form-section">
                     <h3 class="section-title">
                         <i class="fas fa-cogs"></i>
-                        Cấu Hình Khác
+                        Trạng Thái
                     </h3>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">
-                                <i class="fas fa-bell"></i>
-                                Thông Báo Trước (ngày)
+                                <i class="fas fa-toggle-on"></i>
+                                Trạng Thái Ban Đầu <span class="required">*</span>
                             </label>
-                            <input type="number" class="form-control" id="notificationDays" name="notificationDays"
-                                   placeholder="Số ngày thông báo trước" min="0" max="30" value="3" />
+                            <InputSelect @bind-Value="createAssessmentBatch.Status" class="form-select">
+                                <option value="0">Nháp</option>
+                                <option value="1">Đã được phê duyệt</option>
+
+                            </InputSelect>
+                            <ValidationMessage For="@(() => createAssessmentBatch.Status)" />
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">
-                                <i class="fas fa-redo"></i>
-                                Cho Phép Thi Lại
+                                <i class="fas fa-info-circle"></i>
+                                Trạng Thái Hiện Tại
                             </label>
-                            <div class="toggle-switch">
-                                <input type="checkbox" id="allowRetake" name="allowRetake" class="toggle-input" />
-                                <label for="allowRetake" class="toggle-label">
-                                    <span class="toggle-button"></span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-eye"></i>
-                                Công Khai Kết Quả
-                            </label>
-                            <div class="toggle-switch">
-                                <input type="checkbox" id="publicResults" name="publicResults" class="toggle-input" />
-                                <label for="publicResults" class="toggle-label">
-                                    <span class="toggle-button"></span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-file-export"></i>
-                                Tự Động Xuất Báo Cáo
-                            </label>
-                            <div class="toggle-switch">
-                                <input type="checkbox" id="autoReport" name="autoReport" class="toggle-input" checked />
-                                <label for="autoReport" class="toggle-label">
-                                    <span class="toggle-button"></span>
-                                </label>
+                            <div class="status-display">
+                                <span class="badge @GetStatusClass(createAssessmentBatch.Status)">
+                                    @GetStatusText(createAssessmentBatch.Status)
+                                </span>
                             </div>
                         </div>
                     </div>
                 </div>
-            </form>
+            </EditForm>
         </div>
 
         <!-- Footer Actions -->
         <div class="card-footer">
             <div class="action-buttons">
-                <button type="button" class="btn btn-draft">
-                    <i class="fas fa-save"></i>
+                <button type="button" class="btn btn-draft" @onclick="SaveDraft" disabled="@isSubmitting">
+                    @if (isSubmitting && isDraftSave)
+                    {
+                        <i class="fas fa-spinner fa-spin"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-save"></i>
+                    }
                     Lưu Nháp
                 </button>
-                <button type="button" class="btn btn-preview">
+                <button type="button" class="btn btn-preview" @onclick="PreviewAssessment" disabled="@isSubmitting">
                     <i class="fas fa-eye"></i>
                     Xem Trước
                 </button>
-                <button type="button" class="btn btn-cancel" onclick="window.history.back()">
+                <button type="button" class="btn btn-cancel" @onclick="CancelAndGoBack" disabled="@isSubmitting">
                     <i class="fas fa-times"></i>
                     Hủy Bỏ
                 </button>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-paper-plane"></i>
-                    Tạo Đợt Kiểm Tra
+                <button type="submit" form="assessment-form" class="btn btn-primary" disabled="@isSubmitting"
+                    @onclick="SubmitForm">
+                    @if (isSubmitting && !isDraftSave)
+                    {
+                        <i class="fas fa-spinner fa-spin"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-paper-plane"></i>
+                    }
+                    Tạo Đợt Kiểm Tra Và Thêm Học Viên Kiểm Tra 
                 </button>
             </div>
         </div>
@@ -547,5 +224,209 @@
 </div>
 
 @code {
+    // Form model
+    private CreateAssessmentBatchDto createAssessmentBatch = new CreateAssessmentBatchDto();
 
+    // State variables
+    private bool isSubmitting = false;
+    private bool isDraftSave = false;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+
+    // Data for dropdowns
+    private List<UserInfoDto> availableManagers = new List<UserInfoDto>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Set default values
+        createAssessmentBatch.StartDate = DateTime.Today.AddDays(1);
+        createAssessmentBatch.EndDate = DateTime.Today.AddDays(7);
+        createAssessmentBatch.Status = 0; // draw by default
+
+        // Load available managers
+        await LoadAvailableManagers();
+
+        // Get current user ID (this should be implemented properly with authentication)
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated == true)
+            {
+                var userIdClaim = authState.User.FindFirst("sub") ?? authState.User.FindFirst("id");
+                if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId))
+                {
+                    createAssessmentBatch.CreatedBy = userId;
+                }
+                else
+                {
+                    createAssessmentBatch.CreatedBy = Guid.NewGuid(); // Fallback
+                }
+            }
+        }
+        catch
+        {
+            createAssessmentBatch.CreatedBy = Guid.NewGuid(); // Fallback
+        }
+    }
+
+    private async Task LoadAvailableManagers()
+    {
+        try
+        {
+            var response = await UserApiClient.GetAllUsersAsync(1, 50);
+            if (response?.IsSuccess == true && response.Data?.Users != null)
+            {
+                availableManagers = response.Data.Users.ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading managers: {ex.Message}");
+            errorMessage = "Không thể tải danh sách người quản lý.";
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        await SubmitForm();
+    }
+
+    private async Task SubmitForm()
+    {
+        if (isSubmitting) return;
+
+        try
+        {
+            isSubmitting = true;
+            isDraftSave = false;
+            errorMessage = string.Empty;
+            successMessage = string.Empty;
+
+            // Validate data
+            if (createAssessmentBatch.StartDate < DateTime.Today)
+            {
+                errorMessage = "Ngày bắt đầu không thể trong quá khứ.";
+                return;
+            }
+
+            if (!createAssessmentBatch.ManagerBy.HasValue)
+            {
+                errorMessage = "Vui lòng chọn người quản lý.";
+                return;
+            }
+
+            // Set EndDate same as StartDate if not provided (for compatibility)
+            if (createAssessmentBatch.EndDate == DateTime.MinValue)
+            {
+                createAssessmentBatch.EndDate = createAssessmentBatch.StartDate.AddDays(30); // Default 30 days duration
+            }
+
+            // Call API to create assessment batch
+            var result = await AssessmentBatchApiClient.CreateAssessmentBatchAsync(createAssessmentBatch);
+
+            if (result != null)
+            {
+                successMessage = "Đợt kiểm tra đã được tạo thành công!";
+                await JSRuntime.InvokeVoidAsync("showSuccessToast", "Tạo đợt kiểm tra thành công!");
+
+                // Redirect to assessment batch list after a short delay
+                await Task.Delay(2000);
+                Navigation.NavigateTo("/assessment-batch");
+            }
+            else
+            {
+                errorMessage = "Có lỗi xảy ra khi tạo đợt kiểm tra. Vui lòng thử lại.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Lỗi: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task SaveDraft()
+    {
+        if (isSubmitting) return;
+
+        try
+        {
+            isSubmitting = true;
+            isDraftSave = true;
+            errorMessage = string.Empty;
+            successMessage = string.Empty;
+
+            // Set status to draft
+            var originalStatus = createAssessmentBatch.Status;
+            createAssessmentBatch.Status = 0; // Draft
+
+            var result = await AssessmentBatchApiClient.CreateAssessmentBatchAsync(createAssessmentBatch);
+
+            if (result != null)
+            {
+                successMessage = "Đã lưu nháp thành công!";
+                await JSRuntime.InvokeVoidAsync("showSuccessToast", "Lưu nháp thành công!");
+            }
+            else
+            {
+                errorMessage = "Có lỗi xảy ra khi lưu nháp. Vui lòng thử lại.";
+                createAssessmentBatch.Status = originalStatus; // Restore original status
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Lỗi khi lưu nháp: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+            isDraftSave = false;
+        }
+    }
+
+    private async Task PreviewAssessment()
+    {
+        // Implement preview functionality - could open a modal or navigate to preview page
+        await JSRuntime.InvokeVoidAsync("showInfoToast", "Tính năng xem trước đang được phát triển");
+    }
+
+    private async Task CancelAndGoBack()
+    {
+        // Show confirmation dialog before going back
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Bạn có chắc chắn muốn hủy? Mọi thay đổi sẽ bị mất.");
+
+        if (confirmed)
+        {
+            Navigation.NavigateTo("/assessment-batch");
+        }
+    }
+
+    // Helper method to get status text
+    private string GetStatusText(short status)
+    {
+        return status switch
+        {
+            0 => "Nháp",
+            1 => "Hoạt động",
+            2 => "Tạm dừng",
+            3 => "Hoàn thành",
+            _ => "Không xác định"
+        };
+    }
+
+    // Helper method to get status CSS class
+    private string GetStatusClass(short status)
+    {
+        return status switch
+        {
+            0 => "status-draft",
+            1 => "status-active",
+            2 => "status-paused",
+            3 => "status-completed",
+            _ => "status-unknown"
+        };
+    }
 }

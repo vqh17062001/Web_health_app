@@ -1,6 +1,6 @@
 using Web_health_app.Models.Models;
 
-namespace Web_health_app.ApiService.Repository
+namespace Web_health_app.ApiService.Repository.Interface
 {
     public interface IDepartmentRepository
     {

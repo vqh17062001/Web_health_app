@@ -28,6 +28,8 @@ namespace Web_health_app.Models.Models
 
         public DateTime? UpdatedAt { get; set; }
 
+        public Guid? ManagerBy { get; set; }
+
         public Guid CreatedBy { get; set; }
 
         public string? CreatedByName { get; set; }
@@ -60,6 +62,8 @@ namespace Web_health_app.Models.Models
         [Required(ErrorMessage = "Status is required")]
         public short Status { get; set; } = 1;
 
+        public Guid? ManagerBy { get; set; }
+
         public Guid CreatedBy { get; set; }
     }
 
@@ -77,6 +81,9 @@ namespace Web_health_app.Models.Models
         public DateTime? StartDate { get; set; }
 
         public DateTime? EndDate { get; set; }
+
+        public Guid? ManagerBy { get; set; }
+
 
         public short? Status { get; set; }
     }

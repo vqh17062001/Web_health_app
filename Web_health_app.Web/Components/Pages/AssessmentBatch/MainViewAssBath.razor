@@ -5,6 +5,7 @@
 @using Web_health_app.Web.ApiClients
 @inject AssessmentBatchApiClient AssessmentBatchApiClient
 @inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
 @attribute [Authorize(Roles = "ACCESS.MainViewAssBath")]
 
 <PageTitle>Quản lý Kiểm tra Thể lực</PageTitle>
@@ -86,7 +87,7 @@
         <div class="card filter-card mb-4">
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="form-label">Tìm kiếm</label>
                         <div class="search-box">
                             <input type="text" class="form-control" placeholder="Tên đợt kiểm tra..." @bind="searchText"
@@ -94,17 +95,19 @@
                             <i class="fas fa-search search-icon"></i>
                         </div>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3">
                         <label class="form-label">Trạng thái</label>
                         <select class="form-select" @bind="selectedStatus" @bind:event="onchange">
                             <option value="">Tất cả</option>
-                            <option value="draft">Nháp</option>
-                            <option value="active">Đang tiến hành</option>
-                            <option value="completed">Hoàn thành</option>
-                            <option value="cancelled">Đã hủy</option>
+                            <option value="0">Nháp</option>
+                            <option value="1">Đã được phê duyệt</option>
+
+                            <option value="2">Đang tiến hành</option>
+                            <option value="3">Hoàn thành</option>
+                            <option value="-1">Đã hủy</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    @* <div class="col-md-2">
                         <label class="form-label">Loại kiểm tra</label>
                         <select class="form-select" @bind="selectedType" @bind:event="onchange">
                             <option value="">Tất cả</option>
@@ -112,7 +115,7 @@
                             <option value="health">Sức khỏe</option>
                             <option value="comprehensive">Toàn diện</option>
                         </select>
-                    </div>
+                    </div> *@
                     <div class="col-md-2">
                         <label class="form-label">Từ ngày</label>
                         <input type="date" class="form-control" @bind="fromDate" @bind:event="onchange">
@@ -204,7 +207,7 @@
                                             <li>
                                                 <hr class="dropdown-divider">
                                             </li>
-                                            <li><a class="dropdown-item text-danger" href="#"
+                                            <li><a class="dropdown-item text-danger" 
                                                     @onclick="() => DeleteAssessment(assessment.AssessmentBatchId)">
                                                     <i class="fas fa-trash"></i> Xóa
                                                 </a></li>
@@ -319,15 +322,15 @@
         }
     }
 
-    private string selectedType
-    {
-        get => _selectedType;
-        set
-        {
-            _selectedType = value;
-            _ = FilterAssessments();
-        }
-    }
+    // private string selectedType
+    // {
+    //     get => _selectedType;
+    //     set
+    //     {
+    //         _selectedType = value;
+    //         _ = FilterAssessments();
+    //     }
+    // }
 
     private DateTime? fromDate
     {
@@ -534,7 +537,7 @@
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("alert", "Chức năng tạo mới đang được phát triển!");
+            Navigation.NavigateTo("/assessmentbatch/add");
         }
         catch (Exception ex)
         {

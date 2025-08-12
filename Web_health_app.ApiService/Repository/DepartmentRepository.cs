@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Web_health_app.ApiService.Entities;
+using Web_health_app.ApiService.Repository.Interface;
 using Web_health_app.Models.Models;
 
 namespace Web_health_app.ApiService.Repository
