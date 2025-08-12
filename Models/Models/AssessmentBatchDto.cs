@@ -119,6 +119,8 @@ namespace Web_health_app.Models.Models
     {
         public string? SearchTerm { get; set; }
         public short? Status { get; set; }
+      
+        public Guid? ManagerBy { get; set; }
         public Guid? CreatedBy { get; set; }
         public DateTime? StartDateFrom { get; set; }
         public DateTime? StartDateTo { get; set; }

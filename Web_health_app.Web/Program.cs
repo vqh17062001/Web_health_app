@@ -28,6 +28,7 @@ builder.Services.AddHttpClient<PermissionApiClient>(c => c.BaseAddress = new Uri
 builder.Services.AddHttpClient<GroupApiClient>(c => c.BaseAddress = new Uri(apiBase));
 builder.Services.AddHttpClient<StudentApiClient>(c => c.BaseAddress = new Uri(apiBase));
 builder.Services.AddHttpClient<DepartmentApiClient>(c => c.BaseAddress = new Uri(apiBase));
+builder.Services.AddHttpClient<AssessmentBatchApiClient>(c => c.BaseAddress = new Uri(apiBase));
 
 
 // … thêm client khác …

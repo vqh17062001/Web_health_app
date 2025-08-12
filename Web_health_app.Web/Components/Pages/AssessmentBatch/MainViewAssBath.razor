@@ -1,6 +1,10 @@
 ﻿@page "/assessment-batch"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Web
+@using Web_health_app.Models.Models
+@using Web_health_app.Web.ApiClients
+@inject AssessmentBatchApiClient AssessmentBatchApiClient
+@inject IJSRuntime JSRuntime
 @attribute [Authorize(Roles = "ACCESS.MainViewAssBath")]
 
 <PageTitle>Quản lý Kiểm tra Thể lực</PageTitle>
@@ -86,7 +90,7 @@
                         <label class="form-label">Tìm kiếm</label>
                         <div class="search-box">
                             <input type="text" class="form-control" placeholder="Tên đợt kiểm tra..." @bind="searchText"
-                                @onkeyup="FilterAssessments">
+                                @onkeyup="SearchAssessments">
                             <i class="fas fa-search search-icon"></i>
                         </div>
                     </div>
@@ -129,9 +133,32 @@
             </div>
         </div>
 
+        <!-- Error Message -->
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger mb-4" role="alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                @errorMessage
+                <button type="button" class="btn btn-link p-0 ms-2" @onclick="() => LoadData()">
+                    <i class="fas fa-redo"></i> Thử lại
+                </button>
+            </div>
+        }
+
         <!-- Assessment Batches List -->
         <div class="assessment-list">
-            @if (filteredAssessments == null || !filteredAssessments.Any())
+            @if (isLoading)
+            {
+                <div class="loading-state">
+                    <div class="d-flex justify-content-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                    </div>
+                    <p class="text-center mt-2">Đang tải dữ liệu...</p>
+                </div>
+            }
+            else if (assessments == null || !assessments.Any())
             {
                 <div class="empty-state">
                     <div class="empty-icon">
@@ -148,46 +175,44 @@
             else
             {
                 <div class="row g-4">
-                    @foreach (var assessment in filteredAssessments)
+                    @foreach (var assessment in assessments)
                     {
                         <div class="col-md-6 col-lg-4">
                             <div class="assessment-card">
                                 <div class="card-header">
-                                    <div class="assessment-status status-@assessment.Status.ToLower()">
-                                        @GetStatusText(assessment.Status)
+                                    <div class="assessment-status">
+                                        <span class="badge @GetStatusBadgeClass(assessment.Status)">
+                                            @GetStatusText(assessment.Status)
+                                        </span>
                                     </div>
                                     <div class="dropdown">
                                         <button class="btn btn-link dropdown-toggle" type="button" data-bs-toggle="dropdown">
                                             <i class="fas fa-ellipsis-v"></i>
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-end">
-                                            <li><a class="dropdown-item" href="#" @onclick="() => ViewDetails(assessment.Id)">
+                                            <li><a class="dropdown-item" href="#" @onclick="() => ViewDetails(assessment.AssessmentBatchId)">
                                                     <i class="fas fa-eye"></i> Chi tiết
                                                 </a></li>
                                             <li><a class="dropdown-item" href="#"
-                                                    @onclick="() => EditAssessment(assessment.Id)">
+                                                    @onclick="() => EditAssessment(assessment.AssessmentBatchId)">
                                                     <i class="fas fa-edit"></i> Chỉnh sửa
                                                 </a></li>
                                             <li><a class="dropdown-item" href="#"
-                                                    @onclick="() => ManageParticipants(assessment.Id)">
+                                                    @onclick="() => ManageParticipants(assessment.AssessmentBatchId)">
                                                     <i class="fas fa-users"></i> Quản lý HS
                                                 </a></li>
                                             <li>
                                                 <hr class="dropdown-divider">
                                             </li>
                                             <li><a class="dropdown-item text-danger" href="#"
-                                                    @onclick="() => DeleteAssessment(assessment.Id)">
+                                                    @onclick="() => DeleteAssessment(assessment.AssessmentBatchId)">
                                                     <i class="fas fa-trash"></i> Xóa
                                                 </a></li>
                                         </ul>
                                     </div>
                                 </div>
                                 <div class="card-body">
-                                    <div class="assessment-type">
-                                        <i class="fas fa-tag"></i>
-                                        @GetTypeText(assessment.Type)
-                                    </div>
-                                    <h5 class="assessment-title">@assessment.Name</h5>
+                                    <h5 class="assessment-title">@assessment.CodeName</h5>
                                     <p class="assessment-description">@assessment.Description</p>
 
                                     <div class="assessment-info">
@@ -198,32 +223,32 @@
                                         </div>
                                         <div class="info-item">
                                             <i class="fas fa-users"></i>
-                                            <span>@assessment.ParticipantCount học sinh</span>
+                                            <span>@assessment.StudentCount học sinh</span>
                                         </div>
                                         <div class="info-item">
                                             <i class="fas fa-chart-line"></i>
-                                            <span>@assessment.CompletionRate% hoàn thành</span>
+                                            <span>@(GetCompletionPercentage(assessment))% hoàn thành</span>
                                         </div>
                                     </div>
 
                                     <div class="progress-section">
                                         <div class="progress-info">
                                             <span>Tiến độ</span>
-                                            <span>@assessment.CompletedCount/@assessment.ParticipantCount</span>
+                                            <span>@assessment.CompletedCount/@assessment.StudentCount</span>
                                         </div>
                                         <div class="progress">
-                                            <div class="progress-bar" style="width: @(assessment.CompletionRate)%"></div>
+                                            <div class="progress-bar" style="width: @(GetCompletionPercentage(assessment))%"></div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="card-footer">
-                                    <button class="btn btn-primary btn-sm" @onclick="() => ViewDetails(assessment.Id)">
+                                    <button class="btn btn-primary btn-sm" @onclick="() => ViewDetails(assessment.AssessmentBatchId)">
                                         <i class="fas fa-eye"></i>
                                         Xem chi tiết
                                     </button>
-                                    @if (assessment.Status == "active")
+                                    @if (assessment.Status == 1)
                                     {
-                                        <button class="btn btn-success btn-sm" @onclick="() => ManageParticipants(assessment.Id)">
+                                        <button class="btn btn-success btn-sm" @onclick="() => ManageParticipants(assessment.AssessmentBatchId)">
                                             <i class="fas fa-users"></i>
                                             Quản lý HS
                                         </button>
@@ -271,6 +296,12 @@
 </div>
 
 @code {
+    // API Data
+    private List<AssessmentBatchInfoDto> assessments = new();
+    private AssessmentBatchStatisticsDto? statistics;
+    private bool isLoading = true;
+    private string? errorMessage;
+
     // Filter properties
     private string searchText = "";
     private string _selectedStatus = "";
@@ -284,7 +315,7 @@
         set
         {
             _selectedStatus = value;
-            FilterAssessments();
+            _ = FilterAssessments();
         }
     }
 
@@ -294,7 +325,7 @@
         set
         {
             _selectedType = value;
-            FilterAssessments();
+            _ = FilterAssessments();
         }
     }
 
@@ -304,7 +335,7 @@
         set
         {
             _fromDate = value;
-            FilterAssessments();
+            _ = FilterAssessments();
         }
     }
 
@@ -314,7 +345,7 @@
         set
         {
             _toDate = value;
-            FilterAssessments();
+            _ = FilterAssessments();
         }
     }
 
@@ -322,90 +353,128 @@
     private int currentPage = 1;
     private int pageSize = 9;
     private int totalPages = 1;
+    private int totalAssessments = 0;
 
-    // Statistics
-    private int totalAssessments = 12;
-    private int activeAssessments = 3;
-    private int completedAssessments = 7;
-    private int totalParticipants = 1250;
+    // Statistics from API
+    private int activeAssessments => statistics?.ActiveBatches ?? 0;
+    private int completedAssessments => statistics?.CompletedBatches ?? 0;
+    private int totalParticipants => statistics?.TotalStudentsInBatches ?? 0;
 
-    // Data
-    private List<AssessmentBatch> assessments = new();
-    private List<AssessmentBatch> filteredAssessments = new();
-
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        LoadSampleData();
-        FilterAssessments();
+        await LoadData();
     }
 
-    private void LoadSampleData()
+    private async Task LoadData()
     {
-        assessments = new List<AssessmentBatch>
-{
-new AssessmentBatch
-{
-Id = 1,
-Name = "Kiểm tra thể lực học kỳ I",
-Description = "Đánh giá thể lực tổng hợp cho tất cả học sinh khối 10, 11, 12",
-Type = "comprehensive",
-Status = "active",
-StartDate = DateTime.Now.AddDays(-5),
-EndDate = DateTime.Now.AddDays(10),
-ParticipantCount = 450,
-CompletedCount = 320,
-CompletionRate = 71
-},
-new AssessmentBatch
-{
-Id = 2,
-Name = "Kiểm tra sức bền tim mạch",
-Description = "Đo lường khả năng hoạt động tim mạch qua bài tập chạy 12 phút",
-Type = "physical",
-Status = "completed",
-StartDate = DateTime.Now.AddDays(-20),
-EndDate = DateTime.Now.AddDays(-10),
-ParticipantCount = 200,
-CompletedCount = 200,
-CompletionRate = 100
-},
-new AssessmentBatch
-{
-Id = 3,
-Name = "Đo chỉ số BMI và tầm vóc",
-Description = "Kiểm tra chiều cao, cân nặng và các chỉ số cơ bản",
-Type = "health",
-Status = "draft",
-StartDate = DateTime.Now.AddDays(5),
-EndDate = DateTime.Now.AddDays(20),
-ParticipantCount = 600,
-CompletedCount = 0,
-CompletionRate = 0
-}
-};
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+
+            // Load statistics
+            statistics = await AssessmentBatchApiClient.GetAssessmentBatchStatisticsAsync();
+            
+            // Load assessment batches
+            await LoadAssessmentBatches();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Lỗi khi tải dữ liệu: {ex.Message}";
+            Console.WriteLine($"Error loading data: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
     }
 
-    private void FilterAssessments()
+    private async Task LoadAssessmentBatches()
     {
-        filteredAssessments = assessments.Where(a =>
-        (string.IsNullOrEmpty(searchText) || a.Name.ToLower().Contains(searchText.ToLower()) ||
-        a.Description.ToLower().Contains(searchText.ToLower())) &&
-        (string.IsNullOrEmpty(_selectedStatus) || a.Status == _selectedStatus) &&
-        (string.IsNullOrEmpty(_selectedType) || a.Type == _selectedType) &&
-        (_fromDate == null || a.StartDate >= _fromDate) &&
-        (_toDate == null || a.EndDate <= _toDate)
-        ).ToList();
+        try
+        {
+            AssessmentBatchesApiResponse? response;
 
-        totalPages = (int)Math.Ceiling((double)filteredAssessments.Count / pageSize);
-        currentPage = Math.Min(currentPage, Math.Max(1, totalPages));
+            // Check if we need to use search/filter
+            if (HasActiveFilters())
+            {
+                var searchDto = new AssessmentBatchSearchDto
+                {
+                    Page = currentPage,
+                    PageSize = pageSize,
+                    SearchTerm = string.IsNullOrWhiteSpace(searchText) ? null : searchText,
+                    StartDateFrom = _fromDate,
+                    StartDateTo = _toDate,
+                    CreatedFrom = _fromDate,
+                    CreatedTo = _toDate
+                };
 
-        var startIndex = (currentPage - 1) * pageSize;
-        filteredAssessments = filteredAssessments.Skip(startIndex).Take(pageSize).ToList();
+                // Parse status if provided
+                if (!string.IsNullOrWhiteSpace(_selectedStatus) && short.TryParse(_selectedStatus, out var statusValue))
+                {
+                    searchDto.Status = statusValue;
+                }
 
+                response = await AssessmentBatchApiClient.SearchAssessmentBatchesAsync(searchDto);
+            }
+            else
+            {
+                // Use basic get all
+                response = await AssessmentBatchApiClient.GetAllAssessmentBatchesAsync(
+                    currentPage, 
+                    pageSize, 
+                    string.IsNullOrWhiteSpace(searchText) ? null : searchText, 
+                    false
+                );
+            }
+
+            if (response != null)
+            {
+                assessments = response.AssessmentBatches ?? new List<AssessmentBatchInfoDto>();
+                totalAssessments = response.Pagination?.TotalCount ?? 0;
+                totalPages = response.Pagination?.TotalPages ?? 1;
+                currentPage = response.Pagination?.CurrentPage ?? 1;
+            }
+            else
+            {
+                assessments = new List<AssessmentBatchInfoDto>();
+                totalAssessments = 0;
+                totalPages = 1;
+                currentPage = 1;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Lỗi khi tải danh sách kiểm tra: {ex.Message}";
+            Console.WriteLine($"Error loading assessment batches: {ex.Message}");
+        }
+    }
+
+    private bool HasActiveFilters()
+    {
+        return !string.IsNullOrWhiteSpace(_selectedStatus) ||
+               !string.IsNullOrWhiteSpace(_selectedType) ||
+               _fromDate.HasValue ||
+               _toDate.HasValue;
+    }
+
+    private async Task FilterAssessments()
+    {
+        currentPage = 1; // Reset to first page when filtering
+        await LoadAssessmentBatches();
         StateHasChanged();
     }
 
-    private void ClearFilters()
+    private async Task SearchAssessments(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await FilterAssessments();
+        }
+    }
+
+    private async Task ClearFilters()
     {
         searchText = "";
         _selectedStatus = "";
@@ -413,25 +482,38 @@ CompletionRate = 0
         _fromDate = null;
         _toDate = null;
         currentPage = 1;
-        FilterAssessments();
+        await LoadAssessmentBatches();
+        StateHasChanged();
     }
 
-    private void GoToPage(int page)
+    private async Task GoToPage(int page)
     {
-        if (page >= 1 && page <= totalPages)
+        if (page >= 1 && page <= totalPages && page != currentPage)
         {
             currentPage = page;
-            FilterAssessments();
+            await LoadAssessmentBatches();
+            StateHasChanged();
         }
     }
 
-    private string GetStatusText(string status) => status switch
+    private string GetStatusText(short status) => status switch
     {
-        "draft" => "Nháp",
-        "active" => "Đang tiến hành",
-        "completed" => "Hoàn thành",
-        "cancelled" => "Đã hủy",
+        0 => "Nháp",
+        1 => "Đang tiến hành", 
+        2 => "Hoàn thành",
+        3 => "Đã hủy",
+        -1 => "Vô hiệu hóa",
         _ => "Không xác định"
+    };
+
+    private string GetStatusBadgeClass(short status) => status switch
+    {
+        0 => "bg-secondary",      // Nháp
+        1 => "bg-primary",        // Đang tiến hành
+        2 => "bg-success",        // Hoàn thành
+        3 => "bg-danger",         // Đã hủy
+        -1 => "bg-dark",          // Vô hiệu hóa
+        _ => "bg-warning"
     };
 
     private string GetTypeText(string type) => type switch
@@ -442,31 +524,87 @@ CompletionRate = 0
         _ => "Khác"
     };
 
-    private void ShowCreateAssessmentModal()
+    private double GetCompletionPercentage(AssessmentBatchInfoDto assessment)
     {
-        // Implement create assessment modal logic
+        if (assessment.StudentCount == 0) return 0;
+        return Math.Round((double)assessment.CompletedCount / assessment.StudentCount * 100, 1);
     }
 
-    private void ViewDetails(int id)
+    private async Task ShowCreateAssessmentModal()
     {
-        // Navigate to assessment details page
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Chức năng tạo mới đang được phát triển!");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error showing create modal: {ex.Message}");
+        }
     }
 
-    private void EditAssessment(int id)
+    private async Task ViewDetails(string id)
     {
-        // Navigate to edit assessment page
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Xem chi tiết đợt kiểm tra: {id}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error viewing details: {ex.Message}");
+        }
     }
 
-    private void ManageParticipants(int id)
+    private async Task EditAssessment(string id)
     {
-        // Navigate to participants management page
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Chỉnh sửa đợt kiểm tra: {id}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error editing assessment: {ex.Message}");
+        }
     }
 
-    private void DeleteAssessment(int id)
+    private async Task ManageParticipants(string id)
     {
-        // Implement delete confirmation and logic
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Quản lý học sinh đợt kiểm tra: {id}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error managing participants: {ex.Message}");
+        }
     }
 
+    private async Task DeleteAssessment(string id)
+    {
+        try
+        {
+            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Bạn có chắc chắn muốn xóa đợt kiểm tra này?");
+            if (confirmed)
+            {
+                var success = await AssessmentBatchApiClient.SoftDeleteAssessmentBatchAsync(id);
+                if (success)
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Xóa thành công!");
+                    await LoadData(); // Refresh data
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Có lỗi xảy ra khi xóa!");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting assessment: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("alert", "Có lỗi xảy ra khi xóa!");
+        }
+    }
+
+    // Legacy class for compatibility - can be removed later
     public class AssessmentBatch
     {
         public int Id { get; set; }

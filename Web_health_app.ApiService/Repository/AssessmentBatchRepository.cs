@@ -88,6 +88,10 @@ namespace Web_health_app.ApiService.Repository
                 {
                     query = query.Where(ab => ab.Status == searchDto.Status.Value);
                 }
+                if (searchDto.ManagerBy.HasValue)
+                {
+                    query = query.Where(ab => ab.ManagerBy == searchDto.ManagerBy.Value);
+                }
 
                 if (searchDto.CreatedBy.HasValue)
                 {
@@ -381,9 +385,14 @@ namespace Web_health_app.ApiService.Repository
             try
             {
                 var totalBatches = await _context.AssessmentBatches.CountAsync();
-                var activeBatches = await _context.AssessmentBatches.CountAsync(ab => ab.Status == 1);
-                var completedBatches = await _context.AssessmentBatches.CountAsync(ab => ab.Status == 3);
                 var pendingBatches = await _context.AssessmentBatches.CountAsync(ab => ab.Status == 0);
+
+                var activeBatches = await _context.AssessmentBatches.CountAsync(ab => ab.Status == 1);
+                var runningBatches = await _context.AssessmentBatches.CountAsync(ab => ab.Status == 2);
+
+                var completedBatches = await _context.AssessmentBatches.CountAsync(ab => ab.Status == 3);
+                var enrolledBatches = await _context.AssessmentBatches.CountAsync(ab => ab.Status == -1);
+
 
                 var totalStudentsInBatches = await _context.AssessmentBatchStudents.CountAsync();
 
