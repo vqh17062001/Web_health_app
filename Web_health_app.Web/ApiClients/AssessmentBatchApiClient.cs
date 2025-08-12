@@ -401,10 +401,125 @@ namespace Web_health_app.Web.ApiClients
                 return null;
             }
         }
+
+        /// <summary>
+        /// Get students in an assessment batch
+        /// </summary>
+        public async Task<StudentsApiResponse?> GetStudentsInAssessmentBatchAsync(string batchId, int pageNumber = 1, int pageSize = 20)
+        {
+            try
+            {
+                await SetAuthorizeHeader();
+
+                var queryParams = new List<string>
+                {
+                    $"pageNumber={pageNumber}",
+                    $"pageSize={pageSize}"
+                };
+
+                var queryString = string.Join("&", queryParams);
+                var response = await _httpClient.GetAsync($"api/AssessmentBatch/{batchId}/students?{queryString}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var apiResponse = JsonSerializer.Deserialize<ApiResponse<StudentsApiResponse>>(responseContent, _jsonOptions);
+                    return apiResponse?.Data;
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting students in assessment batch: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Add students to an assessment batch
+        /// </summary>
+        public async Task<ApiResponse<int>> AddStudentsToAssessmentBatchAsync(string batchId, List<string> studentIds)
+        {
+            try
+            {
+                await SetAuthorizeHeader();
+
+                var json = JsonSerializer.Serialize(studentIds, _jsonOptions);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync($"api/AssessmentBatch/{batchId}/students", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var apiResponse = JsonSerializer.Deserialize<ApiResponse<int>>(responseContent, _jsonOptions);
+                    return apiResponse ?? new ApiResponse<int> { IsSuccess = false, Message = "Unknown error" };
+                }
+
+                return new ApiResponse<int>
+                {
+                    IsSuccess = false,
+                    Message = $"API call failed with status: {response.StatusCode}"
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error adding students to assessment batch: {ex.Message}");
+                return new ApiResponse<int>
+                {
+                    IsSuccess = false,
+                    Message = ex.Message
+                };
+            }
+        }
+
+        /// <summary>
+        /// Remove students from an assessment batch
+        /// </summary>
+        public async Task<ApiResponse<int>> RemoveStudentsFromAssessmentBatchAsync(string batchId, List<string> studentIds)
+        {
+            try
+            {
+                await SetAuthorizeHeader();
+
+                var json = JsonSerializer.Serialize(studentIds, _jsonOptions);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var request = new HttpRequestMessage(HttpMethod.Delete, $"api/AssessmentBatch/{batchId}/students")
+                {
+                    Content = content
+                };
+
+                var response = await _httpClient.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var apiResponse = JsonSerializer.Deserialize<ApiResponse<int>>(responseContent, _jsonOptions);
+                    return apiResponse ?? new ApiResponse<int> { IsSuccess = false, Message = "Unknown error" };
+                }
+
+                return new ApiResponse<int>
+                {
+                    IsSuccess = false,
+                    Message = $"API call failed with status: {response.StatusCode}"
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error removing students from assessment batch: {ex.Message}");
+                return new ApiResponse<int>
+                {
+                    IsSuccess = false,
+                    Message = ex.Message
+                };
+            }
+        }
     }
 
     /// <summary>
     /// Generic API response wrapper
     /// </summary>
-   
+
 }

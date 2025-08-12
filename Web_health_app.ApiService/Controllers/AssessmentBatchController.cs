@@ -355,7 +355,7 @@ namespace Web_health_app.ApiService.Controllers
 
                 var assignedCount = await _assessmentBatchRepository.AssignStudentsToAssessmentBatchAsync(id, studentIds);
 
-                return Ok(new { IsSuccess = true, Data = new { AssignedCount = assignedCount }, Message = $"{assignedCount} students assigned successfully" });
+                return Ok(new { IsSuccess = true, Data = assignedCount , Message = $"{assignedCount} students assigned successfully" });
             }
             catch (Exception ex)
             {
@@ -387,7 +387,7 @@ namespace Web_health_app.ApiService.Controllers
 
                 var removedCount = await _assessmentBatchRepository.RemoveStudentsFromAssessmentBatchAsync(id, studentIds);
 
-                return Ok(new { IsSuccess = true, Data = new { RemovedCount = removedCount }, Message = $"{removedCount} students removed successfully" });
+                return Ok(new { IsSuccess = true, Data = removedCount , Message = $"{removedCount} students removed successfully" });
             }
             catch (Exception ex)
             {

@@ -569,11 +569,12 @@
         }
     }
 
-    private async Task ManageParticipants(string id)
+    private async Task ManageParticipants(string AssessmentBatchId)
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Quản lý học sinh đợt kiểm tra: {id}");
+            Navigation.NavigateTo($"/assessment-batch/{AssessmentBatchId}/students");
+
         }
         catch (Exception ex)
         {
