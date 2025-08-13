@@ -274,7 +274,9 @@ namespace Web_health_app.ApiService.Repository
                     ScheduledAt = createDto.StartDate,
                     Status = createDto.Status,
                     CreatedAt = DateTime.UtcNow,
-                    CreatedBy = createDto.CreatedBy
+                    CreatedBy = createDto.CreatedBy,
+                    ManagerBy = createDto.ManagerBy
+
                 };
 
                 _context.AssessmentBatches.Add(assessmentBatch);

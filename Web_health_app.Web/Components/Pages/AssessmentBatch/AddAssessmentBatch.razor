@@ -5,6 +5,8 @@
 @using Web_health_app.Web.Components.Layout
 @using Web_health_app.Models.Models
 @using Web_health_app.Web.ApiClients
+@using System.Globalization
+@using System.Text
 @inject AssessmentBatchApiClient AssessmentBatchApiClient
 @inject UserApiClient UserApiClient
 @inject NavigationManager Navigation
@@ -225,6 +227,7 @@
 
 @code {
     // Form model
+
     private CreateAssessmentBatchDto createAssessmentBatch = new CreateAssessmentBatchDto();
 
     // State variables
@@ -315,6 +318,13 @@
                 return;
             }
 
+            if (createAssessmentBatch.CodeName != null)
+
+            {
+
+                createAssessmentBatch.CodeName = WithoutDiacritics(createAssessmentBatch.CodeName);
+
+            }
             // Set EndDate same as StartDate if not provided (for compatibility)
             if (createAssessmentBatch.EndDate == DateTime.MinValue)
             {
@@ -330,8 +340,8 @@
                 await JSRuntime.InvokeVoidAsync("showSuccessToast", "Tạo đợt kiểm tra thành công!");
 
                 // Redirect to assessment batch list after a short delay
-                await Task.Delay(2000);
-                Navigation.NavigateTo("/assessment-batch");
+                await Task.Delay(500);
+                Navigation.NavigateTo($"/assessment-batch/{result.AssessmentBatchId}/students");
             }
             else
             {
@@ -428,5 +438,30 @@
             3 => "status-completed",
             _ => "status-unknown"
         };
+    }
+    private string WithoutDiacritics( string? s)
+    {
+        if (string.IsNullOrEmpty(s)) return s ?? string.Empty;
+
+        
+        string normalized = s.Normalize(NormalizationForm.FormD);
+        var sb = new StringBuilder(normalized.Length);
+
+        foreach (var ch in normalized)
+        {
+            var uc = CharUnicodeInfo.GetUnicodeCategory(ch);
+           
+            if (uc != UnicodeCategory.NonSpacingMark &&
+                uc != UnicodeCategory.SpacingCombiningMark &&
+                uc != UnicodeCategory.EnclosingMark)
+            {
+                sb.Append(ch);
+            }
+        }
+
+        
+        string result = sb.ToString().Normalize(NormalizationForm.FormC);
+        result = result.Replace('đ', 'd').Replace('Đ', 'D');
+        return result;
     }
 }
