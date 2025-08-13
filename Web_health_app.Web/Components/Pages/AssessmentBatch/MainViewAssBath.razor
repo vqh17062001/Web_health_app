@@ -545,11 +545,12 @@
         }
     }
 
-    private async Task ViewDetails(string id)
+    private async Task ViewDetails(string AssessmentBatchId)
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Xem chi tiết đợt kiểm tra: {id}");
+            Navigation.NavigateTo($"/assessmentbatch/edit/{AssessmentBatchId}");
+
         }
         catch (Exception ex)
         {
@@ -557,11 +558,12 @@
         }
     }
 
-    private async Task EditAssessment(string id)
+    private async Task EditAssessment(string AssessmentBatchId)
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Chỉnh sửa đợt kiểm tra: {id}");
+            Navigation.NavigateTo($"/assessmentbatch/edit/{AssessmentBatchId}");
+
         }
         catch (Exception ex)
         {

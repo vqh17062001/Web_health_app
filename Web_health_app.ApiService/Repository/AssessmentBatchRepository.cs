@@ -204,10 +204,11 @@ namespace Web_health_app.ApiService.Repository
                     StatusString = assessmentBatch.GetAssessmentBatchStatusString(),
                     CreatedAt = assessmentBatch.CreatedAt ?? DateTime.MinValue,
                     UpdatedAt = assessmentBatch.UpdatedAt,
+                    ManagerBy = assessmentBatch.ManagerBy,
                     CreatedBy = assessmentBatch.CreatedBy ?? Guid.Empty,
                     CreatedByName = null,
                     StudentCount = assessmentBatch.AssessmentBatchStudents.Count(),
-                    CompletedCount = 0,
+                    CompletedCount = -1,
                     PendingCount = assessmentBatch.AssessmentBatchStudents.Count()
                 };
             }
@@ -312,6 +313,11 @@ namespace Web_health_app.ApiService.Repository
 
                 if (updateDto.Status.HasValue)
                     assessmentBatch.Status = updateDto.Status.Value;
+
+                assessmentBatch.ManagerBy = updateDto.ManagerBy;
+                
+                
+                
 
                 assessmentBatch.UpdatedAt = DateTime.UtcNow;
 

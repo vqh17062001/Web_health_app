@@ -10,9 +10,9 @@
 @inject AssessmentBatchApiClient AssessmentBatchApiClient
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
-@attribute [Authorize]
-@layout EmptyLayout
 
+@layout EmptyLayout
+@attribute [Authorize(Roles = "ACCESS.MainViewAssBath")]
 <link rel="stylesheet" href="css/AssessmentBatch/assessment-batch-students.css" />
 
 <PageTitle>Quản lý học sinh - Đợt kiểm tra @AssessmentBatchId</PageTitle>

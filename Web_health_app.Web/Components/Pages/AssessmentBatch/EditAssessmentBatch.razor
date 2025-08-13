@@ -1,13 +1,48 @@
-﻿@page "/assessmentbatch/edit"
+﻿@page "/assessmentbatch/edit/{AssessmentBatchId}"
 @using Microsoft.AspNetCore.Authorization
 @using Web_health_app.Web.Components.Layout
+@using Web_health_app.Models.Models
+@using Web_health_app.Web.ApiClients
+@using Microsoft.JSInterop
+@inject AssessmentBatchApiClient AssessmentBatchApiClient
+@inject UserApiClient UserApiClient
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
 
 @layout EmptyLayout
 @attribute [Authorize(Roles = "ACCESS.EditAssessmentBatch")]
 
+
+<PageTitle>Chỉnh sửa đợt kiểm tra - @(assessmentBatch?.CodeName ?? "Loading...")</PageTitle>
+
 <link href="/css/AssessmentBatch/edit-assessment-batch.css" rel="stylesheet" />
 
 <div class="edit-assessment-container">
+    @if (isLoading)
+    {
+        <div class="loading-state">
+            <div class="spinner-wrapper">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Đang tải...</span>
+                </div>
+                <p class="loading-text">Đang tải thông tin đợt kiểm tra...</p>
+            </div>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="error-state">
+            <div class="alert alert-danger" role="alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                @errorMessage
+            </div>
+            <button class="btn btn-secondary" @onclick="GoBack">
+                <i class="fas fa-arrow-left"></i> Quay lại
+            </button>
+        </div>
+    }
+    else if (assessmentBatch != null)
+    {
     <div class="edit-assessment-card">
         <!-- Header -->
         <div class="card-header">
@@ -20,14 +55,14 @@
                     <p>Cập nhật thông tin và cấu hình đợt kiểm tra</p>
                 </div>
             </div>
-            <button type="button" class="btn-close" onclick="window.history.back()">
+                <button type="button" class="btn-close" @onclick="GoBack">
                 <i class="fas fa-times"></i>
             </button>
         </div>
 
         <!-- Form Body -->
         <div class="card-body">
-            <form class="edit-assessment-form">
+            <form class="edit-assessment-form" @onsubmit="HandleSubmit" @onsubmit:preventDefault="true">
                 <!-- Current Assessment Info Section -->
                 <div class="form-section">
                     <h3 class="section-title">
@@ -43,7 +78,7 @@
                             </label>
                             <div class="info-display">
                                 <i class="fas fa-barcode"></i>
-                                BATCH_2024_001
+                                @assessmentBatch.AssessmentBatchId
                             </div>
                         </div>
 
@@ -54,7 +89,7 @@
                             </label>
                             <div class="info-display">
                                 <i class="fas fa-clock"></i>
-                                15/01/2024 09:30
+                                @assessmentBatch.CreatedAt.ToString("dd/MM/yyyy HH:mm")
                             </div>
                         </div>
                     </div>
@@ -65,12 +100,39 @@
                                 <i class="fas fa-toggle-on"></i>
                                 Trạng Thái Hiện Tại
                             </label>
-                            <div class="status-badge active">
-                                <i class="fas fa-play-circle"></i>
-                                Đang Tiến Hành
+                            <div class="status-badge @GetStatusClass(assessmentBatch.Status)">
+                                <i class="fas @GetStatusIcon(assessmentBatch.Status)"></i>
+                                @assessmentBatch.StatusString
                             </div>
                         </div>
 
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-user-tie"></i>
+                                Người Quản Lý Hiện Tại
+                            </label>
+                            <div class="info-display">
+                                @if (currentManagerInfo != null)
+                                {
+                                    <i class="fas fa-user-check"></i>
+                                    <span>@currentManagerInfo.FullName</span>
+                                    <small class="text-muted">(@currentManagerInfo.UserName)</small>
+                                }
+                                else if (assessmentBatch.ManagerBy.HasValue)
+                                {
+                                    <i class="fas fa-user-question"></i>
+                                    <span class="text-warning">Đang tải thông tin...</span>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-user-slash"></i>
+                                    <span class="text-muted">Chưa có người quản lý</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">
                                 <i class="fas fa-users"></i>
@@ -78,7 +140,26 @@
                             </label>
                             <div class="info-display">
                                 <i class="fas fa-user-check"></i>
-                                320/450 học sinh (71%)
+                                @assessmentBatch.StudentCount học sinh
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-user-plus"></i>
+                                Người Tạo
+                            </label>
+                            <div class="info-display">
+                                @if (!string.IsNullOrEmpty(assessmentBatch.CreatedByName))
+                                {
+                                    <i class="fas fa-user"></i>
+                                    <span>@assessmentBatch.CreatedByName</span>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-user"></i>
+                                    <span class="text-muted">@assessmentBatch.CreatedBy</span>
+                                }
                             </div>
                         </div>
                     </div>
@@ -97,8 +178,10 @@
                                 <i class="fas fa-tag"></i>
                                 Tên Đợt Kiểm Tra <span class="required">*</span>
                             </label>
-                            <input type="text" class="form-control" id="assessmentName" name="assessmentName"
-                                placeholder="Nhập tên đợt kiểm tra" value="Kiểm tra thể lực học kỳ I" required />
+                                <div class="info-display">
+                                    <i class="fas fa-user-check"></i>
+                                    @assessmentBatch.CodeName
+                                </div>
                         </div>
                     </div>
 
@@ -108,39 +191,8 @@
                                 <i class="fas fa-align-left"></i>
                                 Mô Tả Chi Tiết
                             </label>
-                            <textarea class="form-control" id="description" name="description" rows="4"
-                                placeholder="Nhập mô tả chi tiết về đợt kiểm tra...">Đánh giá thể lực tổng hợp cho tất cả học sinh khối 10, 11, 12 bao gồm các bài kiểm tra sức bền, sức mạnh và độ dẻo dai.</textarea>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-layer-group"></i>
-                                Loại Kiểm Tra <span class="required">*</span>
-                            </label>
-                            <select class="form-select" id="assessmentType" name="assessmentType" required>
-                                <option value="">Chọn loại kiểm tra</option>
-                                <option value="comprehensive" selected>Kiểm tra tổng hợp</option>
-                                <option value="physical">Kiểm tra thể lực</option>
-                                <option value="health">Kiểm tra sức khỏe</option>
-                                <option value="endurance">Kiểm tra sức bền</option>
-                                <option value="strength">Kiểm tra sức mạnh</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-flag"></i>
-                                Mức Độ Ưu Tiên
-                            </label>
-                            <select class="form-select" id="priority" name="priority">
-                                <option value="">Chọn mức độ</option>
-                                <option value="low">Thấp</option>
-                                <option value="medium">Trung bình</option>
-                                <option value="high" selected>Cao</option>
-                                <option value="urgent">Khẩn cấp</option>
-                            </select>
+                            <textarea class="form-control" @bind="updateDto.Description" rows="4"
+                                placeholder="Nhập mô tả chi tiết về đợt kiểm tra..."></textarea>
                         </div>
                     </div>
                 </div>
@@ -158,244 +210,10 @@
                                 <i class="fas fa-play"></i>
                                 Ngày Bắt Đầu <span class="required">*</span>
                             </label>
-                            <input type="datetime-local" class="form-control" id="startDate" name="startDate"
-                                value="2024-01-20T08:00" required />
+                            <input type="datetime-local" class="form-control" @bind="updateDto.StartDate" required />
                         </div>
 
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-stop"></i>
-                                Ngày Kết Thúc <span class="required">*</span>
-                            </label>
-                            <input type="datetime-local" class="form-control" id="endDate" name="endDate"
-                                value="2024-02-05T17:00" required />
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-clock"></i>
-                                Thời Gian Đăng Ký
-                            </label>
-                            <input type="datetime-local" class="form-control" id="registrationDeadline" name="registrationDeadline"
-                                value="2024-01-18T23:59" />
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-hourglass-half"></i>
-                                Thời Gian Thực Hiện (phút)
-                            </label>
-                            <input type="number" class="form-control" id="duration" name="duration"
-                                placeholder="Thời gian dự kiến" value="120" min="30" max="480" />
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Participants Management Section -->
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-users-cog"></i>
-                        Quản Lý Đối Tượng Tham Gia
-                    </h3>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-graduation-cap"></i>
-                                Khối Lớp Tham Gia <span class="required">*</span>
-                            </label>
-                            <div class="checkbox-group">
-                                <label class="checkbox-item">
-                                    <input type="checkbox" name="grades" value="10" checked />
-                                    <span class="checkmark"></span>
-                                    Khối 10
-                                </label>
-                                <label class="checkbox-item">
-                                    <input type="checkbox" name="grades" value="11" checked />
-                                    <span class="checkmark"></span>
-                                    Khối 11
-                                </label>
-                                <label class="checkbox-item">
-                                    <input type="checkbox" name="grades" value="12" checked />
-                                    <span class="checkmark"></span>
-                                    Khối 12
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-venus-mars"></i>
-                                Giới Tính Tham Gia
-                            </label>
-                            <div class="checkbox-group">
-                                <label class="checkbox-item">
-                                    <input type="checkbox" name="genders" value="male" checked />
-                                    <span class="checkmark"></span>
-                                    Nam
-                                </label>
-                                <label class="checkbox-item">
-                                    <input type="checkbox" name="genders" value="female" checked />
-                                    <span class="checkmark"></span>
-                                    Nữ
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-users"></i>
-                                Số Lượng Tối Đa
-                            </label>
-                            <input type="number" class="form-control" id="maxParticipants" name="maxParticipants"
-                                placeholder="Nhập số lượng tối đa" value="450" min="1" />
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-user-plus"></i>
-                                Cho Phép Đăng Ký Muộn
-                            </label>
-                            <div class="toggle-switch">
-                                <input type="checkbox" id="allowLateRegistration" name="allowLateRegistration" checked />
-                                <label for="allowLateRegistration" class="toggle-label">
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Test Configuration Section -->
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-cogs"></i>
-                        Cấu Hình Bài Kiểm Tra
-                    </h3>
-
-                    <div class="tests-container">
-                        <div class="test-category">
-                            <h4 class="category-title">
-                                <i class="fas fa-running"></i>
-                                Bài Kiểm Tra Sức Bền
-                            </h4>
-                            <div class="test-list">
-                                <label class="test-item">
-                                    <input type="checkbox" name="tests" value="running_12min" checked />
-                                    <span class="test-checkmark"></span>
-                                    <div class="test-info">
-                                        <span class="test-name">Chạy 12 phút</span>
-                                        <small class="test-desc">Đo lường sức bền tim mạch</small>
-                                    </div>
-                                </label>
-                                <label class="test-item">
-                                    <input type="checkbox" name="tests" value="running_1500m" />
-                                    <span class="test-checkmark"></span>
-                                    <div class="test-info">
-                                        <span class="test-name">Chạy 1500m</span>
-                                        <small class="test-desc">Kiểm tra sức bền cơ bản</small>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="test-category">
-                            <h4 class="category-title">
-                                <i class="fas fa-dumbbell"></i>
-                                Bài Kiểm Tra Sức Mạnh
-                            </h4>
-                            <div class="test-list">
-                                <label class="test-item">
-                                    <input type="checkbox" name="tests" value="pushups" checked />
-                                    <span class="test-checkmark"></span>
-                                    <div class="test-info">
-                                        <span class="test-name">Hít đất</span>
-                                        <small class="test-desc">Sức mạnh cơ tay</small>
-                                    </div>
-                                </label>
-                                <label class="test-item">
-                                    <input type="checkbox" name="tests" value="situps" checked />
-                                    <span class="test-checkmark"></span>
-                                    <div class="test-info">
-                                        <span class="test-name">Gập bụng</span>
-                                        <small class="test-desc">Sức mạnh cơ bụng</small>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="test-category">
-                            <h4 class="category-title">
-                                <i class="fas fa-weight"></i>
-                                Chỉ Số Cơ Thể
-                            </h4>
-                            <div class="test-list">
-                                <label class="test-item">
-                                    <input type="checkbox" name="tests" value="height_weight" checked />
-                                    <span class="test-checkmark"></span>
-                                    <div class="test-info">
-                                        <span class="test-name">Chiều cao - Cân nặng</span>
-                                        <small class="test-desc">Chỉ số BMI</small>
-                                    </div>
-                                </label>
-                                <label class="test-item">
-                                    <input type="checkbox" name="tests" value="flexibility" />
-                                    <span class="test-checkmark"></span>
-                                    <div class="test-info">
-                                        <span class="test-name">Độ dẻo dai</span>
-                                        <small class="test-desc">Kiểm tra độ linh hoạt</small>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Location & Equipment Section -->
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-map-marker-alt"></i>
-                        Địa Điểm & Thiết Bị
-                    </h3>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-building"></i>
-                                Địa Điểm Tổ Chức <span class="required">*</span>
-                            </label>
-                            <select class="form-select" id="location" name="location" required>
-                                <option value="">Chọn địa điểm</option>
-                                <option value="gym" selected>Phòng tập thể dục</option>
-                                <option value="playground">Sân chơi</option>
-                                <option value="field">Sân bóng</option>
-                                <option value="hall">Hội trường</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-tools"></i>
-                                Thiết Bị Cần Thiết
-                            </label>
-                            <input type="text" class="form-control" id="equipment" name="equipment"
-                                placeholder="Nhập danh sách thiết bị" value="Thước đo, cân điện tử, đồng hồ bấm giờ" />
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group full-width">
-                            <label class="form-label">
-                                <i class="fas fa-sticky-note"></i>
-                                Ghi Chú Về Địa Điểm
-                            </label>
-                            <textarea class="form-control" id="locationNotes" name="locationNotes" rows="3"
-                                placeholder="Ghi chú thêm về địa điểm, yêu cầu đặc biệt...">Cần chuẩn bị sẵn các thiết bị đo lường và đảm bảo không gian thoáng mát</textarea>
-                        </div>
+                        
                     </div>
                 </div>
 
@@ -412,38 +230,69 @@
                                 <i class="fas fa-toggle-on"></i>
                                 Trạng Thái Mới <span class="required">*</span>
                             </label>
-                            <select class="form-select" id="status" name="status" required>
-                                <option value="">Chọn trạng thái</option>
-                                <option value="draft">Bản nháp</option>
-                                <option value="active" selected>Đang tiến hành</option>
-                                <option value="paused">Tạm dừng</option>
-                                <option value="completed">Hoàn thành</option>
-                                <option value="cancelled">Hủy bỏ</option>
+                            <select class="form-select" @bind="updateDto.Status" required>
+                                    <option value="">Chọn trạng thái</option>
+                                    <option value="0">Nháp</option>
+                                    <option value="1">Đã được phê duyệt</option>
+                                    <option value="2">Đang tiến hành kiểm tra</option>
+                                    <option value="3">Hoàn tất kiểm tra</option>
+                                    <option value="-1">Lỗi phải tổ chức lại</option>
                             </select>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">
-                                <i class="fas fa-eye"></i>
-                                Hiển Thị Công Khai
+                                <i class="fas fa-user-tie"></i>
+                                Người Quản Lý Mới
                             </label>
-                            <div class="toggle-switch">
-                                <input type="checkbox" id="isPublic" name="isPublic" checked />
-                                <label for="isPublic" class="toggle-label">
-                                    <span class="toggle-slider"></span>
-                                </label>
+                            <div class="manager-selection">
+                                <div class="current-manager mb-2">
+                                    <small class="text-muted">Hiện tại: </small>
+                                    @if (currentManagerInfo != null)
+                                    {
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-user"></i>
+                                            @currentManagerInfo.FullName (@currentManagerInfo.UserName)
+                                        </span>
+                                    }
+                                    else if (assessmentBatch.ManagerBy.HasValue)
+                                    {
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                            Đang tải...
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-user-slash"></i>
+                                            Chưa có
+                                        </span>
+                                    }
+                                </div>
+                                
+                                <select class="form-select" @bind="selectedManagerId">
+                                    <option value="">-- Chọn người quản lý mới --</option>
+                                    <option value="remove">🗑️ Xóa người quản lý hiện tại</option>
+                                    @if (availableManagers != null)
+                                    {
+                                        @foreach (var manager in availableManagers)
+                                        {
+                                            <option value="@manager.UserId">
+                                                👤 @manager.FullName (@manager.UserName)
+                                            </option>
+                                        }
+                                    }
+                                </select>
+                                
+                                @if (isLoadingManagers)
+                                {
+                                    <small class="text-muted">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                        Đang tải danh sách người quản lý...
+                                    </small>
+                                }
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group full-width">
-                            <label class="form-label">
-                                <i class="fas fa-comment"></i>
-                                Lý Do Thay Đổi
-                            </label>
-                            <textarea class="form-control" id="changeReason" name="changeReason" rows="3"
-                                placeholder="Nhập lý do thay đổi trạng thái hoặc thông tin..."></textarea>
                         </div>
                     </div>
                 </div>
@@ -453,27 +302,277 @@
         <!-- Footer Actions -->
         <div class="card-footer">
             <div class="action-buttons">
-                <button type="button" class="btn btn-secondary">
-                    <i class="fas fa-history"></i>
-                    Xem Lịch Sử
+                <button type="button" class="btn btn-secondary" @onclick="GoBack">
+                    <i class="fas fa-arrow-left"></i>
+                    Quay lại
                 </button>
-                <button type="button" class="btn btn-reset">
+                <button type="button" class="btn btn-reset" @onclick="ResetForm">
                     <i class="fas fa-undo"></i>
                     Khôi Phục
                 </button>
-                <button type="button" class="btn btn-cancel" onclick="window.history.back()">
-                    <i class="fas fa-times"></i>
-                    Hủy Bỏ
-                </button>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i>
-                    Cập Nhật
+                <button type="button" class="btn btn-primary" @onclick="HandleSubmit" disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <text>Đang cập nhật...</text>
+                    }
+                    else
+                    {
+                        <i class="fas fa-save"></i>
+                        <text>Cập Nhật</text>
+                    }
                 </button>
             </div>
         </div>
     </div>
+    }
 </div>
 
 @code {
+    [Parameter] public string AssessmentBatchId { get; set; } = string.Empty;
 
+    private bool isLoading = true;
+    private bool isSubmitting = false;
+    private bool isLoadingManagers = false;
+    private string errorMessage = string.Empty;
+    private string managerGuidString = string.Empty;
+    private string selectedManagerId = string.Empty;
+
+    private AssessmentBatchInfoDto? assessmentBatch = null;
+    private UpdateAssessmentBatchDto updateDto = new();
+    private UserInfoDto? currentManagerInfo = null;
+    private List<UserInfoDto>? availableManagers = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAssessmentBatch();
+        await LoadAvailableManagers();
+    }
+
+    private async Task LoadAssessmentBatch()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+
+            var response = await AssessmentBatchApiClient.GetAssessmentBatchByIdAsync(AssessmentBatchId);
+            if (response != null)
+            {
+                assessmentBatch = response;
+                
+                // Initialize update DTO with current values
+                updateDto = new UpdateAssessmentBatchDto
+                {
+                    CodeName = assessmentBatch.CodeName ?? string.Empty,
+                    Description = assessmentBatch.Description ?? string.Empty,
+                    StartDate = assessmentBatch.StartDate,
+                    EndDate = assessmentBatch.EndDate,
+                    Status = assessmentBatch.Status,
+                    ManagerBy = assessmentBatch.ManagerBy
+                };
+
+                // Set manager GUID string if exists
+                if (assessmentBatch.ManagerBy.HasValue)
+                {
+                    managerGuidString = assessmentBatch.ManagerBy.Value.ToString();
+                    // Load current manager info
+                    await LoadCurrentManagerInfo(assessmentBatch.ManagerBy.Value);
+                }
+            }
+            else
+            {
+                errorMessage = "Không thể tải thông tin đợt kiểm tra";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Lỗi: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadCurrentManagerInfo(Guid managerId)
+    {
+        try
+        {
+            var response = await UserApiClient.GetUserByIdAsync(managerId);
+            if (response.IsSuccess && response.Data != null)
+            {
+                currentManagerInfo = response.Data;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading manager info: {ex.Message}");
+        }
+    }
+
+    private async Task LoadAvailableManagers()
+    {
+        try
+        {
+            isLoadingManagers = true;
+            
+            // Get users with security level >= 5 (managers/admins)
+            var response = await UserApiClient.GetUsersByCompareSecurityLevelAsync(5);
+            if (response.IsSuccess && response.Data != null)
+            {
+                availableManagers = response.Data;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading available managers: {ex.Message}");
+        }
+        finally
+        {
+            isLoadingManagers = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            isSubmitting = true;
+            errorMessage = string.Empty;
+
+            // Validate form
+            if (string.IsNullOrWhiteSpace(updateDto.CodeName))
+            {
+                errorMessage = "Tên đợt kiểm tra không được để trống";
+                return;
+            }
+
+            // if (updateDto.StartDate >= updateDto.EndDate)
+            // {
+            //     errorMessage = "Ngày kết thúc phải sau ngày bắt đầu";
+            //     return;
+            // }
+
+            // Handle manager assignment
+            if (!string.IsNullOrWhiteSpace(selectedManagerId))
+            {
+                if (selectedManagerId == "remove")
+                {
+                    updateDto.ManagerBy = null;
+                }
+                else if (Guid.TryParse(selectedManagerId, out var newManagerId))
+                {
+                    updateDto.ManagerBy = newManagerId;
+                }
+                else
+                {
+                    errorMessage = "ID người quản lý không đúng định dạng";
+                    return;
+                }
+            }
+            // If no manager selected via dropdown, use the original manager
+            else if (assessmentBatch?.ManagerBy.HasValue == true)
+            {
+                updateDto.ManagerBy = assessmentBatch.ManagerBy;
+            }
+
+            // Legacy support for manual GUID input (fallback)
+            // if (!string.IsNullOrWhiteSpace(managerGuidString))
+            // {
+            //     if (Guid.TryParse(managerGuidString, out var managerGuid))
+            //     {
+            //         updateDto.ManagerBy = managerGuid;
+            //     }
+            //     else
+            //     {
+            //         errorMessage = "GUID người quản lý không đúng định dạng";
+            //         return;
+            //     }
+            // }
+
+            var response = await AssessmentBatchApiClient.UpdateAssessmentBatchAsync(AssessmentBatchId, updateDto);
+            if (response != null)
+            {
+               // await JSRuntime.InvokeAsync<object>("showToastAndWait", "Cập nhật thành công!", "success", 1500);
+                Navigation.NavigateTo($"/assessment-batch");
+            }
+            else
+            {
+                errorMessage = "Cập nhật thất bại";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Lỗi: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ResetForm()
+    {
+        if (assessmentBatch == null) return;
+        
+        updateDto = new UpdateAssessmentBatchDto
+        {
+            CodeName = assessmentBatch.CodeName ?? string.Empty,
+            Description = assessmentBatch.Description ?? string.Empty,
+            StartDate = assessmentBatch.StartDate,
+            EndDate = assessmentBatch.EndDate,
+            Status = assessmentBatch.Status,
+            ManagerBy = assessmentBatch.ManagerBy
+        };
+
+        if (assessmentBatch.ManagerBy.HasValue)
+        {
+            managerGuidString = assessmentBatch.ManagerBy.Value.ToString();
+        }
+        else
+        {
+            managerGuidString = string.Empty;
+        }
+
+        // Reset manager selection
+        selectedManagerId = string.Empty;
+
+        errorMessage = string.Empty;
+        StateHasChanged();
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/assessment-batch");
+    }
+
+    private string GetStatusClass(int status)
+    {
+        return status switch
+        {
+            0 => "draft",        // Nháp
+            1 => "active",       // Đang tiến hành
+            2 => "completed",    // Hoàn thành
+            3 => "completed",    // Đã hủy
+            -1 => "disabled",    // Vô hiệu hóa
+            _ => "unknown"
+        };
+    }
+
+    private string GetStatusIcon(int status)
+    {
+        return status switch
+        {
+            0 => "fa-edit",           // Nháp
+            1 => "fa-play-circle",    // Đang tiến hành
+            2 => "fa-check-circle",   // Hoàn thành
+            3 => "fa-ban",            // Đã hủy
+            -1 => "fa-times-circle",  // Vô hiệu hóa
+            _ => "fa-question-circle"
+        };
+    }
 }
