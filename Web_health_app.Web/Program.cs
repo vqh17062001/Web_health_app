@@ -30,6 +30,8 @@ builder.Services.AddHttpClient<GroupApiClient>(c => c.BaseAddress = new Uri(apiB
 builder.Services.AddHttpClient<StudentApiClient>(c => c.BaseAddress = new Uri(apiBase));
 builder.Services.AddHttpClient<DepartmentApiClient>(c => c.BaseAddress = new Uri(apiBase));
 builder.Services.AddHttpClient<AssessmentBatchApiClient>(c => c.BaseAddress = new Uri(apiBase));
+builder.Services.AddHttpClient<AssessmentTestApiClient>(c => c.BaseAddress = new Uri(apiBase));
+builder.Services.AddHttpClient<TestTypeApiClient>(c => c.BaseAddress = new Uri(apiBase));
 
 // … thêm client khác …
 

@@ -516,6 +516,32 @@ namespace Web_health_app.Web.ApiClients
                 };
             }
         }
+
+        /// <summary>
+        /// Get assessment batch student information by ABS ID
+        /// </summary>
+        public async Task<AssessmentBatchStudentDto?> GetAssessmentBatchStudentByAbsIdAsync(string absId)
+        {
+            try
+            {
+                await SetAuthorizeHeader();
+
+                var response = await _httpClient.GetAsync($"api/AssessmentBatch/student/{Uri.EscapeDataString(absId)}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    return JsonSerializer.Deserialize<AssessmentBatchStudentDto>(content, _jsonOptions);
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting assessment batch student by ABS ID: {ex.Message}");
+                return null;
+            }
+        }
     }
 
     /// <summary>

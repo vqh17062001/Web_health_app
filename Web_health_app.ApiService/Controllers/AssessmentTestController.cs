@@ -111,7 +111,7 @@ namespace Web_health_app.ApiService.Controllers
         }
 
         /// <summary>
-        /// Get all assessment tests for a specific student (by AbsId)
+        /// Get all assessment tests for a specific student (by AbsId) 
         /// </summary>
         [HttpGet("abs/{absId}")]
         [Authorize(Roles = "READ.AssessmentTests")]

@@ -1,4 +1,4 @@
-﻿@page "/assessment-batch"
+﻿@page "/assessmentbatch"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Web
 @using Web_health_app.Models.Models
@@ -555,7 +555,7 @@
     {
         try
         {
-            Navigation.NavigateTo($"/assessment-batch/{AssessmentBatchId}/students");
+            Navigation.NavigateTo($"/assessmentbatch/{AssessmentBatchId}/students");
 
         }
         catch (Exception ex)

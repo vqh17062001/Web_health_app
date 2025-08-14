@@ -341,7 +341,7 @@
 
                 // Redirect to assessment batch list after a short delay
                 await Task.Delay(500);
-                Navigation.NavigateTo($"/assessment-batch/{result.AssessmentBatchId}/students");
+                Navigation.NavigateTo($"/assessmentbatch/{result.AssessmentBatchId}/students");
             }
             else
             {
@@ -410,7 +410,7 @@
 
         if (confirmed)
         {
-            Navigation.NavigateTo("/assessment-batch");
+            Navigation.NavigateTo("/assessmentbatch");
         }
     }
 

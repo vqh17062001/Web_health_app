@@ -1,0 +1,373 @@
+/* Assessment Test Result Page Styles */
+.assessment-test-result-page {
+    padding: 20px;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+/* Page Header */
+.page-header {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.breadcrumb {
+    background: none;
+    padding: 0;
+    margin-bottom: 0;
+}
+
+.breadcrumb-item a {
+    color: #6c757d;
+    transition: color 0.3s ease;
+}
+
+.breadcrumb-item a:hover {
+    color: #007bff;
+}
+
+.header-actions .btn {
+    border-radius: 8px;
+    font-weight: 500;
+    padding: 10px 20px;
+}
+
+/* Loading Container */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Student Info Card */
+.student-info-card .card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.student-info-card .card-title {
+    color: #2c3e50;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.batch-info p {
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+/* Test Results Section */
+.test-results-section .card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.test-results-section .card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 20px 24px;
+}
+
+.test-results-section .card-header h5 {
+    margin-bottom: 0;
+    font-weight: 600;
+}
+
+.results-summary .badge {
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 20px;
+}
+
+/* Test Results Grid */
+.test-results-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.test-item {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.test-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.test-item.completed {
+    border-color: #28a745;
+    background: linear-gradient(135deg, #f8fff9 0%, #e8f5e8 100%);
+}
+
+.test-item.pending {
+    border-color: #ffc107;
+    background: linear-gradient(135deg, #fffbf0 0%, #fff3cd 100%);
+}
+
+/* Test Header */
+.test-header {
+    display: flex;
+    justify-content: between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.test-info {
+    flex: 1;
+}
+
+.test-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.test-description {
+    font-size: 14px;
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+.test-code {
+    font-size: 12px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.test-status .badge {
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+/* Test Input Section */
+.test-input-section {
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.test-input-section .form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.test-input-section .form-control {
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    padding: 10px 12px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.test-input-section .form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.test-input-section .form-control.is-invalid {
+    border-color: #dc3545;
+}
+
+.test-input-section .invalid-feedback {
+    display: block;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+/* Test Actions */
+.test-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.test-actions .btn {
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 16px;
+    transition: all 0.3s ease;
+}
+
+.test-actions .btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Result Info */
+.result-info {
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.result-info small {
+    color: #6c757d;
+    font-size: 12px;
+}
+
+/* Empty State */
+.empty-state {
+    background: white;
+    border-radius: 12px;
+    padding: 60px 20px;
+}
+
+.empty-state i {
+    color: #dee2e6;
+}
+
+.empty-state h5 {
+    color: #6c757d;
+    margin-bottom: 12px;
+}
+
+.empty-state p {
+    color: #adb5bd;
+    font-size: 14px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+/* Toast Styles */
+.toast-container {
+    z-index: 1055;
+}
+
+.toast {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.toast-header {
+    border-radius: 8px 8px 0 0;
+    padding: 12px 16px;
+}
+
+.toast-body {
+    padding: 12px 16px;
+    font-size: 14px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .assessment-test-result-page {
+        padding: 12px;
+    }
+
+    .page-header {
+        padding: 16px;
+    }
+
+    .page-title {
+        font-size: 24px;
+    }
+
+    .header-actions {
+        margin-top: 12px;
+    }
+
+    .header-actions .btn {
+        font-size: 14px;
+        padding: 8px 16px;
+    }
+
+    .test-item {
+        padding: 16px;
+    }
+
+    .test-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .test-actions {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .student-info-card .row>div {
+        text-align: left !important;
+        margin-bottom: 12px;
+    }
+}
+
+@media (max-width: 576px) {
+    .test-input-section .row>div {
+        margin-bottom: 12px;
+    }
+
+    .test-actions {
+        flex-direction: column;
+    }
+
+    .test-actions .btn {
+        width: 100%;
+    }
+}
+
+/* Animation for status changes */
+@keyframes statusChange {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.test-item.completed .test-status .badge {
+    animation: statusChange 0.5s ease-in-out;
+}
+
+/* Hover effects */
+.test-actions .btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+.test-actions .btn-outline-primary:hover {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.test-actions .btn-outline-danger:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}

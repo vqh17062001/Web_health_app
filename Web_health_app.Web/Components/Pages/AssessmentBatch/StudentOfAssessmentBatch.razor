@@ -1,4 +1,4 @@
-﻿@page "/assessment-batch/{AssessmentBatchId}/students"
+﻿@page "/assessmentbatch/{AssessmentBatchId}/students"
 @using Web_health_app.Models.Models
 @using Web_health_app.Web.ApiClients
 @using Microsoft.AspNetCore.Components.Web
@@ -237,7 +237,7 @@
                                         {
 
                                             <button type="button" class="btn btn-sm btn-outline-success"
-                                                    @onclick="() => RecordStudentResult(student.StudentId)">
+                                                    @onclick="() => RecordStudentResult(student.StudentId,currentAssessmentBatch.AssessmentBatchId)">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                         
@@ -609,7 +609,7 @@
     {
         await LoadStudents();
         currentAssessmentBatch = await AssessmentBatchApiClient.GetAssessmentBatchByIdAsync(AssessmentBatchId);
-        
+
     }
 
     private async Task LoadStudents()
@@ -621,7 +621,7 @@
 
             // Load students in this assessment batch
             var response = await AssessmentBatchApiClient.GetStudentsInAssessmentBatchAsync(AssessmentBatchId, currentPage, pageSize);
-            
+
             if (response != null)
             {
                 students = response.Students ?? new List<StudentInfoDto>();
@@ -650,10 +650,10 @@
         try
         {
             isLoadingAvailableStudents = true;
-            
+
             // Get all students
             var response = await StudentApiClient.GetAllStudentsAsync(1, 100);
-            
+
             if (response.IsSuccess && response.Data != null)
             {
                 // Filter out students already in the batch
@@ -730,7 +730,7 @@
         {
             selectedStudentIds.Remove(studentId);
         }
-        
+
         UpdateSelectAllState();
         StateHasChanged();
     }
@@ -739,7 +739,7 @@
     {
         var isSelected = (bool)e.Value!;
         selectedStudentIds.Clear();
-        
+
         if (isSelected)
         {
             foreach (var student in GetFilteredStudents())
@@ -747,7 +747,7 @@
                 selectedStudentIds.Add(student.StudentId);
             }
         }
-        
+
         UpdateSelectAllState();
         StateHasChanged();
     }
@@ -826,12 +826,12 @@
             // Call API to add students to assessment batch
             var studentIdsToAdd = selectedAvailableStudentIds.ToList();
             var result = await AssessmentBatchApiClient.AddStudentsToAssessmentBatchAsync(AssessmentBatchId, studentIdsToAdd);
-            
+
             if (result.IsSuccess)
             {
                 HideAddStudentsModal();
                 await RefreshData();
-                
+
                 await JSRuntime.InvokeVoidAsync("alert", $"Đã thêm {studentIdsToAdd.Count} học sinh vào đợt kiểm tra");
             }
             else
@@ -854,7 +854,7 @@
             {
                 // Call API to remove student from assessment batch
                 var result = await AssessmentBatchApiClient.RemoveStudentsFromAssessmentBatchAsync(AssessmentBatchId, new List<string> { studentId });
-                
+
                 if (result.IsSuccess)
                 {
                     selectedStudentIds.Remove(studentId);
@@ -879,13 +879,13 @@
         {
             var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
                 $"Bạn có chắc chắn muốn xóa {selectedStudentIds.Count} học sinh đã chọn khỏi đợt kiểm tra?");
-            
+
             if (confirmed)
             {
                 // Call API to remove multiple students from assessment batch
                 var studentIdsToRemove = selectedStudentIds.ToList();
                 var result = await AssessmentBatchApiClient.RemoveStudentsFromAssessmentBatchAsync(AssessmentBatchId, studentIdsToRemove);
-                
+
                 if (result.IsSuccess)
                 {
                     selectedStudentIds.Clear();
@@ -907,13 +907,24 @@
     // Navigation
     private void GoBack()
     {
-        Navigation.NavigateTo("/assessment-batch");
+        Navigation.NavigateTo("/assessmentbatch");
     }
 
-    private async Task RecordStudentResult(string studentId)
+    private async Task RecordStudentResult(string studentId, string assessmentBatchId)
     {
-        // TODO: Implement record student result functionality
-        await JSRuntime.InvokeVoidAsync("alert", $"Chức năng ghi kết quả cho học sinh ID: {studentId} sẽ được triển khai sau");
+        string ABS_ID = studentId + "_" + assessmentBatchId;
+        try
+        {
+            Navigation.NavigateTo($"/assessmentbatch/testresult/{ABS_ID}");
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error viewing details: {ex.Message}");
+        }
+        
+        
+
     }
 
     // Helper methods

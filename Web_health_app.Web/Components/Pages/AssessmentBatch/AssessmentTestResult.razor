@@ -1,0 +1,686 @@
+﻿@page "/assessmentbatch/testresult/{ABS_ID}"
+@using Microsoft.AspNetCore.Authorization
+@using Web_health_app.Web.Components.Layout
+@using Web_health_app.Models.Models
+@using Web_health_app.Web.ApiClients
+@using Microsoft.JSInterop
+@inject AssessmentBatchApiClient AssessmentBatchApiClient
+@inject StudentApiClient StudentApi
+@inject AssessmentTestApiClient AssessmentTestApiClient
+@inject TestTypeApiClient TestTypeApiClient
+@inject UserApiClient UserApiClient
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+
+@layout EmptyLayout
+@attribute [Authorize(Roles = "CREATE.AssessmentTests,UPDATE.AssessmentTests")]
+
+<link rel="stylesheet" href="css/AssessmentBatch/assessment-test-result.css" />
+
+<PageTitle>Kết quả kiểm tra - @(studentInfo?.Name ?? "Học sinh")</PageTitle>
+
+<div class="assessment-test-result-page container-fluid">
+    <!-- Header Section -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="page-title">
+                    <i class="fas fa-clipboard-check me-2"></i>
+                    Kết quả kiểm tra
+                </h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="/assessmentbatch" class="text-decoration-none">Đợt kiểm tra</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a href="/assessmentbatch/@assessmentBatchInfo?.AssessmentBatchId/students"
+                                class="text-decoration-none">
+                                @assessmentBatchInfo?.CodeName
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active">Kết quả kiểm tra</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-outline-secondary me-2" @onclick="GoBack">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    Quay lại
+                </button>
+                <button class="btn btn-success" @onclick="SaveAllResults" disabled="@(isSaving || !hasChanges)">
+                    @if (isSaving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    else
+                    {
+                        <i class="fas fa-save me-1"></i>
+                    }
+                    Lưu tất cả
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="loading-container">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Đang tải...</span>
+            </div>
+            <p class="mt-2">Đang tải dữ liệu...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            @errorMessage
+        </div>
+    }
+    else
+    {
+        <!-- Student Info Card -->
+        <div class="student-info-card mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h5 class="card-title mb-1">
+                                <i class="fas fa-user-graduate me-2"></i>
+                                @studentInfo?.Name
+                            </h5>
+                            <p class="card-text text-muted mb-0">
+                                Mã học sinh: <strong>@studentInfo?.StudentId</strong>
+                            </p>
+                            <p class="card-text text-muted mb-0">
+                                Khoa: <strong>@studentInfo?.Department</strong>
+                            </p>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <div class="batch-info">
+                                <p class="mb-1">
+                                    <i class="fas fa-calendar-alt me-1"></i>
+                                    Đợt kiểm tra: <strong>@assessmentBatchInfo?.CodeName</strong>
+                                </p>
+                                <p class="mb-0">
+                                    <i class="fas fa-clock me-1"></i>
+                                    @assessmentBatchInfo?.StartDate.ToString("dd/MM/yyyy") -
+                                    @assessmentBatchInfo?.EndDate.ToString("dd/MM/yyyy")
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Results Section -->
+        <div class="test-results-section">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list-check me-2"></i>
+                            Danh sách các bài kiểm tra
+                        </h5>
+                        <div class="results-summary">
+                            <span class="badge bg-success me-2">
+                                Đã hoàn thành: @existingResults.Count
+                            </span>
+                            <span class="badge bg-warning">
+                                Còn lại: @(testTypes.Count - existingResults.Count)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (testTypes.Any())
+                    {
+                        <div class="test-results-grid">
+                            @foreach (var testType in testTypes)
+                            {
+                                var existingResult = existingResults.FirstOrDefault(r => r.TestTypeId == testType.TestTypeId);
+                                var isCompleted = existingResult != null;
+
+                                <div class="test-item @(isCompleted ? "completed" : "pending")">
+                                    <div class="test-header">
+                                        <div class="test-info">
+                                            <h6 class="test-name">
+                                                @if (isCompleted)
+                                                {
+                                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="far fa-circle text-muted me-2"></i>
+                                                }
+                                                @testType.Name
+                                            </h6>
+                                            <p class="test-description text-muted mb-1">@testType.Description</p>
+                                            <small class="test-code text-secondary">Mã: @testType.Code</small>
+                                        </div>
+                                        <div class="test-status">
+                                            @if (isCompleted)
+                                            {
+                                                <span class="badge bg-success">Đã hoàn thành</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning">Chưa thực hiện</span>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <div class="test-input-section mt-3">
+                                        <div class="row align-items-end">
+                                            <div class="col-md-4">
+                                                <label class="form-label">Kết quả <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control @(GetValidationClass(testType.TestTypeId))"
+                                                    placeholder="Nhập kết quả..." value="@GetResultValue(testType.TestTypeId)"
+                                                    @onchange="@((e) => UpdateResultValue(testType.TestTypeId, e.Value?.ToString()))" />
+                                                @if (HasValidationError(testType.TestTypeId))
+                                                {
+                                                    <div class="invalid-feedback">
+                                                        Vui lòng nhập kết quả kiểm tra
+                                                    </div>
+                                                }
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label class="form-label">Đơn vị</label>
+                                                <input type="text" class="form-control" placeholder="Đơn vị..."
+                                                    value="@testType.Unit" readonly />
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label">Mã kết quả</label>
+                                                <input type="text" class="form-control" placeholder="Mã kết quả (tùy chọn)..."
+                                                    value="@testType.TestTypeId" readonly />
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="test-actions">
+                                                    @if (isCompleted)
+                                                    {
+                                                        <button class="btn btn-outline-primary btn-sm me-2"
+                                                            @onclick="@(() => UpdateSingleResult(testType.TestTypeId))"
+                                                            disabled="@isSaving">
+                                                            <i class="fas fa-edit me-1"></i>
+                                                            Cập nhật
+                                                        </button>
+                                                        <button class="btn btn-outline-danger btn-sm"
+                                                            @onclick="@(() => DeleteResult(testType.TestTypeId))" disabled="@isSaving">
+                                                            <i class="fas fa-trash me-1"></i>
+                                                            Xóa
+                                                        </button>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button class="btn btn-primary btn-sm"
+                                                            @onclick="@(() => SaveSingleResult(testType.TestTypeId))"
+                                                            disabled="@(isSaving || !IsResultValid(testType.TestTypeId))">
+                                                            <i class="fas fa-plus me-1"></i>
+                                                            Thêm kết quả
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        @if (isCompleted && existingResult != null)
+                                        {
+                                            <div class="result-info mt-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-clock me-1"></i>
+                                                    Cập nhật lần cuối: @existingResult.RecordedAt?.ToString("dd/MM/yyyy HH:mm")
+                                                    @if (!string.IsNullOrEmpty(existingResult.RecordedByName))
+                                                    {
+                                                        <span> bởi @existingResult.RecordedByName</span>
+                                                    }
+                                                </small>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Không có bài kiểm tra nào</h5>
+                            <p class="text-muted">Hiện tại chưa có loại kiểm tra nào được định nghĩa trong hệ thống.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Success Toast -->
+    @if (showSuccessToast)
+    {
+        <div class="toast-container position-fixed top-0 end-0 p-3">
+            <div class="toast show" role="alert">
+                <div class="toast-header bg-success text-white">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong class="me-auto">Thành công</strong>
+                    <button type="button" class="btn-close btn-close-white"
+                        @onclick="() => showSuccessToast = false"></button>
+                </div>
+                <div class="toast-body">
+                    @successMessage
+                </div>
+            </div>
+        </div>
+    }
+</div>
+@code {
+    [Parameter] public string ABS_ID { get; set; } = string.Empty;
+
+    // Data properties
+    private StudentInfoDto? studentInfo;
+    private AssessmentBatchInfoDto? assessmentBatchInfo;
+    private List<TestTypeInfoDto> testTypes = new();
+    private List<AssessmentTestInfoDto> existingResults = new();
+
+    // Form data for test results
+    private Dictionary<string, string> resultValues = new();
+    private Dictionary<string, string> unitValues = new();
+    private Dictionary<string, string> codeValues = new();
+    private Dictionary<string, bool> validationErrors = new();
+
+    // UI state
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string errorMessage = string.Empty;
+    private bool hasChanges = false;
+    private bool showSuccessToast = false;
+    private string successMessage = string.Empty;
+
+    // Current user
+    private Guid currentUserId = Guid.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadCurrentUser();
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Có lỗi xảy ra khi tải dữ liệu: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadCurrentUser()
+    {
+        try
+        {
+            var userInfo = await UserApiClient.GetCurrentUserAsync();
+            if (userInfo != null)
+            {
+                currentUserId = userInfo.Data.UserId;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading current user: {ex.Message}");
+        }
+    }
+
+    private async Task LoadData()
+    {
+        await LoadStudentAndBatchInfo();
+        await LoadTestTypes();
+        await LoadExistingResults();
+        InitializeFormData();
+    }
+
+    private async Task LoadStudentAndBatchInfo()
+    {
+        try
+        {
+            // Load existing results first to get batch info
+            var existingResultsResponse = await AssessmentTestApiClient.GetAssessmentTestsByAbsIdAsync(ABS_ID);
+            if (existingResultsResponse != null && existingResultsResponse.Any())
+            {
+                var firstResult = existingResultsResponse.First();
+                if (!string.IsNullOrEmpty(firstResult.AssessmentBatchId))
+                {
+                    assessmentBatchInfo = await AssessmentBatchApiClient.GetAssessmentBatchByIdAsync(firstResult.AssessmentBatchId);
+                }
+                if (!string.IsNullOrEmpty(firstResult.StudentId))
+                {
+                    var response = await StudentApi.GetStudentByIdAsync(firstResult.StudentId);
+                    studentInfo = response.Data;
+                }
+            }
+            else
+            {
+                // If no existing results, try to get info from ABS_ID pattern
+                // ABS_ID typically contains both student and batch info
+                // You might need to adjust this based on your ABS_ID format
+                var absInfo = await AssessmentBatchApiClient.GetAssessmentBatchStudentByAbsIdAsync(ABS_ID);
+                if (absInfo != null)
+                {
+                    if (!string.IsNullOrEmpty(absInfo.StudentId))
+                    {
+                        var response = await StudentApi.GetStudentByIdAsync(absInfo.StudentId);
+                        studentInfo = response.Data;
+                    }
+                    if (!string.IsNullOrEmpty(absInfo.AssessmentBatchId))
+                    {
+                        assessmentBatchInfo = await AssessmentBatchApiClient.GetAssessmentBatchByIdAsync(absInfo.AssessmentBatchId);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading student and batch info: {ex.Message}");
+        }
+    }
+
+    private async Task LoadTestTypes()
+    {
+        try
+        {
+            var response = await TestTypeApiClient.GetTestTypeSelectOptionsAsync();
+            if (response != null)
+            {
+                testTypes = response.Select(t => new TestTypeInfoDto
+                {
+                    TestTypeId = t.TestTypeId,
+                    Code = t.Code,
+                    Name = t.Name,
+                    Unit = t.Unit,
+                    Description = "" // You might want to load full details if needed
+                }).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading test types: {ex.Message}");
+        }
+    }
+
+    private async Task LoadExistingResults()
+    {
+        try
+        {
+            existingResults = await AssessmentTestApiClient.GetAssessmentTestsByAbsIdAsync(ABS_ID) ?? new
+            List<AssessmentTestInfoDto>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading existing results: {ex.Message}");
+        }
+    }
+
+    private void InitializeFormData()
+    {
+        resultValues.Clear();
+        unitValues.Clear();
+        codeValues.Clear();
+        validationErrors.Clear();
+
+        foreach (var testType in testTypes)
+        {
+            var existingResult = existingResults.FirstOrDefault(r => r.TestTypeId == testType.TestTypeId);
+            if (existingResult != null)
+            {
+                resultValues[testType.TestTypeId] = existingResult.ResultValue ?? "";
+                unitValues[testType.TestTypeId] = existingResult.Unit ?? testType.Unit ?? "";
+                codeValues[testType.TestTypeId] = existingResult.Code ?? "";
+            }
+            else
+            {
+                resultValues[testType.TestTypeId] = "";
+                unitValues[testType.TestTypeId] = testType.Unit ?? "";
+                codeValues[testType.TestTypeId] = "";
+            }
+            validationErrors[testType.TestTypeId] = false;
+        }
+    }
+
+    // Form helper methods
+    private string GetResultValue(string testTypeId)
+    {
+        return resultValues.TryGetValue(testTypeId, out var value) ? value : "";
+    }
+
+    private async Task<string> GetUnitValue(string testTypeId, string? defaultUnit)
+    {
+        var response = await TestTypeApiClient.GetTestTypeByIdAsync(testTypeId);
+        return response.Unit;
+    }
+
+    private async Task<string> GetCodeValue(string testTypeId)
+    {
+        var response= await TestTypeApiClient.GetTestTypeByIdAsync(testTypeId);
+        return response.Code;
+
+    }
+
+    private void UpdateResultValue(string testTypeId, string? value)
+    {
+        resultValues[testTypeId] = value ?? "";
+        validationErrors[testTypeId] = string.IsNullOrWhiteSpace(value);
+        hasChanges = true;
+    }
+
+
+
+
+
+    private bool IsResultValid(string testTypeId)
+    {
+        return !string.IsNullOrWhiteSpace(GetResultValue(testTypeId));
+    }
+
+    private bool HasValidationError(string testTypeId)
+    {
+        return validationErrors.TryGetValue(testTypeId, out var hasError) && hasError;
+    }
+
+    private string GetValidationClass(string testTypeId)
+    {
+        return HasValidationError(testTypeId) ? "is-invalid" : "";
+    }
+
+    // Action methods
+    private async Task SaveSingleResult(string testTypeId)
+    {
+        if (!IsResultValid(testTypeId))
+        {
+            validationErrors[testTypeId] = true;
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            var createDto = new CreateAssessmentTestDto
+            {
+                TestTypeId = testTypeId,
+                AbsId = ABS_ID,
+                Code = await GetCodeValue(testTypeId),
+                Unit = await GetUnitValue(testTypeId, null),
+                ResultValue = GetResultValue(testTypeId),
+                RecordedAt = DateTime.UtcNow,
+                RecordedBy = currentUserId
+            };
+
+            var result = await AssessmentTestApiClient.CreateAssessmentTestAsync(createDto);
+            if (result != null)
+            {
+                await LoadExistingResults();
+                ShowSuccess("Thêm kết quả kiểm tra thành công!");
+                hasChanges = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Có lỗi xảy ra khi lưu kết quả: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task UpdateSingleResult(string testTypeId)
+    {
+        if (!IsResultValid(testTypeId))
+        {
+            validationErrors[testTypeId] = true;
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            var updateDto = new UpdateAssessmentTestDto
+            {
+                Code = await GetCodeValue(testTypeId),
+                Unit = await GetUnitValue(testTypeId, null),
+                ResultValue = GetResultValue(testTypeId),
+                RecordedAt = DateTime.UtcNow,
+                RecordedBy = currentUserId
+            };
+
+            var result = await AssessmentTestApiClient.UpdateAssessmentTestAsync(testTypeId, ABS_ID, updateDto);
+            if (result != null)
+            {
+                await LoadExistingResults();
+                ShowSuccess("Cập nhật kết quả kiểm tra thành công!");
+                hasChanges = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Có lỗi xảy ra khi cập nhật kết quả: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteResult(string testTypeId)
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Bạn có chắc chắn muốn xóa kết quả kiểm tra này?"))
+            return;
+
+        isSaving = true;
+        try
+        {
+            var success = await AssessmentTestApiClient.DeleteAssessmentTestAsync(testTypeId, ABS_ID);
+            if (success)
+            {
+                await LoadExistingResults();
+                InitializeFormData();
+                ShowSuccess("Xóa kết quả kiểm tra thành công!");
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Có lỗi xảy ra khi xóa kết quả: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task SaveAllResults()
+    {
+        var pendingResults = testTypes
+        .Where(t => !existingResults.Any(r => r.TestTypeId == t.TestTypeId) && IsResultValid(t.TestTypeId))
+        .ToList();
+
+        if (!pendingResults.Any())
+        {
+            errorMessage = "Không có kết quả mới nào để lưu.";
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            var successCount = 0;
+            foreach (var testType in pendingResults)
+            {
+                try
+                {
+                    var createDto = new CreateAssessmentTestDto
+                    {
+                        TestTypeId = testType.TestTypeId,
+                        AbsId = ABS_ID,
+                        Code = await GetCodeValue(testType.TestTypeId),
+                        Unit = await GetUnitValue(testType.TestTypeId, testType.Unit),
+                        ResultValue = GetResultValue(testType.TestTypeId),
+                        RecordedAt = DateTime.UtcNow,
+                        RecordedBy = currentUserId
+                    };
+
+                    var result = await AssessmentTestApiClient.CreateAssessmentTestAsync(createDto);
+                    if (result != null)
+                    {
+                        successCount++;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error saving result for {testType.TestTypeId}: {ex.Message}");
+                }
+            }
+
+            if (successCount > 0)
+            {
+                await LoadExistingResults();
+                ShowSuccess($"Đã lưu thành công {successCount} kết quả kiểm tra!");
+                hasChanges = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Có lỗi xảy ra khi lưu kết quả: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        if (assessmentBatchInfo != null)
+        {
+            Navigation.NavigateTo($"/assessmentbatch/{assessmentBatchInfo.AssessmentBatchId}/students");
+        }
+        else
+        {
+            Navigation.NavigateTo("/assessmentbatch");
+        }
+    }
+
+    private void ShowSuccess(string message)
+    {
+        successMessage = message;
+        showSuccessToast = true;
+
+        // Auto hide after 3 seconds
+        Task.Delay(3000).ContinueWith(_ =>
+        {
+            showSuccessToast = false;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+}

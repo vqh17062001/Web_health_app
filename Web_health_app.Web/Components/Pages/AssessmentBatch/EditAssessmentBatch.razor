@@ -497,7 +497,7 @@
             if (response != null)
             {
                // await JSRuntime.InvokeAsync<object>("showToastAndWait", "Cập nhật thành công!", "success", 1500);
-                Navigation.NavigateTo($"/assessment-batch");
+                Navigation.NavigateTo($"/assessmentbatch");
             }
             else
             {
@@ -547,7 +547,7 @@
 
     private void GoBack()
     {
-        Navigation.NavigateTo("/assessment-batch");
+        Navigation.NavigateTo("/assessmentbatch");
     }
 
     private string GetStatusClass(int status)

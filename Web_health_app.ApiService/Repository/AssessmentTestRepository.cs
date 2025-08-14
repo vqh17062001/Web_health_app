@@ -341,23 +341,33 @@ namespace Web_health_app.ApiService.Repository
                 if (assessmentTest == null)
                     return null;
 
-                // Update fields
-                if (!string.IsNullOrWhiteSpace(updateDto.Code))
-                    assessmentTest.Code = updateDto.Code;
+                // ❶ Tạo câu lệnh UPDATE dùng COALESCE
+                //    – Nếu tham số truyền vào NULL     ➜ giữ nguyên giá trị cũ
+                //    – Nếu tham số khác NULL           ➜ ghi đè
+                var sql = $@"
+                            UPDATE AssessmentTests
+                            SET
+                            code        = COALESCE({{0}}, code ),
+                            unit        = COALESCE({{1}}, unit ),
+                            result_value = COALESCE({{2}}, result_value),
+                            recorded_at  = COALESCE({{3}}, recorded_at ),
+                            recorded_by  = COALESCE({{4}}, recorded_by )
+                        WHERE testtype_ID = {{5}}
+                          AND ABS_ID     = {{6}};
+                    ";
 
-                if (!string.IsNullOrWhiteSpace(updateDto.Unit))
-                    assessmentTest.Unit = updateDto.Unit;
-
-                if (!string.IsNullOrWhiteSpace(updateDto.ResultValue))
-                    assessmentTest.ResultValue = updateDto.ResultValue;
-
-                if (updateDto.RecordedAt.HasValue)
-                    assessmentTest.RecordedAt = updateDto.RecordedAt.Value;
-
-                if (updateDto.RecordedBy.HasValue)
-                    assessmentTest.RecordedBy = updateDto.RecordedBy.Value;
-
-                await _context.SaveChangesAsync();
+                // ❷ Gọi ExecuteSqlRawAsync với mảng parameters đúng thứ tự
+                await _context.Database.ExecuteSqlRawAsync(
+                    sql,
+                    // 0-4: giá trị mới (có thể null) -- sẽ được COALESCE
+                    string.IsNullOrWhiteSpace(updateDto.Code) ? null : updateDto.Code,
+                    string.IsNullOrWhiteSpace(updateDto.Unit) ? null : updateDto.Unit,
+                    string.IsNullOrWhiteSpace(updateDto.ResultValue) ? null : updateDto.ResultValue,
+                    updateDto.RecordedAt,        // Nullable<DateTime>
+                    updateDto.RecordedBy,        // Nullable<Guid>  (hoặc string tuỳ DB)
+                                           // 5-6: khoá tìm dòng cần sửa
+                    testTypeId,
+                    absId);
 
                 return await GetAssessmentTestByIdAsync(testTypeId, absId);
             }
