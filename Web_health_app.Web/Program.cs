@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
+using System.Reflection;
 using Web_health_app.Web;
 using Web_health_app.Web.ApiClients;
 using Web_health_app.Web.Authentication;
@@ -29,8 +30,6 @@ builder.Services.AddHttpClient<GroupApiClient>(c => c.BaseAddress = new Uri(apiB
 builder.Services.AddHttpClient<StudentApiClient>(c => c.BaseAddress = new Uri(apiBase));
 builder.Services.AddHttpClient<DepartmentApiClient>(c => c.BaseAddress = new Uri(apiBase));
 builder.Services.AddHttpClient<AssessmentBatchApiClient>(c => c.BaseAddress = new Uri(apiBase));
-builder.Services.AddHttpClient<UserApiClient>(c => c.BaseAddress = new Uri(apiBase));
-
 
 // … thêm client khác …
 

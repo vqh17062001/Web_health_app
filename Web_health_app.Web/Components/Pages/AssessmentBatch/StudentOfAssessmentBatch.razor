@@ -233,10 +233,17 @@
                                                 @onclick="() => ShowStudentDetails(student)">
                                             <i class="fas fa-eye"></i>
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-outline-success"
-                                                @onclick="() => RecordStudentResult(student.StudentId)">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
+                                        @if (currentAssessmentBatch.Status == 2 )
+                                        {
+
+                                            <button type="button" class="btn btn-sm btn-outline-success"
+                                                    @onclick="() => RecordStudentResult(student.StudentId)">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        
+                                        
+                                        }
+                                      
                                         <button type="button" class="btn btn-sm btn-outline-danger"
                                                 @onclick="() => RemoveStudentFromBatch(student.StudentId)">
                                             <i class="fas fa-times"></i>
@@ -596,9 +603,13 @@
     private int totalCount = 0;
     private int totalPages = 0;
 
+    AssessmentBatchInfoDto currentAssessmentBatch = new AssessmentBatchInfoDto();
+
     protected override async Task OnInitializedAsync()
     {
         await LoadStudents();
+        currentAssessmentBatch = await AssessmentBatchApiClient.GetAssessmentBatchByIdAsync(AssessmentBatchId);
+        
     }
 
     private async Task LoadStudents()

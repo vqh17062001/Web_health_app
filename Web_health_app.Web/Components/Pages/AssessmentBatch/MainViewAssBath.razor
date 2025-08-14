@@ -185,7 +185,7 @@
                                 <div class="card-header">
                                     <div class="assessment-status">
                                         <span class="badge @GetStatusBadgeClass(assessment.Status)">
-                                            @GetStatusText(assessment.Status)
+                                            @assessment.StatusString
                                         </span>
                                     </div>
                                     <div class="dropdown">
@@ -249,13 +249,7 @@
                                         <i class="fas fa-eye"></i>
                                         Xem chi tiết
                                     </button>
-                                    @if (assessment.Status == 1)
-                                    {
-                                        <button class="btn btn-success btn-sm" @onclick="() => ManageParticipants(assessment.AssessmentBatchId)">
-                                            <i class="fas fa-users"></i>
-                                            Quản lý HS
-                                        </button>
-                                    }
+                                 
                                 </div>
                             </div>
                         </div>
@@ -499,15 +493,7 @@
         }
     }
 
-    private string GetStatusText(short status) => status switch
-    {
-        0 => "Nháp",
-        1 => "Đang tiến hành", 
-        2 => "Hoàn thành",
-        3 => "Đã hủy",
-        -1 => "Vô hiệu hóa",
-        _ => "Không xác định"
-    };
+
 
     private string GetStatusBadgeClass(short status) => status switch
     {
@@ -519,13 +505,7 @@
         _ => "bg-warning"
     };
 
-    private string GetTypeText(string type) => type switch
-    {
-        "physical" => "Thể lực",
-        "health" => "Sức khỏe",
-        "comprehensive" => "Toàn diện",
-        _ => "Khác"
-    };
+
 
     private double GetCompletionPercentage(AssessmentBatchInfoDto assessment)
     {
