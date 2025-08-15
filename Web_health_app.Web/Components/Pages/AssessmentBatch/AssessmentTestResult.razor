@@ -171,6 +171,19 @@
                                                 <span class="badge bg-warning">Chưa thực hiện</span>
                                             }
                                         </div>
+                                            @if (existingResult!= null)
+                                            {
+                                            <div class="test-status">
+                                                @if ( existingResult.Result != "Chưa đạt")
+                                                {
+                                                    <span class="badge bg-success">@existingResult.Result</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">@existingResult.Result</span>
+                                                }
+                                            </div>
+                                            }
                                     </div>
 
                                     <div class="test-input-section mt-3">
