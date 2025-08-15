@@ -8,6 +8,7 @@
 @using Microsoft.AspNetCore.Authorization
 @inject StudentApiClient StudentApiClient
 @inject AssessmentBatchApiClient AssessmentBatchApiClient
+@inject AssessmentTestApiClient AssessmentTestApiClient
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 
@@ -175,7 +176,7 @@
                             <th>Liên hệ</th>
                             <th>Khoa</th>
                         
-                            <th>Ngày tham gia</th>
+                            <th>Tiến độ Hoàn thành</th>
                             <th style="width: 120px;">Thao tác</th>
                         </tr>
                     </thead>
@@ -222,9 +223,22 @@
                                 </td>
                                
                                 <td>
+                                    @{
+                                        var completed = completedLookup.GetValueOrDefault(student.StudentId, 0);
+
+                                      
+                                        string colorClass = completed switch
+                                        {
+                                            0 => "text-danger",   // đỏ
+                                            >= 5 => "text-success",
+                                            _ => "text-warning"  // vàng
+                                                                  // xanh lá
+                                                          // mặc định
+                                        };
+                                    }
                                     <div class="date-info">
                                         <i class="fas fa-calendar-plus"></i>
-                                        @(DateTime.Now.ToString("dd/MM/yyyy"))
+                                        <span class="@colorClass">@completed / 5 bài kiểm tra</span>
                                     </div>
                                 </td>
                                 <td>
@@ -604,11 +618,13 @@
     private int totalPages = 0;
 
     AssessmentBatchInfoDto currentAssessmentBatch = new AssessmentBatchInfoDto();
+    private Dictionary<string, int> completedLookup = new();
+
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadStudents();
         currentAssessmentBatch = await AssessmentBatchApiClient.GetAssessmentBatchByIdAsync(AssessmentBatchId);
+        await LoadStudents();
 
     }
 
@@ -633,6 +649,12 @@
                 students = new List<StudentInfoDto>();
                 Console.WriteLine("Error loading students: No data returned");
             }
+            ;
+
+            completedLookup = await GetStudentTestCompeleted(students);
+
+            
+
         }
         catch (Exception ex)
         {
@@ -922,8 +944,8 @@
         {
             Console.WriteLine($"Error viewing details: {ex.Message}");
         }
-        
-        
+
+
 
     }
 
@@ -931,7 +953,7 @@
     private List<StudentInfoDto> GetFilteredStudents()
     {
         var filteredStudents = students.AsEnumerable();
-        
+
         if (!string.IsNullOrWhiteSpace(searchQuery))
         {
             var query = searchQuery.ToLower();
@@ -940,14 +962,14 @@
                 s.StudentId.ToLower().Contains(query) ||
                 (s.Email?.ToLower().Contains(query) ?? false));
         }
-        
+
         return filteredStudents.ToList();
     }
 
     private List<StudentInfoDto> GetFilteredAvailableStudents()
     {
         var filteredStudents = availableStudents.AsEnumerable();
-        
+
         // Filter by search query
         if (!string.IsNullOrWhiteSpace(availableStudentsSearchQuery))
         {
@@ -957,14 +979,14 @@
                 s.StudentId.ToLower().Contains(query) ||
                 (s.Email?.ToLower().Contains(query) ?? false));
         }
-        
+
         // Filter by department
         if (!string.IsNullOrWhiteSpace(selectedDepartmentFilter))
         {
             filteredStudents = filteredStudents.Where(s => 
                 s.Department != null && s.Department.Equals(selectedDepartmentFilter, StringComparison.OrdinalIgnoreCase));
         }
-        
+
         return filteredStudents.ToList();
     }
 
@@ -992,7 +1014,7 @@
         var words = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         if (words.Length == 1)
             return words[0].Substring(0, Math.Min(2, words[0].Length)).ToUpper();
-        
+
         return $"{words[0][0]}{words[words.Length - 1][0]}".ToUpper();
     }
 
@@ -1006,11 +1028,23 @@
     {
         return students?.Count(s => s.Status == 1) ?? 0;
     }
+    private async Task<Dictionary<string, int>> GetStudentTestCompeleted(List<StudentInfoDto> studentInfoDtos)
+    {
+        Dictionary<string, int> result = new Dictionary<string, int>();
 
+        foreach (var studentInfo in studentInfoDtos)
+        {
+             string absId = $"{studentInfo.StudentId}_{currentAssessmentBatch.AssessmentBatchId}";
+             var assessmenttestResult = await AssessmentTestApiClient.GetAssessmentTestsByAbsIdAsync(absId);
+            result[studentInfo.StudentId] = assessmenttestResult.Count();
+        }
+
+        return result;
+    }
     private int GetCompletedCount()
     {
         // Placeholder - implement based on your business logic
-        return students?.Count(s => s.Status == 2) ?? 0;
+        return currentAssessmentBatch.CompletedCount;
     }
 
     private int GetPendingCount()

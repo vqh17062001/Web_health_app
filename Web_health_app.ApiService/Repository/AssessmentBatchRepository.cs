@@ -169,7 +169,7 @@ namespace Web_health_app.ApiService.Repository
                         CreatedBy = ab.CreatedBy ?? Guid.Empty,
                         CreatedByName = null,
                         StudentCount = ab.AssessmentBatchStudents.Count(),
-                        CompletedCount = 0,
+                        CompletedCount = CompletedCountAssessmentBatch(ab.BatchId),
                         PendingCount = ab.AssessmentBatchStudents.Count()
                     })
                     .ToListAsync();
@@ -208,13 +208,46 @@ namespace Web_health_app.ApiService.Repository
                     CreatedBy = assessmentBatch.CreatedBy ?? Guid.Empty,
                     CreatedByName = null,
                     StudentCount = assessmentBatch.AssessmentBatchStudents.Count(),
-                    CompletedCount = -1,
+                    ///////
+                    CompletedCount = CompletedCountAssessmentBatch(assessmentBatchId),
                     PendingCount = assessmentBatch.AssessmentBatchStudents.Count()
                 };
             }
             catch (Exception ex)
             {
                 throw new Exception($"Error retrieving assessment batch: {ex.Message}", ex);
+            }
+        }
+
+        private int CompletedCountAssessmentBatch(string assessmentBatchId)
+        {
+            try
+            {
+                int count = 0;
+
+                var countABS = _context.AssessmentBatchStudents.Where(x => x.BatchId == assessmentBatchId).ToList();
+
+
+                foreach (var i in countABS)
+                {
+
+                    if (_context.AssessmentTests.Where(x => x.AbsId == i.AbsId).Count() >= 5)
+                    {
+
+                        count++;
+                    }
+
+
+
+                }
+
+                return count;
+            }
+            catch (Exception ex) { 
+            
+                throw new Exception($"Error  detail: {ex.Message}", ex);
+
+
             }
         }
 
@@ -244,7 +277,7 @@ namespace Web_health_app.ApiService.Repository
                     CreatedBy = assessmentBatch.CreatedBy ?? Guid.Empty,
                     CreatedByName = null,
                     StudentCount = assessmentBatch.AssessmentBatchStudents.Count(),
-                    CompletedCount = 0,
+                    CompletedCount = CompletedCountAssessmentBatch(assessmentBatchId),
                     PendingCount = assessmentBatch.AssessmentBatchStudents.Count(),
                     Students = assessmentBatch.AssessmentBatchStudents.Select(abs => new AssessmentBatchStudentDto
                     {
@@ -541,7 +574,7 @@ namespace Web_health_app.ApiService.Repository
                         CreatedBy = ab.CreatedBy ?? Guid.Empty,
                         CreatedByName = null,
                         StudentCount = ab.AssessmentBatchStudents.Count(),
-                        CompletedCount = 0,
+                        CompletedCount = CompletedCountAssessmentBatch(ab.BatchId),
                         PendingCount = ab.AssessmentBatchStudents.Count()
                     })
                     .ToListAsync();
@@ -582,7 +615,7 @@ namespace Web_health_app.ApiService.Repository
                         CreatedBy = ab.CreatedBy ?? Guid.Empty,
                         CreatedByName = null,
                         StudentCount = ab.AssessmentBatchStudents.Count(),
-                        CompletedCount = 0,
+                        CompletedCount = CompletedCountAssessmentBatch(ab.BatchId),
                         PendingCount = ab.AssessmentBatchStudents.Count()
                     })
                     .ToListAsync();

@@ -53,6 +53,8 @@ namespace Web_health_app.Models.Models
         public int SleepSessionsCount { get; set; } = 0;
         public int ExercisesCount { get; set; } = 0;
         public int AssessmentBatchCount { get; set; } = 0;
+      
+
     }
 
     /// <summary>
