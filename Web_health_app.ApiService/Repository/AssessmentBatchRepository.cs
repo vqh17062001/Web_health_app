@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 using Web_health_app.ApiService.Entities;
 using Web_health_app.Models.Models;
@@ -18,48 +18,54 @@ namespace Web_health_app.ApiService.Repository
         {
             try
             {
-                var query = _context.AssessmentBatches.AsQueryable();
+                // 1. Truy vấn gốc
+                var query = _context.AssessmentBatches.AsNoTracking();
 
-                // Filter by active status
                 if (!includeInactive)
-                {
                     query = query.Where(ab => ab.Status >= 0);
-                }
 
-                // Apply search filter
                 if (!string.IsNullOrWhiteSpace(searchTerm))
-                {
                     query = query.Where(ab =>
-                        ab.BatchId.Contains(searchTerm) ||
-                        (ab.CodeName != null && ab.CodeName.Contains(searchTerm)) ||
-                        (ab.Description != null && ab.Description.Contains(searchTerm)));
-                }
+                             ab.BatchId.Contains(searchTerm) ||
+                             (ab.CodeName != null && ab.CodeName.Contains(searchTerm)) ||
+                             (ab.Description != null && ab.Description.Contains(searchTerm)));
 
                 var totalCount = await query.CountAsync();
 
-                var assessmentBatches = await query
+                // 2. Lấy dữ liệu trang (materialize thành list trước)
+                var batchEntities = await query
                     .Include(ab => ab.AssessmentBatchStudents)
                     .OrderBy(ab => ab.BatchId)
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(ab => new AssessmentBatchInfoDto
-                    {
-                        AssessmentBatchId = ab.BatchId,
-                        CodeName = ab.CodeName ?? "",
-                        Description = ab.Description,
-                        StartDate = ab.ScheduledAt ?? DateTime.MinValue,
-                        EndDate = ab.ScheduledAt ?? DateTime.MinValue,
-                        Status = ab.Status,
-                        StatusString = ab.GetAssessmentBatchStatusString(),
-                        CreatedAt = ab.CreatedAt ?? DateTime.MinValue,
-                        UpdatedAt = ab.UpdatedAt,
-                        CreatedBy = ab.CreatedBy ?? Guid.Empty,
-                        CreatedByName = null,
-                        StudentCount = ab.AssessmentBatchStudents.Count(),
-                        CompletedCount = 0,
-                        PendingCount = ab.AssessmentBatchStudents.Count()
-                    })
-                    .ToListAsync();
+                    .ToListAsync();        // <-- chỉ thay đổi vị trí ToListAsync()
+
+                // 3. Map sang DTO (CompletedCount vẫn gọi như bạn đã viết)
+                var assessmentBatches = batchEntities.Select(ab => new AssessmentBatchInfoDto
+                {
+                    AssessmentBatchId = ab.BatchId,
+                    CodeName = ab.CodeName ?? "",
+                    Description = ab.Description,
+                    StartDate = ab.ScheduledAt ?? DateTime.MinValue,
+                    EndDate = ab.ScheduledAt ?? DateTime.MinValue,
+                    Status = ab.Status,
+                    StatusString = ab.GetAssessmentBatchStatusString(),   // GIỮ NGUYÊN
+
+                    CreatedAt = ab.CreatedAt ?? DateTime.MinValue,
+                    UpdatedAt = ab.UpdatedAt,
+
+                    ManagerBy = ab.ManagerBy ?? Guid.Empty,
+                    ManagerByName = _context.Users.FirstOrDefault(x => x.UserId == ab.ManagerBy)?.FullName + " "
+                                      + _context.Users.FirstOrDefault(x => x.UserId == ab.ManagerBy)?.UserName,
+
+                    CreatedBy = ab.CreatedBy ?? Guid.Empty,
+                    CreatedByName = _context.Users.FirstOrDefault(x => x.UserId == ab.CreatedBy)?.FullName + " "
+                                      + _context.Users.FirstOrDefault(x => x.UserId == ab.CreatedBy)?.UserName,
+
+                    StudentCount = ab.AssessmentBatchStudents.Count(),
+                    CompletedCount = CompletedCountAssessmentBatch(ab.BatchId),  // GIỮ NGUYÊN
+                    PendingCount = ab.AssessmentBatchStudents.Count()
+                }).ToList();
 
                 return (assessmentBatches, totalCount);
             }
@@ -69,13 +75,15 @@ namespace Web_health_app.ApiService.Repository
             }
         }
 
-        public async Task<(List<AssessmentBatchInfoDto> AssessmentBatches, int TotalCount)> SearchAssessmentBatchesAsync(AssessmentBatchSearchDto searchDto)
+        public async Task<(List<AssessmentBatchInfoDto> AssessmentBatches, int TotalCount)>
+                            SearchAssessmentBatchesAsync(AssessmentBatchSearchDto searchDto)
         {
             try
             {
-                var query = _context.AssessmentBatches.AsQueryable();
+                /* ---------- 1. Xây dựng truy vấn gốc ---------- */
+                var query = _context.AssessmentBatches.AsNoTracking();
 
-                // Apply filters
+                // --- bộ lọc ---
                 if (!string.IsNullOrWhiteSpace(searchDto.SearchTerm))
                 {
                     query = query.Where(ab =>
@@ -85,94 +93,104 @@ namespace Web_health_app.ApiService.Repository
                 }
 
                 if (searchDto.Status.HasValue)
-                {
-                    query = query.Where(ab => ab.Status == searchDto.Status.Value);
-                }
+                    query = query.Where(ab => ab.Status == searchDto.Status);
+
                 if (searchDto.ManagerBy.HasValue)
-                {
-                    query = query.Where(ab => ab.ManagerBy == searchDto.ManagerBy.Value);
-                }
+                    query = query.Where(ab => ab.ManagerBy == searchDto.ManagerBy);
 
                 if (searchDto.CreatedBy.HasValue)
-                {
-                    query = query.Where(ab => ab.CreatedBy == searchDto.CreatedBy.Value);
-                }
+                    query = query.Where(ab => ab.CreatedBy == searchDto.CreatedBy);
 
                 if (searchDto.StartDateFrom.HasValue)
-                {
-                    query = query.Where(ab => ab.ScheduledAt >= searchDto.StartDateFrom.Value);
-                }
+                    query = query.Where(ab => ab.ScheduledAt >= searchDto.StartDateFrom);
 
                 if (searchDto.StartDateTo.HasValue)
-                {
-                    query = query.Where(ab => ab.ScheduledAt <= searchDto.StartDateTo.Value);
-                }
+                    query = query.Where(ab => ab.ScheduledAt <= searchDto.StartDateTo);
 
                 if (searchDto.CreatedFrom.HasValue)
-                {
-                    query = query.Where(ab => ab.CreatedAt >= searchDto.CreatedFrom.Value);
-                }
+                    query = query.Where(ab => ab.CreatedAt >= searchDto.CreatedFrom);
 
                 if (searchDto.CreatedTo.HasValue)
-                {
-                    query = query.Where(ab => ab.CreatedAt <= searchDto.CreatedTo.Value);
-                }
+                    query = query.Where(ab => ab.CreatedAt <= searchDto.CreatedTo);
 
-                // Apply sorting
+                // --- sắp xếp ---
                 if (!string.IsNullOrWhiteSpace(searchDto.SortBy))
                 {
-                    var isDescending = searchDto.SortDirection?.ToLower() == "desc";
+                    var desc = searchDto.SortDirection?.ToLower() == "desc";
                     switch (searchDto.SortBy.ToLower())
                     {
                         case "assessmentbatchid":
                         case "batchid":
-                            query = isDescending ? query.OrderByDescending(ab => ab.BatchId) : query.OrderBy(ab => ab.BatchId);
+                            query = desc ? query.OrderByDescending(ab => ab.BatchId) : query.OrderBy(ab => ab.BatchId);
                             break;
                         case "batchname":
                         case "codename":
-                            query = isDescending ? query.OrderByDescending(ab => ab.CodeName) : query.OrderBy(ab => ab.CodeName);
+                            query = desc ? query.OrderByDescending(ab => ab.CodeName) : query.OrderBy(ab => ab.CodeName);
                             break;
                         case "scheduledat":
                         case "startdate":
-                            query = isDescending ? query.OrderByDescending(ab => ab.ScheduledAt) : query.OrderBy(ab => ab.ScheduledAt);
+                            query = desc ? query.OrderByDescending(ab => ab.ScheduledAt) : query.OrderBy(ab => ab.ScheduledAt);
                             break;
                         case "createdat":
-                            query = isDescending ? query.OrderByDescending(ab => ab.CreatedAt) : query.OrderBy(ab => ab.CreatedAt);
+                            query = desc ? query.OrderByDescending(ab => ab.CreatedAt) : query.OrderBy(ab => ab.CreatedAt);
                             break;
                         default:
                             query = query.OrderBy(ab => ab.BatchId);
                             break;
                     }
                 }
-                else
-                {
-                    query = query.OrderBy(ab => ab.BatchId);
-                }
+                else query = query.OrderBy(ab => ab.BatchId);
 
                 var totalCount = await query.CountAsync();
 
-                var assessmentBatches = await query
+                /* ---------- 2. Lấy page dữ liệu (materialize) ---------- */
+                var batchEntities = await query
                     .Include(ab => ab.AssessmentBatchStudents)
                     .Skip((searchDto.Page - 1) * searchDto.PageSize)
                     .Take(searchDto.PageSize)
-                    .Select(ab => new AssessmentBatchInfoDto
-                    {
-                        AssessmentBatchId = ab.BatchId,
-                        CodeName = ab.CodeName ?? "",
-                        Description = ab.Description,
-                        StartDate = ab.ScheduledAt ?? DateTime.MinValue,
-                        EndDate = ab.ScheduledAt ?? DateTime.MinValue,
-                        Status = ab.Status,
-                        StatusString = ab.GetAssessmentBatchStatusString(),
-                        CreatedAt = ab.CreatedAt ?? DateTime.MinValue,
-                        UpdatedAt = ab.UpdatedAt,
-                        CreatedBy = ab.CreatedBy ?? Guid.Empty,
-                        CreatedByName = null,
-                        StudentCount = ab.AssessmentBatchStudents.Count(),
-                        CompletedCount = CompletedCountAssessmentBatch(ab.BatchId),
-                        PendingCount = ab.AssessmentBatchStudents.Count()
-                    })
-                    .ToListAsync();
+                    .ToListAsync();            // <-- materialize trước
+
+                /* ---------- 3. Lấy User 1 lần ---------- */
+                var userIds = batchEntities
+                                .SelectMany(b => new[] { b.ManagerBy, b.CreatedBy })
+                                .Where(id => id.HasValue)
+                                .Select(id => id!.Value)
+                                .Distinct()
+                                .ToList();
+
+                var users = await _context.Users
+                                  .Where(u => userIds.Contains(u.UserId))
+                                  .AsNoTracking()
+                                  .ToDictionaryAsync(u => u.UserId);
+
+                /* ---------- 4. Map DTO – GIỮ NGUYÊN CompletedCount ---------- */
+                var assessmentBatches = batchEntities.Select(ab => new AssessmentBatchInfoDto
+                {
+                    AssessmentBatchId = ab.BatchId,
+                    CodeName = ab.CodeName ?? "",
+                    Description = ab.Description,
+                    StartDate = ab.ScheduledAt ?? DateTime.MinValue,
+                    EndDate = ab.ScheduledAt ?? DateTime.MinValue,
+                    Status = ab.Status,
+                    StatusString = ab.GetAssessmentBatchStatusString(),   // giữ nguyên
+
+                    CreatedAt = ab.CreatedAt ?? DateTime.MinValue,
+                    UpdatedAt = ab.UpdatedAt,
+
+                    ManagerBy = ab.ManagerBy ?? Guid.Empty,
+                    ManagerByName = ab.ManagerBy is { } mId && users.TryGetValue(mId, out var mUser)
+                                            ? $"{mUser.FullName} {mUser.UserName}"
+                                            : string.Empty,
+
+                    CreatedBy = ab.CreatedBy ?? Guid.Empty,
+                    CreatedByName = ab.CreatedBy is { } cId && users.TryGetValue(cId, out var cUser)
+                                            ? $"{cUser.FullName} {cUser.UserName}"
+                                            : string.Empty,
+
+                    StudentCount = ab.AssessmentBatchStudents.Count(),
+                    CompletedCount = CompletedCountAssessmentBatch(ab.BatchId),  // giữ nguyên
+                    PendingCount = ab.AssessmentBatchStudents.Count()
+                }).ToList();
 
                 return (assessmentBatches, totalCount);
             }
@@ -182,17 +200,32 @@ namespace Web_health_app.ApiService.Repository
             }
         }
 
+
         public async Task<AssessmentBatchInfoDto?> GetAssessmentBatchByIdAsync(string assessmentBatchId)
         {
             try
             {
+                /* ---------- 1. Lấy batch (đọc-chỉ) ---------- */
                 var assessmentBatch = await _context.AssessmentBatches
+                    .AsNoTracking()
                     .Include(ab => ab.AssessmentBatchStudents)
                     .FirstOrDefaultAsync(ab => ab.BatchId == assessmentBatchId);
 
                 if (assessmentBatch == null)
                     return null;
 
+                /* ---------- 2. Tải User liên quan 1 lần ---------- */
+                var userIds = new List<Guid>();
+
+                if (assessmentBatch.ManagerBy.HasValue) userIds.Add(assessmentBatch.ManagerBy.Value);
+                if (assessmentBatch.CreatedBy.HasValue) userIds.Add(assessmentBatch.CreatedBy.Value);
+
+                var users = await _context.Users
+                                  .Where(u => userIds.Contains(u.UserId))
+                                  .AsNoTracking()
+                                  .ToDictionaryAsync(u => u.UserId);
+
+                /* ---------- 3. Map DTO – GIỮ NGUYÊN CompletedCount ---------- */
                 return new AssessmentBatchInfoDto
                 {
                     AssessmentBatchId = assessmentBatch.BatchId,
@@ -202,14 +235,22 @@ namespace Web_health_app.ApiService.Repository
                     EndDate = assessmentBatch.ScheduledAt ?? DateTime.MinValue,
                     Status = assessmentBatch.Status,
                     StatusString = assessmentBatch.GetAssessmentBatchStatusString(),
+
                     CreatedAt = assessmentBatch.CreatedAt ?? DateTime.MinValue,
                     UpdatedAt = assessmentBatch.UpdatedAt,
-                    ManagerBy = assessmentBatch.ManagerBy,
+
+                    ManagerBy = assessmentBatch.ManagerBy ?? Guid.Empty,
+                    ManagerByName = assessmentBatch.ManagerBy is { } mId && users.TryGetValue(mId, out var mUser)
+                                            ? $"{mUser.FullName} {mUser.UserName}"
+                                            : string.Empty,
+
                     CreatedBy = assessmentBatch.CreatedBy ?? Guid.Empty,
-                    CreatedByName = null,
+                    CreatedByName = assessmentBatch.CreatedBy is { } cId && users.TryGetValue(cId, out var cUser)
+                                            ? $"{cUser.FullName} {cUser.UserName}"
+                                            : string.Empty,
+
                     StudentCount = assessmentBatch.AssessmentBatchStudents.Count(),
-                    ///////
-                    CompletedCount = CompletedCountAssessmentBatch(assessmentBatchId),
+                    CompletedCount = CompletedCountAssessmentBatch(assessmentBatchId), // giữ nguyên
                     PendingCount = assessmentBatch.AssessmentBatchStudents.Count()
                 };
             }
@@ -218,6 +259,7 @@ namespace Web_health_app.ApiService.Repository
                 throw new Exception($"Error retrieving assessment batch: {ex.Message}", ex);
             }
         }
+
 
         private int CompletedCountAssessmentBatch(string assessmentBatchId)
         {
@@ -255,7 +297,9 @@ namespace Web_health_app.ApiService.Repository
         {
             try
             {
+                /* ---------- 1. Lấy batch (đọc-chỉ) ---------- */
                 var assessmentBatch = await _context.AssessmentBatches
+                    .AsNoTracking()
                     .Include(ab => ab.AssessmentBatchStudents)
                         .ThenInclude(abs => abs.Student)
                     .FirstOrDefaultAsync(ab => ab.BatchId == assessmentBatchId);
@@ -263,6 +307,18 @@ namespace Web_health_app.ApiService.Repository
                 if (assessmentBatch == null)
                     return null;
 
+                /* ---------- 2. Lấy User liên quan 1 lần ---------- */
+                var userIds = new List<Guid>();
+
+                if (assessmentBatch.ManagerBy.HasValue) userIds.Add(assessmentBatch.ManagerBy.Value);
+                if (assessmentBatch.CreatedBy.HasValue) userIds.Add(assessmentBatch.CreatedBy.Value);
+
+                var users = await _context.Users
+                    .Where(u => userIds.Contains(u.UserId))
+                    .AsNoTracking()
+                    .ToDictionaryAsync(u => u.UserId);
+
+                /* ---------- 3. Map DTO – GIỮ NGUYÊN CompletedCount ---------- */
                 return new AssessmentBatchDetailDto
                 {
                     AssessmentBatchId = assessmentBatch.BatchId,
@@ -272,19 +328,31 @@ namespace Web_health_app.ApiService.Repository
                     EndDate = assessmentBatch.ScheduledAt ?? DateTime.MinValue,
                     Status = assessmentBatch.Status,
                     StatusString = assessmentBatch.GetAssessmentBatchStatusString(),
+
                     CreatedAt = assessmentBatch.CreatedAt ?? DateTime.MinValue,
                     UpdatedAt = assessmentBatch.UpdatedAt,
+
+                    ManagerBy = assessmentBatch.ManagerBy ?? Guid.Empty,
+                    ManagerByName = assessmentBatch.ManagerBy is { } mId && users.TryGetValue(mId, out var mUser)
+                                            ? $"{mUser.FullName} {mUser.UserName}"
+                                            : string.Empty,
+
                     CreatedBy = assessmentBatch.CreatedBy ?? Guid.Empty,
-                    CreatedByName = null,
+                    CreatedByName = assessmentBatch.CreatedBy is { } cId && users.TryGetValue(cId, out var cUser)
+                                            ? $"{cUser.FullName} {cUser.UserName}"
+                                            : string.Empty,
+
                     StudentCount = assessmentBatch.AssessmentBatchStudents.Count(),
-                    CompletedCount = CompletedCountAssessmentBatch(assessmentBatchId),
+                    CompletedCount = CompletedCountAssessmentBatch(assessmentBatchId),  // giữ nguyên
                     PendingCount = assessmentBatch.AssessmentBatchStudents.Count(),
+
                     Students = assessmentBatch.AssessmentBatchStudents.Select(abs => new AssessmentBatchStudentDto
                     {
                         AssessmentBatchId = abs.BatchId ?? "",
                         StudentId = abs.StudentId ?? "",
-                        AssignedDate = DateTime.UtcNow
+                        AssignedDate = DateTime.UtcNow         // giữ nguyên như code gốc
                     }).ToList(),
+
                     Tests = new List<AssessmentTestDto>()
                 };
             }
@@ -293,6 +361,7 @@ namespace Web_health_app.ApiService.Repository
                 throw new Exception($"Error retrieving assessment batch detail: {ex.Message}", ex);
             }
         }
+
 
         public async Task<AssessmentBatchInfoDto?> CreateAssessmentBatchAsync(CreateAssessmentBatchDto createDto)
         {
@@ -546,38 +615,67 @@ namespace Web_health_app.ApiService.Repository
             }
         }
 
-        public async Task<(List<AssessmentBatchInfoDto> AssessmentBatches, int TotalCount)> GetAssessmentBatchesByCreatorAsync(Guid createdBy, int pageNumber = 1, int pageSize = 10)
+        public async Task<(List<AssessmentBatchInfoDto> AssessmentBatches, int TotalCount)>
+    GetAssessmentBatchesByCreatorAsync(Guid createdBy, int pageNumber = 1, int pageSize = 10)
         {
             try
             {
+                /* ---------- 1. Truy vấn gốc ---------- */
                 var query = _context.AssessmentBatches
-                    .Where(ab => ab.CreatedBy == createdBy);
+                                    .AsNoTracking()
+                                    .Where(ab => ab.CreatedBy == createdBy);
 
                 var totalCount = await query.CountAsync();
 
-                var assessmentBatches = await query
+                /* ---------- 2. Lấy page dữ liệu (materialize) ---------- */
+                var batchEntities = await query
                     .Include(ab => ab.AssessmentBatchStudents)
                     .OrderByDescending(ab => ab.CreatedAt)
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(ab => new AssessmentBatchInfoDto
-                    {
-                        AssessmentBatchId = ab.BatchId,
-                        CodeName = ab.CodeName ?? "",
-                        Description = ab.Description,
-                        StartDate = ab.ScheduledAt ?? DateTime.MinValue,
-                        EndDate = ab.ScheduledAt ?? DateTime.MinValue,
-                        Status = ab.Status,
-                        StatusString = ab.GetAssessmentBatchStatusString(),
-                        CreatedAt = ab.CreatedAt ?? DateTime.MinValue,
-                        UpdatedAt = ab.UpdatedAt,
-                        CreatedBy = ab.CreatedBy ?? Guid.Empty,
-                        CreatedByName = null,
-                        StudentCount = ab.AssessmentBatchStudents.Count(),
-                        CompletedCount = CompletedCountAssessmentBatch(ab.BatchId),
-                        PendingCount = ab.AssessmentBatchStudents.Count()
-                    })
-                    .ToListAsync();
+                    .ToListAsync();               // materialize trước -> không còn method instance trong LINQ
+
+                /* ---------- 3. Tải User liên quan 1 lần ---------- */
+                var userIds = batchEntities
+                                .SelectMany(b => new[] { b.ManagerBy, b.CreatedBy })
+                                .Where(id => id.HasValue)
+                                .Select(id => id!.Value)
+                                .Distinct()
+                                .ToList();
+
+                var users = await _context.Users
+                                  .Where(u => userIds.Contains(u.UserId))
+                                  .AsNoTracking()
+                                  .ToDictionaryAsync(u => u.UserId);
+
+                /* ---------- 4. Map DTO – GIỮ NGUYÊN CompletedCount ---------- */
+                var assessmentBatches = batchEntities.Select(ab => new AssessmentBatchInfoDto
+                {
+                    AssessmentBatchId = ab.BatchId,
+                    CodeName = ab.CodeName ?? "",
+                    Description = ab.Description,
+                    StartDate = ab.ScheduledAt ?? DateTime.MinValue,
+                    EndDate = ab.ScheduledAt ?? DateTime.MinValue,
+                    Status = ab.Status,
+                    StatusString = ab.GetAssessmentBatchStatusString(),
+
+                    CreatedAt = ab.CreatedAt ?? DateTime.MinValue,
+                    UpdatedAt = ab.UpdatedAt,
+
+                    ManagerBy = ab.ManagerBy ?? Guid.Empty,
+                    ManagerByName = ab.ManagerBy is { } mId && users.TryGetValue(mId, out var mUser)
+                                            ? $"{mUser.FullName} {mUser.UserName}"
+                                            : string.Empty,
+
+                    CreatedBy = ab.CreatedBy ?? Guid.Empty,
+                    CreatedByName = ab.CreatedBy is { } cId && users.TryGetValue(cId, out var cUser)
+                                            ? $"{cUser.FullName} {cUser.UserName}"
+                                            : string.Empty,
+
+                    StudentCount = ab.AssessmentBatchStudents.Count(),
+                    CompletedCount = CompletedCountAssessmentBatch(ab.BatchId),   // GIỮ NGUYÊN
+                    PendingCount = ab.AssessmentBatchStudents.Count()
+                }).ToList();
 
                 return (assessmentBatches, totalCount);
             }
@@ -587,38 +685,68 @@ namespace Web_health_app.ApiService.Repository
             }
         }
 
-        public async Task<(List<AssessmentBatchInfoDto> AssessmentBatches, int TotalCount)> GetActiveAssessmentBatchesAsync(int pageNumber = 1, int pageSize = 10)
+
+        public async Task<(List<AssessmentBatchInfoDto> AssessmentBatches, int TotalCount)>
+        GetActiveAssessmentBatchesAsync(int pageNumber = 1, int pageSize = 10)
         {
             try
             {
+                /* ---------- 1. Truy vấn gốc ---------- */
                 var query = _context.AssessmentBatches
-                    .Where(ab => ab.Status == 1); // Active status
+                                    .AsNoTracking()
+                                    .Where(ab => ab.Status == 1);   // chỉ batch đang active
 
                 var totalCount = await query.CountAsync();
 
-                var assessmentBatches = await query
+                /* ---------- 2. Lấy page dữ liệu (materialize) ---------- */
+                var batchEntities = await query
                     .Include(ab => ab.AssessmentBatchStudents)
                     .OrderByDescending(ab => ab.CreatedAt)
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(ab => new AssessmentBatchInfoDto
-                    {
-                        AssessmentBatchId = ab.BatchId,
-                        CodeName = ab.CodeName ?? "",
-                        Description = ab.Description,
-                        StartDate = ab.ScheduledAt ?? DateTime.MinValue,
-                        EndDate = ab.ScheduledAt ?? DateTime.MinValue,
-                        Status = ab.Status,
-                        StatusString = ab.GetAssessmentBatchStatusString(),
-                        CreatedAt = ab.CreatedAt ?? DateTime.MinValue,
-                        UpdatedAt = ab.UpdatedAt,
-                        CreatedBy = ab.CreatedBy ?? Guid.Empty,
-                        CreatedByName = null,
-                        StudentCount = ab.AssessmentBatchStudents.Count(),
-                        CompletedCount = CompletedCountAssessmentBatch(ab.BatchId),
-                        PendingCount = ab.AssessmentBatchStudents.Count()
-                    })
-                    .ToListAsync();
+                    .ToListAsync();               // materialize trước ⇒ không còn method instance trong LINQ
+
+                /* ---------- 3. Tải User liên quan 1 lần ---------- */
+                var userIds = batchEntities
+                                .SelectMany(b => new[] { b.ManagerBy, b.CreatedBy })
+                                .Where(id => id.HasValue)
+                                .Select(id => id!.Value)
+                                .Distinct()
+                                .ToList();
+
+                var users = await _context.Users
+                                  .Where(u => userIds.Contains(u.UserId))
+                                  .AsNoTracking()
+                                  .ToDictionaryAsync(u => u.UserId);
+
+                /* ---------- 4. Map DTO – GIỮ NGUYÊN CompletedCount ---------- */
+                var assessmentBatches = batchEntities.Select(ab => new AssessmentBatchInfoDto
+                {
+                    AssessmentBatchId = ab.BatchId,
+                    CodeName = ab.CodeName ?? "",
+                    Description = ab.Description,
+                    StartDate = ab.ScheduledAt ?? DateTime.MinValue,
+                    EndDate = ab.ScheduledAt ?? DateTime.MinValue,
+                    Status = ab.Status,
+                    StatusString = ab.GetAssessmentBatchStatusString(),
+
+                    CreatedAt = ab.CreatedAt ?? DateTime.MinValue,
+                    UpdatedAt = ab.UpdatedAt,
+
+                    ManagerBy = ab.ManagerBy ?? Guid.Empty,
+                    ManagerByName = ab.ManagerBy is { } mId && users.TryGetValue(mId, out var mUser)
+                                            ? $"{mUser.FullName} {mUser.UserName}"
+                                            : string.Empty,
+
+                    CreatedBy = ab.CreatedBy ?? Guid.Empty,
+                    CreatedByName = ab.CreatedBy is { } cId && users.TryGetValue(cId, out var cUser)
+                                            ? $"{cUser.FullName} {cUser.UserName}"
+                                            : string.Empty,
+
+                    StudentCount = ab.AssessmentBatchStudents.Count(),
+                    CompletedCount = CompletedCountAssessmentBatch(ab.BatchId),  // giữ nguyên
+                    PendingCount = ab.AssessmentBatchStudents.Count()
+                }).ToList();
 
                 return (assessmentBatches, totalCount);
             }
@@ -627,6 +755,7 @@ namespace Web_health_app.ApiService.Repository
                 throw new Exception($"Error retrieving active assessment batches: {ex.Message}", ex);
             }
         }
+
 
         public async Task<int> BulkOperationAsync(BulkAssessmentBatchOperationDto operationDto)
         {

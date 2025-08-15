@@ -76,7 +76,7 @@
                         </div>
                         <div class="stat-content">
                             <h3>@totalParticipants</h3>
-                            <p>Học sinh tham gia</p>
+                            <p>Lược Học sinh tham gia</p>
                         </div>
                     </div>
                 </div>
@@ -232,6 +232,26 @@
                                             <i class="fas fa-chart-line"></i>
                                             <span>@(GetCompletionPercentage(assessment))% hoàn thành</span>
                                         </div>
+                                        <div class="info-item">
+                                            👤
+                                            <span>Tạo Bởi: @assessment.CreatedByName </span>
+                                        </div>
+                                        @if (assessment.ManagerByName != null && assessment.ManagerBy != Guid.Empty)
+                                        {
+                                            <div class="info-item">
+                                                👤
+                                                <span>Quản Lý Bởi: @assessment.ManagerByName </span>
+                                            </div>
+                                        }else
+                                        {
+
+                                            <div class="info-item text-bg-warning">
+                                                👤
+                                                <span>Quản Lý Bởi: Chưa Gán Người Quản lý </span>
+                                            </div>
+
+                                        }
+
                                     </div>
 
                                     <div class="progress-section">

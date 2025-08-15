@@ -118,7 +118,7 @@
                                     <span>@currentManagerInfo.FullName</span>
                                     <small class="text-muted">(@currentManagerInfo.UserName)</small>
                                 }
-                                else if (assessmentBatch.ManagerBy.HasValue)
+                                 else if (assessmentBatch.ManagerBy.HasValue && assessmentBatch.ManagerBy != Guid.Empty)
                                 {
                                     <i class="fas fa-user-question"></i>
                                     <span class="text-warning">Đang tải thông tin...</span>
@@ -255,7 +255,7 @@
                                             @currentManagerInfo.FullName (@currentManagerInfo.UserName)
                                         </span>
                                     }
-                                    else if (assessmentBatch.ManagerBy.HasValue)
+                                        else if (assessmentBatch.ManagerBy.HasValue && assessmentBatch.ManagerBy != Guid.Empty)
                                     {
                                         <span class="badge bg-warning">
                                             <i class="fas fa-spinner fa-spin"></i>

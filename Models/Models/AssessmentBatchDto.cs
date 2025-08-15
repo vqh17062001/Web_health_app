@@ -30,6 +30,9 @@ namespace Web_health_app.Models.Models
 
         public Guid? ManagerBy { get; set; }
 
+        public string? ManagerByName { get; set; }
+
+
         public Guid CreatedBy { get; set; }
 
         public string? CreatedByName { get; set; }
