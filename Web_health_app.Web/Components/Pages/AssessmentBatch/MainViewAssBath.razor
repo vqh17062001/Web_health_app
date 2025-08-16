@@ -1,6 +1,7 @@
 ﻿@page "/assessmentbatch"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Web
+@using System.Globalization
 @using Web_health_app.Models.Models
 @using Web_health_app.Web.ApiClients
 @inject AssessmentBatchApiClient AssessmentBatchApiClient
@@ -247,7 +248,7 @@
 
                                             <div class="info-item text-bg-warning">
                                                 👤
-                                                <span>Quản Lý Bởi: Chưa Gán Người Quản lý </span>
+                                                <span>Chưa Gán Người Quản lý! </span>
                                             </div>
 
                                         }
@@ -260,14 +261,14 @@
                                             <span>@assessment.CompletedCount/@assessment.StudentCount</span>
                                         </div>
                                         <div class="progress">
-                                            <div class="progress-bar" style="width: @(GetCompletionPercentage(assessment))%"></div>
+                                            <div class="progress-bar" style='@($"width:{GetCompletionPercentage(assessment).ToString("0.##", CultureInfo.InvariantCulture)}%");'></div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="card-footer">
-                                    <button class="btn btn-primary btn-sm" @onclick="() => ViewDetails(assessment.AssessmentBatchId)">
+                                    <button class="btn btn-primary btn-sm" @onclick="() => GetActionNextWithBatchStatus(assessment.AssessmentBatchId)">
                                         <i class="fas fa-eye"></i>
-                                        Xem chi tiết
+                                        @GetStringNextWithBatchStatus(assessment.AssessmentBatchId)
                                     </button>
                                  
                                 </div>
@@ -391,7 +392,7 @@
 
             // Load statistics
             statistics = await AssessmentBatchApiClient.GetAssessmentBatchStatisticsAsync();
-            
+
             // Load assessment batches
             await LoadAssessmentBatches();
         }
@@ -520,12 +521,52 @@
         0 => "bg-secondary",      // Nháp
         1 => "bg-primary",        // Đang tiến hành
         2 => "bg-success",        // Hoàn thành
-        3 => "bg-danger",         // Đã hủy
-        -1 => "bg-dark",          // Vô hiệu hóa
+        3 => "bg-dark",         // Đã hủy
+        -1 => "bg-danger",          // Vô hiệu hóa
         _ => "bg-warning"
     };
 
+    private async Task GetActionNextWithBatchStatus(string AssessmentBatchId)
 
+    {
+        var currentAssessment =  assessments.Where(x => x.AssessmentBatchId == AssessmentBatchId).FirstOrDefault();
+
+        if (currentAssessment.Status != 3){
+            short V = 1;
+            var updateAssessmentBatch = new UpdateAssessmentBatchDto()
+        {
+            Status = ++currentAssessment.Status,
+
+        };
+
+            await AssessmentBatchApiClient.UpdateAssessmentBatchAsync(AssessmentBatchId, updateAssessmentBatch);
+            StateHasChanged();
+            LoadData();
+        }
+
+
+
+    }
+
+
+    private string GetStringNextWithBatchStatus(string AssessmentBatchId){
+
+        var currentAssessment = assessments.Where(x => x.AssessmentBatchId == AssessmentBatchId).FirstOrDefault();
+
+        return currentAssessment.Status switch
+
+        {
+            0 => "Phê Duyệt",
+            1 => "Tiến Hành Hiểm Tra",
+            2 => "Hoàn Tất Kiểm Tra",
+            3 => "Đã Hoàn Tất Kiểm Tra",
+            -1 => "Tổ chức lại"
+
+
+        };
+
+
+    }
 
     private double GetCompletionPercentage(AssessmentBatchInfoDto assessment)
     {
