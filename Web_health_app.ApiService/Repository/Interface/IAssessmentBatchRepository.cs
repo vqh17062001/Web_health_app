@@ -12,7 +12,7 @@ namespace Web_health_app.ApiService.Repository
         /// <param name="searchTerm">Optional search term for filtering</param>
         /// <param name="includeInactive">Include inactive assessment batches in results</param>
         /// <returns>Paginated list of assessment batches</returns>
-        Task<(List<AssessmentBatchInfoDto> AssessmentBatches, int TotalCount)> GetAllAssessmentBatchesAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null, bool includeInactive = false);
+        Task<(List<AssessmentBatchInfoDto> AssessmentBatches, int TotalCount)> GetAllAssessmentBatchesAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null, bool includeInactive = false, string currenUserId = "");
 
         /// <summary>
         /// Get assessment batches with advanced search and filtering

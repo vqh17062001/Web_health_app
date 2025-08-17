@@ -603,7 +603,7 @@
 
         if (isAllRead)
         {
-
+            isOnlyManage = false;
             await Task.WhenAll(
                 LoadStudents(),
                 LoadStatistics(),

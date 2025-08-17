@@ -27,19 +27,20 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="includeInactive">Include inactive assessment batches</param>
         /// <returns>Paginated list of assessment batches</returns>
         [HttpGet]
-        [Authorize(Roles = "READ.AssessmentBatch")]
+        [Authorize(Roles = "READ.AssessmentBatch,READ_SELF_MANAGED.AssessmentBatch")]
         public async Task<ActionResult> GetAllAssessmentBatches(
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] string? searchTerm = null,
-            [FromQuery] bool includeInactive = false)
+            [FromQuery] bool includeInactive = false,
+            [FromQuery] string currenUserId = "")
         {
             try
             {
                 if (pageNumber < 1) pageNumber = 1;
                 if (pageSize < 1 || pageSize > 100) pageSize = 10;
 
-                var (assessmentBatches, totalCount) = await _assessmentBatchRepository.GetAllAssessmentBatchesAsync(pageNumber, pageSize, searchTerm, includeInactive);
+                var (assessmentBatches, totalCount) = await _assessmentBatchRepository.GetAllAssessmentBatchesAsync(pageNumber, pageSize, searchTerm, includeInactive, currenUserId);
 
                 var response = new AssessmentBatchesApiResponse
                 {
@@ -69,7 +70,8 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="searchDto">Search criteria</param>
         /// <returns>Filtered list of assessment batches</returns>
         [HttpPost("search")]
-        [Authorize(Roles = "READ.AssessmentBatch")]
+        [Authorize(Roles = "READ.AssessmentBatch,READ_SELF_MANAGED.AssessmentBatch")]
+
         public async Task<ActionResult> SearchAssessmentBatches([FromBody] AssessmentBatchSearchDto searchDto)
         {
             try
@@ -112,7 +114,7 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="id">Assessment batch ID</param>
         /// <returns>Assessment batch information</returns>
         [HttpGet("{id}")]
-        [Authorize(Roles = "READ.AssessmentBatch")]
+        [Authorize(Roles = "READ.AssessmentBatch,READ_SELF_MANAGED.AssessmentBatch")]
         public async Task<ActionResult> GetAssessmentBatchById(string id)
         {
             try
@@ -143,7 +145,7 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="id">Assessment batch ID</param>
         /// <returns>Detailed assessment batch information</returns>
         [HttpGet("{id}/detail")]
-        [Authorize(Roles = "READ.AssessmentBatch")]
+        [Authorize(Roles = "READ.AssessmentBatch,READ_SELF_MANAGED.AssessmentBatch")]
         public async Task<ActionResult> GetAssessmentBatchDetail(string id)
         {
             try
@@ -213,7 +215,7 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="updateDto">Assessment batch update data</param>
         /// <returns>Updated assessment batch information</returns>
         [HttpPut("{id}")]
-        [Authorize(Roles = "UPDATE.AssessmentBatch")]
+        [Authorize(Roles = "UPDATE.AssessmentBatch,UPDATE_SELF_MANAGED.AssessmentBatch")]
         public async Task<ActionResult> UpdateAssessmentBatch(string id, [FromBody] UpdateAssessmentBatchDto updateDto)
         {
             try
@@ -255,7 +257,7 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="id">Assessment batch ID</param>
         /// <returns>Success status</returns>
         [HttpDelete("{id}")]
-        [Authorize(Roles = "DELETE.AssessmentBatch")]
+        [Authorize(Roles = "DELETE.AssessmentBatch,DELETE_SELF_MANAGED.AssessmentBatch")]
         public async Task<ActionResult> DeleteAssessmentBatch(string id)
         {
             try
@@ -286,7 +288,7 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="id">Assessment batch ID</param>
         /// <returns>Success status</returns>
         [HttpPatch("{id}/soft-delete")]
-        [Authorize(Roles = "DELETE.AssessmentBatch")]
+        [Authorize(Roles = "DELETE.AssessmentBatch,DELETE_SELF_MANAGED.AssessmentBatch")]
         public async Task<ActionResult> SoftDeleteAssessmentBatch(string id)
         {
             try
@@ -316,7 +318,7 @@ namespace Web_health_app.ApiService.Controllers
         /// </summary>
         /// <returns>Assessment batch statistics</returns>
         [HttpGet("statistics")]
-        [Authorize(Roles = "READ.AssessmentBatch")]
+        [Authorize(Roles = "READ.AssessmentBatch,READ_SELF_MANAGED.AssessmentBatch")]
         public async Task<ActionResult> GetAssessmentBatchStatistics()
         {
             try
@@ -338,7 +340,7 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="studentIds">List of student IDs to assign</param>
         /// <returns>Number of students assigned</returns>
         [HttpPost("{id}/students")]
-        [Authorize(Roles = "UPDATE.AssessmentBatch")]
+        [Authorize(Roles = "UPDATE.AssessmentBatch,UPDATE_SELF_MANAGED.AssessmentBatch")]
         public async Task<ActionResult> AssignStudentsToAssessmentBatch(string id, [FromBody] List<string> studentIds)
         {
             try
@@ -370,7 +372,7 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="studentIds">List of student IDs to remove</param>
         /// <returns>Number of students removed</returns>
         [HttpDelete("{id}/students")]
-        [Authorize(Roles = "UPDATE.AssessmentBatch")]
+        [Authorize(Roles = "UPDATE.AssessmentBatch,UPDATE_SELF_MANAGED.AssessmentBatch")]
         public async Task<ActionResult> RemoveStudentsFromAssessmentBatch(string id, [FromBody] List<string> studentIds)
         {
             try
@@ -403,7 +405,7 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="pageSize">Page size (default: 10)</param>
         /// <returns>Paginated list of students in the assessment batch</returns>
         [HttpGet("{id}/students")]
-        [Authorize(Roles = "READ.AssessmentBatch")]
+        [Authorize(Roles = "READ.AssessmentBatch,READ_SELF_MANAGED.AssessmentBatch")]
         public async Task<ActionResult> GetStudentsInAssessmentBatch(
             string id,
             [FromQuery] int pageNumber = 1,
@@ -451,7 +453,7 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="pageSize">Page size (default: 10)</param>
         /// <returns>Paginated list of assessment batches created by the user</returns>
         [HttpGet("creator/{createdBy}")]
-        [Authorize(Roles = "READ.AssessmentBatch")]
+        [Authorize(Roles = "READ.AssessmentBatch,READ_SELF_MANAGED.AssessmentBatch")]
         public async Task<ActionResult> GetAssessmentBatchesByCreator(
             Guid createdBy,
             [FromQuery] int pageNumber = 1,
@@ -498,7 +500,7 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="pageSize">Page size (default: 10)</param>
         /// <returns>Paginated list of active assessment batches</returns>
         [HttpGet("active")]
-        [Authorize(Roles = "READ.AssessmentBatch")]
+        [Authorize(Roles = "READ.AssessmentBatch,READ_SELF_MANAGED.AssessmentBatch")]
         public async Task<ActionResult> GetActiveAssessmentBatches(
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10)
@@ -680,7 +682,7 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="pageSize">Page size (default: 20)</param>
         /// <returns>Paginated list of recent assessment batches</returns>
         [HttpGet("Recent")]
-        [Authorize(Roles = "READ.AssessmentBatch")]
+        [Authorize(Roles = "READ.AssessmentBatch,READ_SELF_MANAGED.AssessmentBatch")]
         public async Task<ActionResult<AssessmentBatchesApiResponse>> GetRecentAssessmentBatches(
             [FromQuery] int days = 30,
             [FromQuery] int pageNumber = 1,
@@ -734,7 +736,7 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="pageSize">Page size (default: 20)</param>
         /// <returns>Paginated list of assessment batches in date range</returns>
         [HttpGet("DateRange")]
-        [Authorize(Roles = "READ.AssessmentBatch")]
+        [Authorize(Roles = "READ.AssessmentBatch,READ_SELF_MANAGED.AssessmentBatch")]
         public async Task<ActionResult<AssessmentBatchesApiResponse>> GetAssessmentBatchesByDateRange(
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null,
@@ -791,7 +793,7 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="searchTerm">Search term for filtering</param>
         /// <returns>Paginated list of assessment batches with specific status</returns>
         [HttpGet("Status/{status}")]
-        [Authorize(Roles = "READ.AssessmentBatch")]
+        [Authorize(Roles = "READ.AssessmentBatch,READ_SELF_MANAGED.AssessmentBatch")]
         public async Task<ActionResult<AssessmentBatchesApiResponse>> GetAssessmentBatchesByStatus(
             string status,
             [FromQuery] int pageNumber = 1,
@@ -851,7 +853,7 @@ namespace Web_health_app.ApiService.Controllers
         /// <param name="id">Assessment batch ID</param>
         /// <returns>Existence status</returns>
         [HttpHead("{id}")]
-        [Authorize(Roles = "READ.AssessmentBatch")]
+        [Authorize(Roles = "READ.AssessmentBatch,READ_SELF_MANAGED.AssessmentBatch")]
         public async Task<ActionResult> AssessmentBatchExists(string id)
         {
             try

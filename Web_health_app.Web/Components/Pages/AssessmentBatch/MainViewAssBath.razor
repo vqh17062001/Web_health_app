@@ -1,5 +1,6 @@
 ﻿@page "/assessmentbatch"
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Web
 @using System.Globalization
 @using Web_health_app.Models.Models
@@ -197,21 +198,27 @@
                                             <li><a class="dropdown-item" href="#" @onclick="() => ViewDetails(assessment.AssessmentBatchId)">
                                                     <i class="fas fa-eye"></i> Chi tiết
                                                 </a></li>
-                                            <li><a class="dropdown-item" href="#"
-                                                    @onclick="() => EditAssessment(assessment.AssessmentBatchId)">
-                                                    <i class="fas fa-edit"></i> Chỉnh sửa
-                                                </a></li>
+                                            <AuthorizeView Roles="UPDATE.AssessmentBatch,UPDATE_SELF_MANAGED.AssessmentBatch">
+                                                <li><a class="dropdown-item" href="#"
+                                                        @onclick="() => EditAssessment(assessment.AssessmentBatchId)">
+                                                        <i class="fas fa-edit"></i> Chỉnh sửa
+                                                    </a></li>
+                                            </AuthorizeView>
+                                            <AuthorizeView Roles="READ.Students,READ_SELF_MANAGED.Students">
                                             <li><a class="dropdown-item" href="#"
                                                     @onclick="() => ManageParticipants(assessment.AssessmentBatchId)">
                                                     <i class="fas fa-users"></i> Quản lý HS
                                                 </a></li>
+                                            </AuthorizeView>
                                             <li>
                                                 <hr class="dropdown-divider">
                                             </li>
+                                            <AuthorizeView Roles="DELETE.AssessmentBatch,DELETE_SELF_MANAGED.AssessmentBatch">
                                             <li><a class="dropdown-item text-danger" 
                                                     @onclick="() => DeleteAssessment(assessment.AssessmentBatchId)">
                                                     <i class="fas fa-trash"></i> Xóa
                                                 </a></li>
+                                            </AuthorizeView>
                                         </ul>
                                     </div>
                                 </div>
@@ -327,6 +334,7 @@
     private DateTime? _fromDate;
     private DateTime? _toDate;
 
+
     private string selectedStatus
     {
         get => _selectedStatus;
@@ -378,9 +386,34 @@
     private int completedAssessments => statistics?.CompletedBatches ?? 0;
     private int totalParticipants => statistics?.TotalStudentsInBatches ?? 0;
 
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
+    private bool isAllRead, isOnlyManage;
+
     protected override async Task OnInitializedAsync()
     {
-        await LoadData();
+        var user = (await AuthStateTask).User;
+        isAllRead = user.IsInRole("READ.AssessmentBatch");
+        isOnlyManage = user.IsInRole("READ_SELF_MANAGED.AssessmentBatch");
+
+        if (isAllRead)
+        {
+            isOnlyManage = false;
+
+            await LoadData();
+
+        }
+        else if (isOnlyManage)
+
+        {
+
+
+            await LoadData();
+
+        }
+
+
     }
 
     private async Task LoadData()
@@ -389,12 +422,27 @@
         {
             isLoading = true;
             errorMessage = null;
+            var user = (await AuthStateTask).User;
 
             // Load statistics
             statistics = await AssessmentBatchApiClient.GetAssessmentBatchStatisticsAsync();
 
             // Load assessment batches
-            await LoadAssessmentBatches();
+
+            if (!isOnlyManage)
+
+            {
+                await LoadAssessmentBatches();
+
+            }
+            else
+            
+            {
+                
+                await LoadAssessmentBatches(user.FindFirst("userId").Value);
+
+
+            }
         }
         catch (Exception ex)
         {
@@ -408,15 +456,17 @@
         }
     }
 
-    private async Task LoadAssessmentBatches()
+    private async Task LoadAssessmentBatches(string currentUserId = null)
     {
         try
         {
             AssessmentBatchesApiResponse? response;
+            var user = (await AuthStateTask).User;
 
             // Check if we need to use search/filter
             if (HasActiveFilters())
             {
+
                 var searchDto = new AssessmentBatchSearchDto
                 {
                     Page = currentPage,
@@ -427,6 +477,10 @@
                     CreatedFrom = _fromDate,
                     CreatedTo = _toDate
                 };
+                if (isOnlyManage)
+                {
+                    searchDto.ManagerBy = Guid.Parse(user.FindFirst("userId").Value);
+                }
 
                 // Parse status if provided
                 if (!string.IsNullOrWhiteSpace(_selectedStatus) && short.TryParse(_selectedStatus, out var statusValue))
@@ -438,12 +492,16 @@
             }
             else
             {
-                // Use basic get all
+                if (isOnlyManage)
+                {
+                    currentUserId = user.FindFirst("userId").Value;
+                }
                 response = await AssessmentBatchApiClient.GetAllAssessmentBatchesAsync(
                     currentPage, 
                     pageSize, 
                     string.IsNullOrWhiteSpace(searchText) ? null : searchText, 
-                    false
+                    false,
+                    currentUserId
                 );
             }
 

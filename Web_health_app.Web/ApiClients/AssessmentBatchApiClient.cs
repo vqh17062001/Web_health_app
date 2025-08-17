@@ -52,7 +52,7 @@ namespace Web_health_app.Web.ApiClients
         /// <summary>
         /// Get all assessment batches with pagination and search
         /// </summary>
-        public async Task<AssessmentBatchesApiResponse?> GetAllAssessmentBatchesAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null, bool includeInactive = false)
+        public async Task<AssessmentBatchesApiResponse?> GetAllAssessmentBatchesAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null, bool includeInactive = false, string currenUserId = null)
         {
             try
             {
@@ -62,7 +62,8 @@ namespace Web_health_app.Web.ApiClients
                 {
                     $"pageNumber={pageNumber}",
                     $"pageSize={pageSize}",
-                    $"includeInactive={includeInactive.ToString().ToLower()}"
+                    $"includeInactive={includeInactive.ToString().ToLower()}",
+                    $"currenUserId={Uri.EscapeDataString(currenUserId ?? string.Empty)}"
                 };
 
                 if (!string.IsNullOrWhiteSpace(searchTerm))

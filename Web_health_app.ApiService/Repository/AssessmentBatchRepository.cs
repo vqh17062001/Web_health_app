@@ -14,7 +14,7 @@ namespace Web_health_app.ApiService.Repository
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public async Task<(List<AssessmentBatchInfoDto> AssessmentBatches, int TotalCount)> GetAllAssessmentBatchesAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null, bool includeInactive = false)
+        public async Task<(List<AssessmentBatchInfoDto> AssessmentBatches, int TotalCount)> GetAllAssessmentBatchesAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null, bool includeInactive = false, string currenUserId = "")
         {
             try
             {
@@ -23,6 +23,8 @@ namespace Web_health_app.ApiService.Repository
 
                 if (!includeInactive)
                     query = query.Where(ab => ab.Status >= 0);
+                if (!string.IsNullOrWhiteSpace(currenUserId))
+                    query = query.Where(ab => ab.ManagerBy == Guid.Parse(currenUserId));
 
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                     query = query.Where(ab =>
@@ -415,8 +417,8 @@ namespace Web_health_app.ApiService.Repository
 
                 if (updateDto.Status.HasValue)
                     assessmentBatch.Status = updateDto.Status.Value;
-
-                assessmentBatch.ManagerBy = updateDto.ManagerBy;
+                if(updateDto.ManagerBy.HasValue)
+                    assessmentBatch.ManagerBy = updateDto.ManagerBy;
                 
                 
                 
