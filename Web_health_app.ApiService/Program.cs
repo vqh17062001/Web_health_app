@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using System.Reflection;
 using Web_health_app.ApiService.Entities;
 using Web_health_app.ApiService.Repository;
+using Web_health_app.ApiService.Repository.Atlas;
+using Web_health_app.ApiService.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +13,17 @@ builder.AddServiceDefaults();
 
 // Thêm dòng này để cấu hình DbContext
 builder.Services.AddDbContext<HealthDbContext>();
+
+// Đăng ký AtlasDbContext cho MongoDB Atlas
+builder.Services.AddSingleton<AtlasDbContext>(provider =>
+    new AtlasDbContext(builder.Configuration.GetConnectionString("MongoDbAtlas") ??
+                      throw new InvalidOperationException("MongoDbAtlas connection string not found")));
+
+// Đăng ký các Atlas repositories
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+builder.Services.AddScoped<IDeviceRepository, DeviceRepository>();
+builder.Services.AddScoped<IUserAtlasRepository, UserAtlasRepository>();
+builder.Services.AddScoped<ISensorReadingRepository, SensorReadingRepository>();
 
 // Register repositories
 //builder.Services.AddScoped<IAuthRepository, AuthRepository>();
@@ -50,7 +63,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         //ClockSkew = TimeSpan.Zero, // Optional: Set clock skew to zero for immediate expiration
         ValidIssuer = builder.Configuration.GetValue<string>("Jwt:Issuer"),
         ValidAudience = builder.Configuration.GetValue<string>("Jwt:Audience"),
-        IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration.GetValue<string>("Jwt:Secret")))
+        IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration.GetValue<string>("Jwt:Secret") ?? throw new InvalidOperationException("JWT Secret not found")))
     });
 
 builder.Services.AddAuthorization();
