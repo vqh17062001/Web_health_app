@@ -1,8 +1,7 @@
 using MongoDB.Driver;
 using MongoDB.Bson;
-using Web_health_app.ApiService.Entities.NonSQLTable;
 
-namespace Web_health_app.ApiService.Data
+namespace Web_health_app.ApiService.Entities.NonSQLTable
 {
     public class AtlasDbContext : IDisposable
     {
@@ -44,7 +43,7 @@ namespace Web_health_app.ApiService.Data
         public IMongoCollection<AuditLog> AuditLogs => _database.GetCollection<AuditLog>("audit_logs");
         public IMongoCollection<Device> Devices => _database.GetCollection<Device>("devices");
         public IMongoCollection<SensorReading> SensorReadings => _database.GetCollection<SensorReading>("sensor_readings");
-        public IMongoCollection<Entities.NonSQLTable.User> Users => _database.GetCollection<Entities.NonSQLTable.User>("users");
+        public IMongoCollection<User> Users => _database.GetCollection<User>("users");
 
         // Generic CRUD operations
         public async Task<T> InsertOneAsync<T>(IMongoCollection<T> collection, T document)
@@ -121,7 +120,7 @@ namespace Web_health_app.ApiService.Data
             return await InsertOneAsync(SensorReadings, sensorReading);
         }
 
-        public async Task<Entities.NonSQLTable.User> CreateUserAsync(Entities.NonSQLTable.User user)
+        public async Task<User> CreateUserAsync(User user)
         {
             user.CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
             user.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");

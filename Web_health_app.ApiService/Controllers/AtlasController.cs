@@ -1,6 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
-using Web_health_app.ApiService.Repository.Atlas;
+﻿using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
+using MongoDB.Bson.IO;
 using Web_health_app.ApiService.Entities.NonSQLTable;
+using Web_health_app.ApiService.Repository.Atlas;
 
 namespace Web_health_app.ApiService.Controllers
 {
@@ -138,7 +140,14 @@ namespace Web_health_app.ApiService.Controllers
         public async Task<ActionResult<List<SensorReading>>> GetAllSensorReadings()
         {
             var readings = await _sensorReadingRepository.GetAllAsync();
-            return Ok(readings);
+
+            // Dùng serializer của Mongo (Extended JSON)
+            var json = readings.ToJson(new JsonWriterSettings
+            {
+                OutputMode = JsonOutputMode.RelaxedExtendedJson
+            });
+
+            return Content(json, "application/json"); // không dùng Ok()
         }
 
         [HttpGet("sensor-readings/{id}")]

@@ -40,24 +40,8 @@ namespace Web_health_app.ApiService.Entities.NonSQLTable
         public string Key { get; set; } = string.Empty;
 
         [BsonElement("value")]
-        public ValueType Value { get; set; } = new ValueType();
+        public BsonValue Value { get; set; } = BsonNull.Value;
     }
 
-    public class ValueType
-    {
-        [BsonElement("intValue")]
-        public int? IntValue { get; set; }
-
-        [BsonElement("doubleValue")]
-        public double? DoubleValue { get; set; }
-
-        [BsonElement("stringValue")]
-        public string? StringValue { get; set; }
-
-        [BsonElement("boolValue")]
-        public bool? BoolValue { get; set; }
-
-        [BsonElement("type")]
-        public string Type { get; set; } = string.Empty; // "int", "double", "string", "bool"
-    }
+  
 }

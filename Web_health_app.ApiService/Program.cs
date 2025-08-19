@@ -4,7 +4,7 @@ using System.Reflection;
 using Web_health_app.ApiService.Entities;
 using Web_health_app.ApiService.Repository;
 using Web_health_app.ApiService.Repository.Atlas;
-using Web_health_app.ApiService.Data;
+using Web_health_app.ApiService.Entities.NonSQLTable;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Web_health_app.ApiService.Data;
 using Web_health_app.ApiService.Entities.NonSQLTable;
 using MongoDB.Driver;
 

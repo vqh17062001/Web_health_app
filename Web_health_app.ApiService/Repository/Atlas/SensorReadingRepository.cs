@@ -1,5 +1,4 @@
 using Web_health_app.ApiService.Entities.NonSQLTable;
-using Web_health_app.ApiService.Data;
 using MongoDB.Driver;
 using MongoDB.Bson;
 
@@ -36,7 +35,15 @@ namespace Web_health_app.ApiService.Repository.Atlas
 
         public async Task<List<SensorReading>> GetAllAsync()
         {
+            try { 
+            
             return await _collection.Find(Builders<SensorReading>.Filter.Empty).ToListAsync();
+
+            }catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching all sensor readings: {ex.Message}");
+                return new List<SensorReading>();
+            }
         }
 
         public async Task<SensorReading?> GetByIdAsync(string id)

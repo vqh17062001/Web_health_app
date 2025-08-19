@@ -1,5 +1,4 @@
 using Web_health_app.ApiService.Entities.NonSQLTable;
-using Web_health_app.ApiService.Data;
 using MongoDB.Driver;
 using MongoDB.Bson;
 
