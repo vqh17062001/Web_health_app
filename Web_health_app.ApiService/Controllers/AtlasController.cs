@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MongoDB.Bson;
-using MongoDB.Bson.IO;
 using Web_health_app.ApiService.Entities.NonSQLTable;
 using Web_health_app.ApiService.Repository.Atlas;
+using Web_health_app.Models.Models.NonSqlDTO;
 
 namespace Web_health_app.ApiService.Controllers
 {
@@ -27,13 +26,7 @@ namespace Web_health_app.ApiService.Controllers
             _sensorReadingRepository = sensorReadingRepository;
         }
 
-        // ========== User Management ==========
-        [HttpPost("users")]
-        public async Task<ActionResult<User>> CreateUser([FromBody] User user)
-        {
-            var result = await _userRepository.CreateAsync(user);
-            return Ok(result);
-        }
+        #region User Management - Read Only APIs
 
         [HttpGet("users")]
         public async Task<ActionResult<List<User>>> GetAllUsers()
@@ -60,27 +53,9 @@ namespace Web_health_app.ApiService.Controllers
             return Ok(user);
         }
 
-        //[HttpGet("users/validate/username/{username}")]
-        //public async Task<ActionResult<bool>> ValidateUsername(string username)
-        //{
-        //    var isValid = await _userRepository.IsUsernameAvailableAsync(username);
-        //    return Ok(isValid);
-        //}
+        #endregion
 
-        //[HttpGet("users/validate/email/{email}")]
-        //public async Task<ActionResult<bool>> ValidateEmail(string email)
-        //{
-        //    var isValid = await _userRepository.IsEmailAvailableAsync(email);
-        //    return Ok(isValid);
-        //}
-
-        // ========== Device Management ==========
-        [HttpPost("devices")]
-        public async Task<ActionResult<Device>> CreateDevice([FromBody] Device device)
-        {
-            var result = await _deviceRepository.CreateAsync(device);
-            return Ok(result);
-        }
+        #region Device Management - Read Only APIs
 
         [HttpGet("devices")]
         public async Task<ActionResult<List<Device>>> GetAllDevices()
@@ -105,53 +80,19 @@ namespace Web_health_app.ApiService.Controllers
             return Ok(devices);
         }
 
-        [HttpPut("devices/{id}/status")]
-        public async Task<ActionResult<bool>> UpdateDeviceStatus(string id, [FromBody] string status)
-        {
-            var result = await _deviceRepository.UpdateStatusAsync(id, status);
-            if (!result)
-                return NotFound();
-            return Ok(result);
-        }
+        #endregion
 
-        //[HttpGet("devices/online")]
-        //public async Task<ActionResult<List<Device>>> GetOnlineDevices()
-        //{
-        //    var devices = await _deviceRepository.GetOnlineDevicesAsync();
-        //    return Ok(devices);
-        //}
-
-        // ========== Sensor Reading Management ==========
-        [HttpPost("sensor-readings")]
-        public async Task<ActionResult<SensorReading>> CreateSensorReading([FromBody] SensorReading reading)
-        {
-            var result = await _sensorReadingRepository.CreateAsync(reading);
-            return Ok(result);
-        }
-
-        [HttpPost("sensor-readings/bulk")]
-        public async Task<ActionResult<List<SensorReading>>> CreateSensorReadings([FromBody] List<SensorReading> readings)
-        {
-            var result = await _sensorReadingRepository.CreateManyAsync(readings);
-            return Ok(result);
-        }
+        #region Sensor Reading Management - Read Only APIs
 
         [HttpGet("sensor-readings")]
-        public async Task<ActionResult<List<SensorReading>>> GetAllSensorReadings()
+        public async Task<ActionResult<List<SensorReadingInfoDto>>> GetAllSensorReadings()
         {
             var readings = await _sensorReadingRepository.GetAllAsync();
-
-            // Dùng serializer của Mongo (Extended JSON)
-            var json = readings.ToJson(new JsonWriterSettings
-            {
-                OutputMode = JsonOutputMode.RelaxedExtendedJson
-            });
-
-            return Content(json, "application/json"); // không dùng Ok()
+            return Ok(readings);
         }
 
         [HttpGet("sensor-readings/{id}")]
-        public async Task<ActionResult<SensorReading>> GetSensorReading(string id)
+        public async Task<ActionResult<SensorReadingInfoDto>> GetSensorReading(string id)
         {
             var reading = await _sensorReadingRepository.GetByIdAsync(id);
             if (reading == null)
@@ -160,29 +101,29 @@ namespace Web_health_app.ApiService.Controllers
         }
 
         [HttpGet("sensor-readings/user/{userId}")]
-        public async Task<ActionResult<List<SensorReading>>> GetSensorReadingsByUser(string userId)
+        public async Task<ActionResult<List<SensorReadingInfoDto>>> GetSensorReadingsByUser(string userId)
         {
             var readings = await _sensorReadingRepository.GetByUserIdAsync(userId);
             return Ok(readings);
         }
 
         [HttpGet("sensor-readings/device/{deviceId}")]
-        public async Task<ActionResult<List<SensorReading>>> GetSensorReadingsByDevice(string deviceId)
+        public async Task<ActionResult<List<SensorReadingInfoDto>>> GetSensorReadingsByDevice(string deviceId)
         {
             var readings = await _sensorReadingRepository.GetByDeviceIdAsync(deviceId);
             return Ok(readings);
         }
 
         [HttpGet("sensor-readings/type/{sensorType}")]
-        public async Task<ActionResult<List<SensorReading>>> GetSensorReadingsByType(string sensorType)
+        public async Task<ActionResult<List<SensorReadingInfoDto>>> GetSensorReadingsByType(string sensorType)
         {
             var readings = await _sensorReadingRepository.GetBySensorTypeAsync(sensorType);
             return Ok(readings);
         }
 
         [HttpGet("sensor-readings/date-range")]
-        public async Task<ActionResult<List<SensorReading>>> GetSensorReadingsByDateRange(
-            [FromQuery] DateTime fromDate, 
+        public async Task<ActionResult<List<SensorReadingInfoDto>>> GetSensorReadingsByDateRange(
+            [FromQuery] DateTime fromDate,
             [FromQuery] DateTime toDate)
         {
             var readings = await _sensorReadingRepository.GetByDateRangeAsync(fromDate, toDate);
@@ -190,35 +131,41 @@ namespace Web_health_app.ApiService.Controllers
         }
 
         [HttpGet("sensor-readings/user/{userId}/latest")]
-        public async Task<ActionResult<List<SensorReading>>> GetLatestSensorReadingsByUser(
-            string userId, 
-            [FromQuery] int limit = 10)
+        public async Task<ActionResult<List<SensorReadingInfoDto>>> GetLatestSensorReadingsByUser(
+            string userId,
+            [FromQuery] int limit = 10,
+            [FromQuery] string sensorType = null)
         {
-            var readings = await _sensorReadingRepository.GetLatestByUserAsync(userId, limit);
+            var readings = await _sensorReadingRepository.GetLatestByUserAsync(userId, limit, sensorType);
             return Ok(readings);
         }
 
         [HttpGet("sensor-readings/statistics/sensor-types")]
-        public async Task<ActionResult<Dictionary<string, long>>> GetSensorTypeStatistics()
+        public async Task<ActionResult<SensorStatisticsDto>> GetSensorTypeStatistics()
         {
             var statistics = await _sensorReadingRepository.GetSensorTypeStatisticsAsync();
             return Ok(statistics);
         }
 
         [HttpGet("sensor-readings/recent")]
-        public async Task<ActionResult<List<SensorReading>>> GetRecentSensorReadings([FromQuery] int hours = 24)
+        public async Task<ActionResult<List<SensorReadingInfoDto>>> GetRecentSensorReadings([FromQuery] int hours = 24)
         {
             var readings = await _sensorReadingRepository.GetRecentReadingsAsync(hours);
             return Ok(readings);
         }
 
-        // ========== Audit Log Management ==========
-        [HttpPost("audit-logs")]
-        public async Task<ActionResult<AuditLog>> CreateAuditLog([FromBody] AuditLog auditLog)
+        [HttpGet("sensor-readings/paginated")]
+        public async Task<ActionResult<SensorReadingListDto>> GetPaginatedSensorReadings(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
-            var result = await _auditLogRepository.CreateAsync(auditLog);
+            var result = await _sensorReadingRepository.GetPaginatedAsync(page, pageSize);
             return Ok(result);
         }
+
+        #endregion
+
+        #region Audit Log Management - Read Only APIs
 
         [HttpGet("audit-logs")]
         public async Task<ActionResult<List<AuditLog>>> GetAllAuditLogs()
@@ -252,7 +199,7 @@ namespace Web_health_app.ApiService.Controllers
 
         [HttpGet("audit-logs/date-range")]
         public async Task<ActionResult<List<AuditLog>>> GetAuditLogsByDateRange(
-            [FromQuery] DateTime fromDate, 
+            [FromQuery] DateTime fromDate,
             [FromQuery] DateTime toDate)
         {
             var logs = await _auditLogRepository.GetByDateRangeAsync(fromDate, toDate);
@@ -261,14 +208,17 @@ namespace Web_health_app.ApiService.Controllers
 
         [HttpGet("audit-logs/paginated")]
         public async Task<ActionResult<List<AuditLog>>> GetPaginatedAuditLogs(
-            [FromQuery] int page = 1, 
+            [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
             var logs = await _auditLogRepository.GetPaginatedAsync(page, pageSize);
             return Ok(logs);
         }
 
-        // ========== General Statistics ==========
+        #endregion
+
+        #region General Statistics - Read Only APIs
+
         [HttpGet("statistics/counts")]
         public async Task<ActionResult<object>> GetCounts()
         {
@@ -285,5 +235,7 @@ namespace Web_health_app.ApiService.Controllers
                 AuditLogs = auditLogCount
             });
         }
+
+        #endregion
     }
 }

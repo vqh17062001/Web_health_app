@@ -1,4 +1,5 @@
 using Web_health_app.ApiService.Entities.NonSQLTable;
+using Web_health_app.Models.Models.NonSqlDTO;
 using MongoDB.Driver;
 using MongoDB.Bson;
 
@@ -13,6 +14,31 @@ namespace Web_health_app.ApiService.Repository.Atlas
         {
             _context = context;
             _collection = _context.SensorReadings;
+        }
+
+        private SensorReadingInfoDto ConvertToDto(SensorReading sensorReading)
+        {
+            return new SensorReadingInfoDto
+            {
+                Id = sensorReading.Id,
+                Timestamp = sensorReading.Timestamp,
+                Metadata = new MetadataDto
+                {
+                    UserId = sensorReading.Metadata?.UserId ?? string.Empty,
+                    DeviceId = sensorReading.Metadata?.DeviceId ?? string.Empty,
+                    SensorType = sensorReading.Metadata?.SensorType
+                },
+                Readings = sensorReading.Readings?.Select(r => new ReadingDto
+                {
+                    Key = r.Key,
+                    Value = r.Value?.ToString()
+                }).ToList() ?? new List<ReadingDto>()
+            };
+        }
+
+        private List<SensorReadingInfoDto> ConvertToDtoList(List<SensorReading> sensorReadings)
+        {
+            return sensorReadings.Select(ConvertToDto).ToList();
         }
 
         public async Task<SensorReading> CreateAsync(SensorReading sensorReading)
@@ -33,54 +59,61 @@ namespace Web_health_app.ApiService.Repository.Atlas
             return sensorReadings;
         }
 
-        public async Task<List<SensorReading>> GetAllAsync()
+        public async Task<List<SensorReadingInfoDto>> GetAllAsync()
         {
-            try { 
-            
-            return await _collection.Find(Builders<SensorReading>.Filter.Empty).ToListAsync();
-
-            }catch (Exception ex)
+            try
+            {
+                var sensorReadings = await _collection.Find(Builders<SensorReading>.Filter.Empty).ToListAsync();
+                return ConvertToDtoList(sensorReadings);
+            }
+            catch (Exception ex)
             {
                 Console.WriteLine($"Error fetching all sensor readings: {ex.Message}");
-                return new List<SensorReading>();
+                return new List<SensorReadingInfoDto>();
             }
         }
 
-        public async Task<SensorReading?> GetByIdAsync(string id)
+        public async Task<SensorReadingInfoDto?> GetByIdAsync(string id)
         {
             var filter = Builders<SensorReading>.Filter.Eq(x => x.Id, id);
-            return await _collection.Find(filter).FirstOrDefaultAsync();
+            var sensorReading = await _collection.Find(filter).FirstOrDefaultAsync();
+            return sensorReading != null ? ConvertToDto(sensorReading) : null;
         }
 
-        public async Task<List<SensorReading>> GetByUserIdAsync(string userId)
+        public async Task<List<SensorReadingInfoDto>> GetByUserIdAsync(string userId)
         {
-            var filter = Builders<SensorReading>.Filter.Eq("metadata.userId", userId);
-            return await _collection.Find(filter).ToListAsync();
+            var filter = Builders<SensorReading>.Filter
+            .Eq(x => x.Metadata.UserId, userId);
+            var sensorReadings = await _collection.Find(filter).ToListAsync();
+            return ConvertToDtoList(sensorReadings);
         }
 
-        public async Task<List<SensorReading>> GetByDeviceIdAsync(string deviceId)
+        public async Task<List<SensorReadingInfoDto>> GetByDeviceIdAsync(string deviceId)
         {
             var filter = Builders<SensorReading>.Filter.Eq("metadata.deviceId", deviceId);
-            return await _collection.Find(filter).ToListAsync();
+            var sensorReadings = await _collection.Find(filter).ToListAsync();
+            return ConvertToDtoList(sensorReadings);
         }
 
-        public async Task<List<SensorReading>> GetBySensorTypeAsync(string sensorType)
+        public async Task<List<SensorReadingInfoDto>> GetBySensorTypeAsync(string sensorType)
         {
             var filter = Builders<SensorReading>.Filter.Eq("metadata.sensorType", sensorType);
-            return await _collection.Find(filter).ToListAsync();
+            var sensorReadings = await _collection.Find(filter).ToListAsync();
+            return ConvertToDtoList(sensorReadings);
         }
 
-        public async Task<List<SensorReading>> GetByDateRangeAsync(DateTime fromDate, DateTime toDate)
+        public async Task<List<SensorReadingInfoDto>> GetByDateRangeAsync(DateTime fromDate, DateTime toDate)
         {
             var builder = Builders<SensorReading>.Filter;
             var filter = builder.And(
                 builder.Gte(x => x.Timestamp, new DateTimeOffset(fromDate)),
                 builder.Lte(x => x.Timestamp, new DateTimeOffset(toDate))
             );
-            return await _collection.Find(filter).ToListAsync();
+            var sensorReadings = await _collection.Find(filter).ToListAsync();
+            return ConvertToDtoList(sensorReadings);
         }
 
-        public async Task<List<SensorReading>> GetByUserAndDateRangeAsync(string userId, DateTime fromDate, DateTime toDate)
+        public async Task<List<SensorReadingInfoDto>> GetByUserAndDateRangeAsync(string userId, DateTime fromDate, DateTime toDate)
         {
             var builder = Builders<SensorReading>.Filter;
             var filter = builder.And(
@@ -88,10 +121,11 @@ namespace Web_health_app.ApiService.Repository.Atlas
                 builder.Gte(x => x.Timestamp, new DateTimeOffset(fromDate)),
                 builder.Lte(x => x.Timestamp, new DateTimeOffset(toDate))
             );
-            return await _collection.Find(filter).ToListAsync();
+            var sensorReadings = await _collection.Find(filter).ToListAsync();
+            return ConvertToDtoList(sensorReadings);
         }
 
-        public async Task<List<SensorReading>> GetByDeviceAndDateRangeAsync(string deviceId, DateTime fromDate, DateTime toDate)
+        public async Task<List<SensorReadingInfoDto>> GetByDeviceAndDateRangeAsync(string deviceId, DateTime fromDate, DateTime toDate)
         {
             var builder = Builders<SensorReading>.Filter;
             var filter = builder.And(
@@ -99,38 +133,47 @@ namespace Web_health_app.ApiService.Repository.Atlas
                 builder.Gte(x => x.Timestamp, new DateTimeOffset(fromDate)),
                 builder.Lte(x => x.Timestamp, new DateTimeOffset(toDate))
             );
-            return await _collection.Find(filter).ToListAsync();
+            var sensorReadings = await _collection.Find(filter).ToListAsync();
+            return ConvertToDtoList(sensorReadings);
         }
 
-        public async Task<List<SensorReading>> GetLatestByUserAsync(string userId, int limit = 10)
+        public async Task<List<SensorReadingInfoDto>> GetLatestByUserAsync(string userId, int limit = 10, string sensorType = null)
         {
-            var filter = Builders<SensorReading>.Filter.Eq("metadata.userId", userId);
-            return await _collection.Find(filter)
+            var filter = Builders<SensorReading>.Filter
+            .Eq(x => x.Metadata.UserId, userId);
+            if (sensorType != null) {
+
+                filter = Builders<SensorReading>.Filter.Eq("metadata.sensorType", sensorType);
+            }
+            var sensorReadings = await _collection.Find(filter)
                 .Sort(Builders<SensorReading>.Sort.Descending(x => x.Timestamp))
                 .Limit(limit)
                 .ToListAsync();
+            return ConvertToDtoList(sensorReadings);
         }
 
-        public async Task<List<SensorReading>> GetLatestByDeviceAsync(string deviceId, int limit = 10)
+        public async Task<List<SensorReadingInfoDto>> GetLatestByDeviceAsync(string deviceId, int limit = 10)
         {
             var filter = Builders<SensorReading>.Filter.Eq("metadata.deviceId", deviceId);
-            return await _collection.Find(filter)
+            var sensorReadings = await _collection.Find(filter)
                 .Sort(Builders<SensorReading>.Sort.Descending(x => x.Timestamp))
                 .Limit(limit)
                 .ToListAsync();
+            return ConvertToDtoList(sensorReadings);
         }
 
-        public async Task<SensorReading?> GetLatestByUserAndSensorTypeAsync(string userId, string sensorType)
+        public async Task<SensorReadingInfoDto?> GetLatestByUserAndSensorTypeAsync(string userId, string sensorType)
         {
             var builder = Builders<SensorReading>.Filter;
             var filter = builder.And(
                 builder.Eq("metadata.userId", userId),
                 builder.Eq("metadata.sensorType", sensorType)
             );
-            
-            return await _collection.Find(filter)
+
+            var sensorReading = await _collection.Find(filter)
                 .Sort(Builders<SensorReading>.Sort.Descending(x => x.Timestamp))
                 .FirstOrDefaultAsync();
+            return sensorReading != null ? ConvertToDto(sensorReading) : null;
         }
 
         public async Task<bool> DeleteAsync(string id)
@@ -171,17 +214,26 @@ namespace Web_health_app.ApiService.Repository.Atlas
             return await _collection.CountDocumentsAsync(filter);
         }
 
-        public async Task<List<SensorReading>> GetPaginatedAsync(int page, int pageSize)
+        public async Task<SensorReadingListDto> GetPaginatedAsync(int page, int pageSize)
         {
             var skip = (page - 1) * pageSize;
-            return await _collection.Find(Builders<SensorReading>.Filter.Empty)
+            var totalCount = await _collection.CountDocumentsAsync(Builders<SensorReading>.Filter.Empty);
+            var sensorReadings = await _collection.Find(Builders<SensorReading>.Filter.Empty)
                 .Sort(Builders<SensorReading>.Sort.Descending(x => x.Timestamp))
                 .Skip(skip)
                 .Limit(pageSize)
                 .ToListAsync();
+
+            return new SensorReadingListDto
+            {
+                SensorReadings = ConvertToDtoList(sensorReadings),
+                TotalCount = (int)totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
-        public async Task<Dictionary<string, long>> GetSensorTypeStatisticsAsync()
+        public async Task<SensorStatisticsDto> GetSensorTypeStatisticsAsync()
         {
             var pipeline = new[]
             {
@@ -202,17 +254,25 @@ namespace Web_health_app.ApiService.Repository.Atlas
                 statistics[sensorType] = count;
             });
 
-            return statistics;
+            var totalCount = await _collection.CountDocumentsAsync(Builders<SensorReading>.Filter.Empty);
+
+            return new SensorStatisticsDto
+            {
+                SensorTypeCounts = statistics,
+                TotalReadings = totalCount,
+                LastUpdated = DateTime.UtcNow
+            };
         }
 
-        public async Task<List<SensorReading>> GetRecentReadingsAsync(int hours = 24)
+        public async Task<List<SensorReadingInfoDto>> GetRecentReadingsAsync(int hours = 24)
         {
             var cutoffTime = DateTimeOffset.UtcNow.AddHours(-hours);
             var filter = Builders<SensorReading>.Filter.Gte(x => x.Timestamp, cutoffTime);
-            
-            return await _collection.Find(filter)
+
+            var sensorReadings = await _collection.Find(filter)
                 .Sort(Builders<SensorReading>.Sort.Descending(x => x.Timestamp))
                 .ToListAsync();
+            return ConvertToDtoList(sensorReadings);
         }
     }
 }
