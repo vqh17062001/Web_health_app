@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Web_health_app.ApiService.Entities.NonSQLTable;
 using Web_health_app.ApiService.Repository.Atlas;
 using Web_health_app.Models.Models.NonSqlDTO;
@@ -7,6 +8,7 @@ namespace Web_health_app.ApiService.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class AtlasController : ControllerBase
     {
         private readonly IAuditLogRepository _auditLogRepository;
@@ -80,6 +82,36 @@ namespace Web_health_app.ApiService.Controllers
             return Ok(devices);
         }
 
+        [HttpGet("devices/user/{userId}/statistics")]
+        public async Task<ActionResult<object>> GetDevicesStatusByUser(string userId)
+        {
+            var devices = await _deviceRepository.GetByOwnerIdAsync(userId);
+
+            var deviceStatuses = devices.Select(device => new
+            {
+                DeviceId = device.DeviceId,
+                Model = device.Model,
+                Status = device.Status,
+
+                SdkVersion = device .SdkVersion,
+                OsVersion = device.OsVersion,
+                LastSyncAt = device.LastSyncAt,
+                RegisteredAt = device.RegisteredAt,
+                IsOnline = device.Status?.ToLower() == "online"
+            }).ToList();
+
+            var summary = new
+            {
+                UserId = userId,
+                TotalDevices = devices.Count,
+                OnlineDevices = deviceStatuses.Count(d => d.IsOnline),
+                OfflineDevices = deviceStatuses.Count(d => !d.IsOnline),
+                Devices = deviceStatuses
+            };
+
+            return Ok(summary);
+        }
+
         #endregion
 
         #region Sensor Reading Management - Read Only APIs
@@ -119,7 +151,7 @@ namespace Web_health_app.ApiService.Controllers
 
         [HttpGet("sensor-readings/type/{sensorType}")]
         public async Task<ActionResult<List<SensorReadingInfoDto>>> GetSensorReadingsByType(
-            
+
          string sensorType,
          [FromQuery] int page = 1,
          [FromQuery] int pageSize = 10)
@@ -192,7 +224,7 @@ namespace Web_health_app.ApiService.Controllers
 
         [HttpGet("audit-logs/user/")]
         public async Task<ActionResult<List<AuditLog>>> GetAuditLogsByUser(
-            [FromQuery]  string userId,
+            [FromQuery] string userId,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20
             )
