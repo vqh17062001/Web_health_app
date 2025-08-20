@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Components.Authorization;
 using System.Reflection;
 using Web_health_app.Web;
 using Web_health_app.Web.ApiClients;
+using Web_health_app.Web.ApiClients.Atlas;
+
 using Web_health_app.Web.Authentication;
 using Web_health_app.Web.Components;
 
@@ -32,6 +34,8 @@ builder.Services.AddHttpClient<DepartmentApiClient>(c => c.BaseAddress = new Uri
 builder.Services.AddHttpClient<AssessmentBatchApiClient>(c => c.BaseAddress = new Uri(apiBase));
 builder.Services.AddHttpClient<AssessmentTestApiClient>(c => c.BaseAddress = new Uri(apiBase));
 builder.Services.AddHttpClient<TestTypeApiClient>(c => c.BaseAddress = new Uri(apiBase));
+builder.Services.AddHttpClient<AtlasApiClient>(c => c.BaseAddress = new Uri(apiBase));
+
 
 // … thêm client khác …
 

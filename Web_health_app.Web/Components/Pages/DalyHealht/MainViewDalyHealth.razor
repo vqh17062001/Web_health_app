@@ -1,9 +1,12 @@
 ﻿@page "/dalyhealth/mainview"
 @using Microsoft.AspNetCore.Authorization
-@using Web_health_app.Web.Components.Layout
+@using Web_health_app.Web.ApiClients.Atlas
+@using Web_health_app.ApiService.Entities.NonSQLTable
+@using Web_health_app.Models.Models.NonSqlDTO
+@using System.Text.Json
 @attribute [Authorize(Roles = "ACCESS.MainViewDalyHealth")]
 
-@layout MainLayout
+@inject AtlasApiClient AtlasApi
 
 <link href="/css/DalyHealth/daily-health.css" rel="stylesheet" />
 
@@ -35,7 +38,7 @@
 
     <!-- Health Summary Cards -->
     <div class="container-fluid">
-        
+
 
         <!-- Filter and Search Section -->
         <div class="filter-section">
@@ -44,7 +47,8 @@
                     <div class="search-container">
                         <div class="search-box">
                             <i class="fas fa-search search-icon"></i>
-                            <input type="text" class="form-control" placeholder="Tìm kiếm học sinh theo tên, lớp hoặc mã số..." />
+                            <input type="text" class="form-control"
+                                placeholder="Tìm kiếm học sinh theo tên, lớp hoặc mã số..." />
                         </div>
                     </div>
                 </div>
@@ -71,580 +75,181 @@
         <!-- Students Health Data Grid -->
         <div class="students-grid">
             <div class="row">
-                <!-- Student Card 1 -->
-                <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
-                    <div class="student-health-card">
-                        <div class="student-header">
-                            <div class="student-avatar">
-                                <img src="/images/avatars/student1.jpg" alt="Nguyễn Văn An" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                                <div class="avatar-fallback">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                            </div>
-                            <div class="student-info">
-                                <h4>Nguyễn Văn An</h4>
-                                <p>Lớp 10A1 - Mã: HS001</p>
-                                <span class="status-badge active">Đang hoạt động</span>
-                            </div>
-                            <div class="sync-status">
-                                <i class="fas fa-check-circle text-success" title="Đã đồng bộ"></i>
-                                <small>2 phút trước</small>
-                            </div>
+                @if (isLoading)
+                {
+                    <div class="col-12 text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
                         </div>
-
-                        <div class="health-metrics">
-                            <div class="metric-item">
-                                <div class="metric-icon steps-icon">
-                                    <i class="fas fa-walking"></i>
-                                </div>
-                                <div class="metric-data">
-                                    <span class="metric-value">8,234</span>
-                                    <span class="metric-label">Bước chân</span>
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width: 82%"></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="metric-item">
-                                <div class="metric-icon calories-icon">
-                                    <i class="fas fa-fire"></i>
-                                </div>
-                                <div class="metric-data">
-                                    <span class="metric-value">1,845</span>
-                                    <span class="metric-label">Calories</span>
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width: 74%"></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="metric-item">
-                                <div class="metric-icon heart-icon">
-                                    <i class="fas fa-heart"></i>
-                                </div>
-                                <div class="metric-data">
-                                    <span class="metric-value">68 BPM</span>
-                                    <span class="metric-label">Nhịp tim</span>
-                                    <div class="heart-rate-status normal">Bình thường</div>
-                                </div>
-                            </div>
-
-                            <div class="metric-item">
-                                <div class="metric-icon sleep-icon">
-                                    <i class="fas fa-moon"></i>
-                                </div>
-                                <div class="metric-data">
-                                    <span class="metric-value">8.2h</span>
-                                    <span class="metric-label">Giấc ngủ</span>
-                                    <div class="sleep-quality good">Chất lượng tốt</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="additional-metrics">
-                            <div class="metric-row">
-                                <div class="metric-col">
-                                    <i class="fas fa-dumbbell"></i>
-                                    <span>45 phút</span>
-                                    <small>Vận động</small>
-                                </div>
-                                <div class="metric-col">
-                                    <i class="fas fa-glass-water"></i>
-                                    <span>1.8L</span>
-                                    <small>Nước uống</small>
-                                </div>
-                                <div class="metric-col">
-                                    <i class="fas fa-thermometer-half"></i>
-                                    <span>36.5°C</span>
-                                    <small>Thân nhiệt</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card-actions">
-                            <button class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-chart-line"></i>
-                                Chi tiết
-                            </button>
-                            <button class="btn btn-outline-success btn-sm">
-                                <i class="fas fa-bell"></i>
-                                Nhắc nhở
-                            </button>
-                            <button class="btn btn-outline-info btn-sm">
-                                <i class="fas fa-comments"></i>
-                                Ghi chú
-                            </button>
-                        </div>
+                        <p>Đang tải dữ liệu học sinh...</p>
                     </div>
-                </div>
-
-                <!-- Student Card 2 -->
-                <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
-                    <div class="student-health-card">
-                        <div class="student-header">
-                            <div class="student-avatar">
-                                <img src="/images/avatars/student2.jpg" alt="Trần Thị Bình" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                                <div class="avatar-fallback">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                            </div>
-                            <div class="student-info">
-                                <h4>Trần Thị Bình</h4>
-                                <p>Lớp 10A1 - Mã: HS002</p>
-                                <span class="status-badge warning">Cần chú ý</span>
-                            </div>
-                            <div class="sync-status">
-                                <i class="fas fa-exclamation-triangle text-warning" title="Đồng bộ có vấn đề"></i>
-                                <small>1 giờ trước</small>
-                            </div>
-                        </div>
-
-                        <div class="health-metrics">
-                            <div class="metric-item">
-                                <div class="metric-icon steps-icon">
-                                    <i class="fas fa-walking"></i>
-                                </div>
-                                <div class="metric-data">
-                                    <span class="metric-value">4,567</span>
-                                    <span class="metric-label">Bước chân</span>
-                                    <div class="progress-bar">
-                                        <div class="progress-fill warning" style="width: 46%"></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="metric-item">
-                                <div class="metric-icon calories-icon">
-                                    <i class="fas fa-fire"></i>
-                                </div>
-                                <div class="metric-data">
-                                    <span class="metric-value">1,234</span>
-                                    <span class="metric-label">Calories</span>
-                                    <div class="progress-bar">
-                                        <div class="progress-fill warning" style="width: 49%"></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="metric-item">
-                                <div class="metric-icon heart-icon">
-                                    <i class="fas fa-heart"></i>
-                                </div>
-                                <div class="metric-data">
-                                    <span class="metric-value">85 BPM</span>
-                                    <span class="metric-label">Nhịp tim</span>
-                                    <div class="heart-rate-status elevated">Hơi cao</div>
-                                </div>
-                            </div>
-
-                            <div class="metric-item">
-                                <div class="metric-icon sleep-icon">
-                                    <i class="fas fa-moon"></i>
-                                </div>
-                                <div class="metric-data">
-                                    <span class="metric-value">5.8h</span>
-                                    <span class="metric-label">Giấc ngủ</span>
-                                    <div class="sleep-quality poor">Thiếu ngủ</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="additional-metrics">
-                            <div class="metric-row">
-                                <div class="metric-col">
-                                    <i class="fas fa-dumbbell"></i>
-                                    <span>15 phút</span>
-                                    <small>Vận động</small>
-                                </div>
-                                <div class="metric-col">
-                                    <i class="fas fa-glass-water"></i>
-                                    <span>0.9L</span>
-                                    <small>Nước uống</small>
-                                </div>
-                                <div class="metric-col">
-                                    <i class="fas fa-thermometer-half"></i>
-                                    <span>37.2°C</span>
-                                    <small>Thân nhiệt</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card-actions">
-                            <button class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-chart-line"></i>
-                                Chi tiết
-                            </button>
-                            <button class="btn btn-outline-warning btn-sm">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                Cảnh báo
-                            </button>
-                            <button class="btn btn-outline-info btn-sm">
-                                <i class="fas fa-comments"></i>
-                                Ghi chú
-                            </button>
-                        </div>
+                }
+                else if (students == null || !students.Any())
+                {
+                    <div class="col-12 text-center">
+                        <p>Không có dữ liệu học sinh</p>
                     </div>
-                </div>
-
-                <!-- Student Card 3 -->
-                <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
-                    <div class="student-health-card">
-                        <div class="student-header">
-                            <div class="student-avatar">
-                                <img src="/images/avatars/student3.jpg" alt="Lê Minh Châu" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                                <div class="avatar-fallback">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                            </div>
-                            <div class="student-info">
-                                <h4>Lê Minh Châu</h4>
-                                <p>Lớp 11B1 - Mã: HS003</p>
-                                <span class="status-badge excellent">Xuất sắc</span>
-                            </div>
-                            <div class="sync-status">
-                                <i class="fas fa-check-circle text-success" title="Đã đồng bộ"></i>
-                                <small>1 phút trước</small>
-                            </div>
-                        </div>
-
-                        <div class="health-metrics">
-                            <div class="metric-item">
-                                <div class="metric-icon steps-icon">
-                                    <i class="fas fa-walking"></i>
-                                </div>
-                                <div class="metric-data">
-                                    <span class="metric-value">12,890</span>
-                                    <span class="metric-label">Bước chân</span>
-                                    <div class="progress-bar">
-                                        <div class="progress-fill excellent" style="width: 95%"></div>
+                }
+                else
+                {
+                    @foreach (var student in students)
+                    {
+                        <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
+                            <div class="student-health-card">
+                                <div class="student-header">
+                                    <div class="student-avatar">
+                                        <div class="avatar-fallback">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                    </div>
+                                    <div class="student-info">
+                                        <h4>@student.FullName</h4>
+                                        <p>@student.Department - @student.Role</p>
+                                        @{
+                                            var deviceStatus = GetDeviceStatus(student.Id);
+                                        }
+                                        @if (deviceStatus.IsOnline)
+                                        {
+                                            <span class="status-badge active">Đang hoạt động</span>
+                                        }
+                                        else if (deviceStatus.HasDevices)
+                                        {
+                                            <span class="status-badge warning">Offline</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-badge inactive">Chưa kết nối</span>
+                                        }
+                                    </div>
+                                    <div class="sync-status">
+                                        @if (deviceStatus.IsOnline)
+                                        {
+                                            <i class="fas fa-check-circle text-success" title="Đã đồng bộ"></i>
+                                            <small>Vừa xong</small>
+                                        }
+                                        else if (deviceStatus.HasDevices)
+                                        {
+                                            <i class="fas fa-exclamation-triangle text-warning" title="Mất kết nối"></i>
+                                            <small>@deviceStatus.LastSync</small>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-times-circle text-danger" title="Chưa kết nối"></i>
+                                            <small>Chưa có thiết bị</small>
+                                        }
                                     </div>
                                 </div>
-                            </div>
 
-                            <div class="metric-item">
-                                <div class="metric-icon calories-icon">
-                                    <i class="fas fa-fire"></i>
-                                </div>
-                                <div class="metric-data">
-                                    <span class="metric-value">2,456</span>
-                                    <span class="metric-label">Calories</span>
-                                    <div class="progress-bar">
-                                        <div class="progress-fill excellent" style="width: 98%"></div>
+                                @{
+                                    var healthData = GetHealthData(student.Id);
+                                }
+
+                                @if (healthData.HasData)
+                                {
+                                    <div class="health-metrics">
+                                        <div class="metric-item">
+                                            <div class="metric-icon steps-icon">
+                                                <i class="fas fa-walking"></i>
+                                            </div>
+                                            <div class="metric-data">
+                                                <span class="metric-value">@healthData.Steps</span>
+                                                <span class="metric-label">Bước chân</span>
+                                                <div class="progress-bar">
+                                                    <div class="progress-fill" style="width: @(healthData.StepsProgress)%"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="metric-item">
+                                            <div class="metric-icon calories-icon">
+                                                <i class="fas fa-fire"></i>
+                                            </div>
+                                            <div class="metric-data">
+                                                <span class="metric-value">@healthData.Calories</span>
+                                                <span class="metric-label">Calories</span>
+                                                <div class="progress-bar">
+                                                    <div class="progress-fill" style="width: @(healthData.CaloriesProgress)%"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="metric-item">
+                                            <div class="metric-icon heart-icon">
+                                                <i class="fas fa-heart"></i>
+                                            </div>
+                                            <div class="metric-data">
+                                                <span class="metric-value">@healthData.HeartRate BPM</span>
+                                                <span class="metric-label">Nhịp tim</span>
+                                                <div class="heart-rate-status @healthData.HeartRateStatus.ToLower()">
+                                                    @healthData.HeartRateStatus</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="metric-item">
+                                            <div class="metric-icon sleep-icon">
+                                                <i class="fas fa-moon"></i>
+                                            </div>
+                                            <div class="metric-data">
+                                                <span class="metric-value">@healthData.SleepHours h</span>
+                                                <span class="metric-label">Giấc ngủ</span>
+                                                <div class="sleep-quality @healthData.SleepQuality.ToLower()">
+                                                    @healthData.SleepQualityText</div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
 
-                            <div class="metric-item">
-                                <div class="metric-icon heart-icon">
-                                    <i class="fas fa-heart"></i>
-                                </div>
-                                <div class="metric-data">
-                                    <span class="metric-value">65 BPM</span>
-                                    <span class="metric-label">Nhịp tim</span>
-                                    <div class="heart-rate-status excellent">Rất tốt</div>
-                                </div>
-                            </div>
-
-                            <div class="metric-item">
-                                <div class="metric-icon sleep-icon">
-                                    <i class="fas fa-moon"></i>
-                                </div>
-                                <div class="metric-data">
-                                    <span class="metric-value">8.5h</span>
-                                    <span class="metric-label">Giấc ngủ</span>
-                                    <div class="sleep-quality excellent">Rất tốt</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="additional-metrics">
-                            <div class="metric-row">
-                                <div class="metric-col">
-                                    <i class="fas fa-dumbbell"></i>
-                                    <span>75 phút</span>
-                                    <small>Vận động</small>
-                                </div>
-                                <div class="metric-col">
-                                    <i class="fas fa-glass-water"></i>
-                                    <span>2.5L</span>
-                                    <small>Nước uống</small>
-                                </div>
-                                <div class="metric-col">
-                                    <i class="fas fa-thermometer-half"></i>
-                                    <span>36.4°C</span>
-                                    <small>Thân nhiệt</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card-actions">
-                            <button class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-chart-line"></i>
-                                Chi tiết
-                            </button>
-                            <button class="btn btn-outline-success btn-sm">
-                                <i class="fas fa-trophy"></i>
-                                Khen thưởng
-                            </button>
-                            <button class="btn btn-outline-info btn-sm">
-                                <i class="fas fa-comments"></i>
-                                Ghi chú
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Student Card 4 -->
-                <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
-                    <div class="student-health-card">
-                        <div class="student-header">
-                            <div class="student-avatar">
-                                <img src="/images/avatars/student4.jpg" alt="Phạm Hoàng Duy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                                <div class="avatar-fallback">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                            </div>
-                            <div class="student-info">
-                                <h4>Phạm Hoàng Duy</h4>
-                                <p>Lớp 12C1 - Mã: HS004</p>
-                                <span class="status-badge inactive">Chưa kết nối</span>
-                            </div>
-                            <div class="sync-status">
-                                <i class="fas fa-times-circle text-danger" title="Chưa đồng bộ"></i>
-                                <small>1 ngày trước</small>
-                            </div>
-                        </div>
-
-                        <div class="health-metrics no-data">
-                            <div class="no-data-message">
-                                <i class="fas fa-mobile-alt"></i>
-                                <p>Chưa có dữ liệu sức khỏe</p>
-                                <small>Học sinh chưa kết nối Samsung Health</small>
-                                <button class="btn btn-primary btn-sm mt-2">
-                                    <i class="fas fa-link"></i>
-                                    Kết nối ngay
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Student Card 5 -->
-                <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
-                    <div class="student-health-card">
-                        <div class="student-header">
-                            <div class="student-avatar">
-                                <img src="/images/avatars/student5.jpg" alt="Võ Thị Lan" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                                <div class="avatar-fallback">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                            </div>
-                            <div class="student-info">
-                                <h4>Võ Thị Lan</h4>
-                                <p>Lớp 10A2 - Mã: HS005</p>
-                                <span class="status-badge active">Đang hoạt động</span>
-                            </div>
-                            <div class="sync-status">
-                                <i class="fas fa-check-circle text-success" title="Đã đồng bộ"></i>
-                                <small>5 phút trước</small>
-                            </div>
-                        </div>
-
-                        <div class="health-metrics">
-                            <div class="metric-item">
-                                <div class="metric-icon steps-icon">
-                                    <i class="fas fa-walking"></i>
-                                </div>
-                                <div class="metric-data">
-                                    <span class="metric-value">9,876</span>
-                                    <span class="metric-label">Bước chân</span>
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width: 78%"></div>
+                                    <div class="additional-metrics">
+                                        <div class="metric-row">
+                                            <div class="metric-col">
+                                                <i class="fas fa-dumbbell"></i>
+                                                <span>@healthData.Exercise phút</span>
+                                                <small>Vận động</small>
+                                            </div>
+                                            <div class="metric-col">
+                                                <i class="fas fa-glass-water"></i>
+                                                <span>@healthData.Water L</span>
+                                                <small>Nước uống</small>
+                                            </div>
+                                            <div class="metric-col">
+                                                <i class="fas fa-thermometer-half"></i>
+                                                <span>@healthData.Temperature°C</span>
+                                                <small>Thân nhiệt</small>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-
-                            <div class="metric-item">
-                                <div class="metric-icon calories-icon">
-                                    <i class="fas fa-fire"></i>
-                                </div>
-                                <div class="metric-data">
-                                    <span class="metric-value">1,678</span>
-                                    <span class="metric-label">Calories</span>
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width: 67%"></div>
+                                }
+                                else
+                                {
+                                    <div class="health-metrics no-data">
+                                        <div class="no-data-message">
+                                            <i class="fas fa-mobile-alt"></i>
+                                            <p>Chưa có dữ liệu sức khỏe</p>
+                                            <small>Học sinh chưa có dữ liệu từ thiết bị</small>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
+                                }
 
-                            <div class="metric-item">
-                                <div class="metric-icon heart-icon">
-                                    <i class="fas fa-heart"></i>
-                                </div>
-                                <div class="metric-data">
-                                    <span class="metric-value">72 BPM</span>
-                                    <span class="metric-label">Nhịp tim</span>
-                                    <div class="heart-rate-status normal">Bình thường</div>
-                                </div>
-                            </div>
-
-                            <div class="metric-item">
-                                <div class="metric-icon sleep-icon">
-                                    <i class="fas fa-moon"></i>
-                                </div>
-                                <div class="metric-data">
-                                    <span class="metric-value">7.2h</span>
-                                    <span class="metric-label">Giấc ngủ</span>
-                                    <div class="sleep-quality good">Tốt</div>
+                                <div class="card-actions">
+                                    <button class="btn btn-outline-primary btn-sm" @onclick="() => ViewDetails(student.Id)">
+                                        <i class="fas fa-chart-line"></i>
+                                        Chi tiết
+                                    </button>
+                                    @if (healthData.HasData)
+                                    {
+                                        <button class="btn btn-outline-success btn-sm">
+                                            <i class="fas fa-bell"></i>
+                                            Nhắc nhở
+                                        </button>
+                                    }
+                                    <button class="btn btn-outline-info btn-sm">
+                                        <i class="fas fa-comments"></i>
+                                        Ghi chú
+                                    </button>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="additional-metrics">
-                            <div class="metric-row">
-                                <div class="metric-col">
-                                    <i class="fas fa-dumbbell"></i>
-                                    <span>30 phút</span>
-                                    <small>Vận động</small>
-                                </div>
-                                <div class="metric-col">
-                                    <i class="fas fa-glass-water"></i>
-                                    <span>1.5L</span>
-                                    <small>Nước uống</small>
-                                </div>
-                                <div class="metric-col">
-                                    <i class="fas fa-thermometer-half"></i>
-                                    <span>36.6°C</span>
-                                    <small>Thân nhiệt</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card-actions">
-                            <button class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-chart-line"></i>
-                                Chi tiết
-                            </button>
-                            <button class="btn btn-outline-success btn-sm">
-                                <i class="fas fa-bell"></i>
-                                Nhắc nhở
-                            </button>
-                            <button class="btn btn-outline-info btn-sm">
-                                <i class="fas fa-comments"></i>
-                                Ghi chú
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Student Card 6 -->
-                <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
-                    <div class="student-health-card">
-                        <div class="student-header">
-                            <div class="student-avatar">
-                                <img src="/images/avatars/student6.jpg" alt="Đặng Văn Em" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                                <div class="avatar-fallback">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                            </div>
-                            <div class="student-info">
-                                <h4>Đặng Văn Em</h4>
-                                <p>Lớp 11B2 - Mã: HS006</p>
-                                <span class="status-badge active">Đang hoạt động</span>
-                            </div>
-                            <div class="sync-status">
-                                <i class="fas fa-check-circle text-success" title="Đã đồng bộ"></i>
-                                <small>3 phút trước</small>
-                            </div>
-                        </div>
-
-                        <div class="health-metrics">
-                            <div class="metric-item">
-                                <div class="metric-icon steps-icon">
-                                    <i class="fas fa-walking"></i>
-                                </div>
-                                <div class="metric-data">
-                                    <span class="metric-value">11,245</span>
-                                    <span class="metric-label">Bước chân</span>
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width: 89%"></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="metric-item">
-                                <div class="metric-icon calories-icon">
-                                    <i class="fas fa-fire"></i>
-                                </div>
-                                <div class="metric-data">
-                                    <span class="metric-value">2,123</span>
-                                    <span class="metric-label">Calories</span>
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width: 85%"></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="metric-item">
-                                <div class="metric-icon heart-icon">
-                                    <i class="fas fa-heart"></i>
-                                </div>
-                                <div class="metric-data">
-                                    <span class="metric-value">70 BPM</span>
-                                    <span class="metric-label">Nhịp tim</span>
-                                    <div class="heart-rate-status normal">Bình thường</div>
-                                </div>
-                            </div>
-
-                            <div class="metric-item">
-                                <div class="metric-icon sleep-icon">
-                                    <i class="fas fa-moon"></i>
-                                </div>
-                                <div class="metric-data">
-                                    <span class="metric-value">7.8h</span>
-                                    <span class="metric-label">Giấc ngủ</span>
-                                    <div class="sleep-quality good">Tốt</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="additional-metrics">
-                            <div class="metric-row">
-                                <div class="metric-col">
-                                    <i class="fas fa-dumbbell"></i>
-                                    <span>50 phút</span>
-                                    <small>Vận động</small>
-                                </div>
-                                <div class="metric-col">
-                                    <i class="fas fa-glass-water"></i>
-                                    <span>2.1L</span>
-                                    <small>Nước uống</small>
-                                </div>
-                                <div class="metric-col">
-                                    <i class="fas fa-thermometer-half"></i>
-                                    <span>36.3°C</span>
-                                    <small>Thân nhiệt</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card-actions">
-                            <button class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-chart-line"></i>
-                                Chi tiết
-                            </button>
-                            <button class="btn btn-outline-success btn-sm">
-                                <i class="fas fa-bell"></i>
-                                Nhắc nhở
-                            </button>
-                            <button class="btn btn-outline-info btn-sm">
-                                <i class="fas fa-comments"></i>
-                                Ghi chú
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                    }
+                }
             </div>
         </div>
 
@@ -672,5 +277,435 @@
 </div>
 
 @code {
+    private bool isLoading = true;
+    private List<User> students = new List<User>();
+    private Dictionary<string, dynamic> deviceStatuses = new Dictionary<string, dynamic>();
+    private Dictionary<string, HealthData> healthDataCache = new Dictionary<string, HealthData>();
 
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStudentsData();
+        await LoadDeviceStatuses();
+        await LoadHealthData();
+        isLoading = false;
+    }
+
+    private async Task LoadStudentsData()
+    {
+        try
+        {
+            var users = await AtlasApi.GetAllUsersAsync();
+            if (users != null)
+            {
+                students = users.ToList();
+                Console.WriteLine($"Loaded {students.Count} students");
+            }
+            else
+            {
+                Console.WriteLine("No users returned from API");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading students: {ex.Message}");
+            // You might want to show a user-friendly error message here
+        }
+    }
+
+    private async Task LoadDeviceStatuses()
+    {
+        try
+        {
+            foreach (var student in students)
+            {
+                var status = await AtlasApi.GetDevicesStatusByUserAsync(student.Id);
+                if (status != null)
+                {
+                    deviceStatuses[student.Id] = status;
+                    Console.WriteLine($"Loaded device status for user {student.Id}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading device statuses: {ex.Message}");
+        }
+    }
+
+    private async Task LoadHealthData()
+    {
+        try
+        {
+            foreach (var student in students)
+            {
+                var readings = await AtlasApi.GetLatestSensorReadingsByUserAsync(student.Id);
+                if (readings != null && readings.Any())
+                {
+                    healthDataCache[student.Id] = ProcessHealthData(readings);
+                    Console.WriteLine($"Processed {readings.Count} sensor readings for user {student.Id}");
+                }
+                else
+                {
+                    healthDataCache[student.Id] = new HealthData();
+                    Console.WriteLine($"No sensor readings found for user {student.Id}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading health data: {ex.Message}");
+        }
+    }
+
+    private DeviceStatusInfo GetDeviceStatus(string userId)
+    {
+        if (deviceStatuses.TryGetValue(userId, out var status))
+        {
+            try
+            {
+                var statusJson = JsonSerializer.Serialize(status);
+                var statusObj = JsonSerializer.Deserialize<JsonElement>(statusJson);
+
+                JsonElement totalProp, onlineProp;
+                // Try different property name cases that might be returned from API
+                var totalDevices = 0;
+                var onlineDevices = 0;
+
+                if (statusObj.TryGetProperty("TotalDevices", out totalProp))
+                    totalDevices = totalProp.GetInt32();
+                else if (statusObj.TryGetProperty("totalDevices", out totalProp))
+                    totalDevices = totalProp.GetInt32();
+
+                if (statusObj.TryGetProperty("OnlineDevices", out onlineProp))
+                    onlineDevices = onlineProp.GetInt32();
+                else if (statusObj.TryGetProperty("onlineDevices", out onlineProp))
+                    onlineDevices = onlineProp.GetInt32();
+
+                return new DeviceStatusInfo
+                {
+                    IsOnline = onlineDevices > 0,
+                    HasDevices = totalDevices > 0,
+                    LastSync = onlineDevices > 0 ? "Vừa xong" : "Offline"
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error parsing device status: {ex.Message}");
+                return new DeviceStatusInfo { IsOnline = false, HasDevices = false, LastSync = "Lỗi dữ liệu" };
+            }
+        }
+        return new DeviceStatusInfo { IsOnline = false, HasDevices = false, LastSync = "Chưa có" };
+    }
+
+    private HealthData GetHealthData(string userId)
+    {
+        return healthDataCache.TryGetValue(userId, out var data) ? data : new HealthData();
+    }
+
+    private HealthData ProcessHealthData(List<SensorReadingInfoDto> readings)
+    {
+        var healthData = new HealthData();
+
+        if (!readings.Any())
+            return healthData;
+
+        healthData.HasData = true;
+
+        // Process each sensor reading
+        foreach (var reading in readings)
+        {
+            var sensorType = reading.Metadata?.SensorType?.ToLower();
+            
+            // Process data based on sensor type
+            switch (sensorType)
+            {
+                case "step_counter":
+                case "step_count":
+                case "steps":
+                    ProcessStepsData(reading, healthData);
+                    break;
+
+                case "calories":
+                case "calorie_tracker":
+                case "calories_burned":
+                    ProcessCaloriesData(reading, healthData);
+                    break;
+
+                case "heart_rate":
+                case "heart_rate_monitor":
+                case "pulse":
+                    ProcessHeartRateData(reading, healthData);
+                    break;
+
+                case "sleep_tracker":
+                case "sleep_duration":
+                case "sleep":
+                    ProcessSleepData(reading, healthData);
+                    break;
+
+                case "exercise_tracker":
+                case "exercise_duration":
+                case "workout":
+                    ProcessExerciseData(reading, healthData);
+                    break;
+
+                case "hydration":
+                case "water_intake":
+                case "water":
+                    ProcessWaterData(reading, healthData);
+                    break;
+
+                case "body_temperature":
+                case "temperature":
+                case "thermometer":
+                    ProcessTemperatureData(reading, healthData);
+                    break;
+
+                default:
+                    // Try to process generic readings if sensor type is unknown
+                    ProcessGenericData(reading, healthData);
+                    break;
+            }
+        }
+
+        return healthData;
+    }
+
+    private void ProcessStepsData(SensorReadingInfoDto reading, HealthData healthData)
+    {
+        foreach (var data in reading.Readings)
+        {
+            if (data.Key?.ToLower().Contains("step") == true || data.Key?.ToLower().Contains("count") == true)
+            {
+                var value = GetNumericValue(data.Value);
+                if (value > 0)
+                {
+                    healthData.Steps = Math.Max(healthData.Steps, (int)value);
+                    healthData.StepsProgress = Math.Min(100, (healthData.Steps / 100.0)); // Target: 10,000 steps
+                }
+            }
+        }
+    }
+
+    private void ProcessCaloriesData(SensorReadingInfoDto reading, HealthData healthData)
+    {
+        foreach (var data in reading.Readings)
+        {
+            if (data.Key?.ToLower().Contains("calorie") == true || data.Key?.ToLower().Contains("energy") == true)
+            {
+                var value = GetNumericValue(data.Value);
+                if (value > 0)
+                {
+                    healthData.Calories = Math.Max(healthData.Calories, (int)value);
+                    healthData.CaloriesProgress = Math.Min(100, (healthData.Calories / 25.0)); // Target: 2,500 calories
+                }
+            }
+        }
+    }
+
+    private void ProcessHeartRateData(SensorReadingInfoDto reading, HealthData healthData)
+    {
+        foreach (var data in reading.Readings)
+        {
+            if (data.Key?.ToLower().Contains("heart") == true || data.Key?.ToLower().Contains("bpm") == true || data.Key?.ToLower().Contains("pulse") == true)
+            {
+                var value = GetNumericValue(data.Value);
+                if (value > 0 && value < 300) // Reasonable heart rate range
+                {
+                    healthData.HeartRate = (int)value;
+                    healthData.HeartRateStatus = GetHeartRateStatus(healthData.HeartRate);
+                }
+            }
+        }
+    }
+
+    private void ProcessSleepData(SensorReadingInfoDto reading, HealthData healthData)
+    {
+        foreach (var data in reading.Readings)
+        {
+            if (data.Key?.ToLower().Contains("sleep") == true || data.Key?.ToLower().Contains("duration") == true)
+            {
+                var value = GetNumericValue(data.Value);
+                if (value > 0)
+                {
+                    // Assume value is in minutes, convert to hours
+                    var hours = Math.Round(value / 60.0, 1);
+                    if (hours > healthData.SleepHours)
+                    {
+                        healthData.SleepHours = hours;
+                        healthData.SleepQuality = GetSleepQuality(healthData.SleepHours);
+                        healthData.SleepQualityText = GetSleepQualityText(healthData.SleepQuality);
+                    }
+                }
+            }
+        }
+    }
+
+    private void ProcessExerciseData(SensorReadingInfoDto reading, HealthData healthData)
+    {
+        foreach (var data in reading.Readings)
+        {
+            if (data.Key?.ToLower().Contains("exercise") == true || data.Key?.ToLower().Contains("workout") == true || data.Key?.ToLower().Contains("activity") == true)
+            {
+                var value = GetNumericValue(data.Value);
+                if (value > 0)
+                {
+                    healthData.Exercise = Math.Max(healthData.Exercise, (int)value);
+                }
+            }
+        }
+    }
+
+    private void ProcessWaterData(SensorReadingInfoDto reading, HealthData healthData)
+    {
+        foreach (var data in reading.Readings)
+        {
+            if (data.Key?.ToLower().Contains("water") == true || data.Key?.ToLower().Contains("hydration") == true || data.Key?.ToLower().Contains("fluid") == true)
+            {
+                var value = GetNumericValue(data.Value);
+                if (value > 0)
+                {
+                    // Convert ml to liters
+                    var liters = Math.Round(value / 1000.0, 1);
+                    healthData.Water = Math.Max(healthData.Water, liters);
+                }
+            }
+        }
+    }
+
+    private void ProcessTemperatureData(SensorReadingInfoDto reading, HealthData healthData)
+    {
+        foreach (var data in reading.Readings)
+        {
+            if (data.Key?.ToLower().Contains("temperature") == true || data.Key?.ToLower().Contains("temp") == true)
+            {
+                var value = GetNumericValue(data.Value);
+                if (value > 30 && value < 45) // Reasonable body temperature range in Celsius
+                {
+                    healthData.Temperature = Math.Round(value, 1);
+                }
+            }
+        }
+    }
+
+    private void ProcessGenericData(SensorReadingInfoDto reading, HealthData healthData)
+    {
+        // Fallback processing for unknown sensor types
+        foreach (var data in reading.Readings)
+        {
+            var key = data.Key?.ToLower() ?? "";
+            var value = GetNumericValue(data.Value);
+            
+            if (value <= 0) continue;
+
+            if (key.Contains("step"))
+            {
+                healthData.Steps = Math.Max(healthData.Steps, (int)value);
+                healthData.StepsProgress = Math.Min(100, (healthData.Steps / 100.0));
+            }
+            else if (key.Contains("calorie"))
+            {
+                healthData.Calories = Math.Max(healthData.Calories, (int)value);
+                healthData.CaloriesProgress = Math.Min(100, (healthData.Calories / 25.0));
+            }
+            else if (key.Contains("heart") || key.Contains("bpm"))
+            {
+                if (value < 300)
+                {
+                    healthData.HeartRate = (int)value;
+                    healthData.HeartRateStatus = GetHeartRateStatus(healthData.HeartRate);
+                }
+            }
+        }
+    }
+
+    private double GetNumericValue(object? value)
+    {
+        if (value == null) return 0;
+
+        try
+        {
+            if (value is JsonElement jsonElement)
+            {
+                return jsonElement.ValueKind switch
+                {
+                    JsonValueKind.Number => jsonElement.GetDouble(),
+                    JsonValueKind.String => double.TryParse(jsonElement.GetString(), out var result) ? result : 0,
+                    _ => 0
+                };
+            }
+            else if (value is string stringValue)
+            {
+                return double.TryParse(stringValue, out var result) ? result : 0;
+            }
+            else
+            {
+                return Convert.ToDouble(value);
+            }
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    private string GetHeartRateStatus(int heartRate)
+    {
+        if (heartRate == 0) return "Không có dữ liệu";
+        if (heartRate < 60) return "Thấp";
+        if (heartRate <= 100) return "Bình thường";
+        if (heartRate <= 120) return "Hơi cao";
+        return "Cao";
+    }
+
+    private string GetSleepQuality(double hours)
+    {
+        if (hours >= 8) return "excellent";
+        if (hours >= 7) return "good";
+        if (hours >= 6) return "average";
+        return "poor";
+    }
+
+    private string GetSleepQualityText(string quality)
+    {
+        return quality switch
+        {
+            "excellent" => "Rất tốt",
+            "good" => "Tốt",
+            "average" => "Trung bình",
+            "poor" => "Thiếu ngủ",
+            _ => "Không có dữ liệu"
+        };
+    }
+
+    private void ViewDetails(string userId)
+    {
+        // Navigate to detailed view
+        Console.WriteLine($"Viewing details for user: {userId}");
+    }
+
+    // Helper classes
+    public class DeviceStatusInfo
+    {
+        public bool IsOnline { get; set; }
+        public bool HasDevices { get; set; }
+        public string LastSync { get; set; } = "";
+    }
+
+    public class HealthData
+    {
+        public bool HasData { get; set; }
+        public int Steps { get; set; }
+        public double StepsProgress { get; set; }
+        public int Calories { get; set; }
+        public double CaloriesProgress { get; set; }
+        public int HeartRate { get; set; }
+        public string HeartRateStatus { get; set; } = "Không có dữ liệu";
+        public double SleepHours { get; set; }
+        public string SleepQuality { get; set; } = "average";
+        public string SleepQualityText { get; set; } = "Không có dữ liệu";
+        public int Exercise { get; set; }
+        public double Water { get; set; }
+        public double Temperature { get; set; } = 36.5;
+    }
 }
