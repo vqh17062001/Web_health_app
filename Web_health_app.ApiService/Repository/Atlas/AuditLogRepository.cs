@@ -1,6 +1,8 @@
-using Web_health_app.ApiService.Entities.NonSQLTable;
-using MongoDB.Driver;
+using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
+using MongoDB.Driver;
+using System.Drawing.Printing;
+using Web_health_app.ApiService.Entities.NonSQLTable;
 
 namespace Web_health_app.ApiService.Repository.Atlas
 {
@@ -33,16 +35,27 @@ namespace Web_health_app.ApiService.Repository.Atlas
             return await _collection.Find(filter).FirstOrDefaultAsync();
         }
 
-        public async Task<List<AuditLog>> GetByUserIdAsync(string userId)
+        public async Task<List<AuditLog>> GetByUserIdAsync(string userId, int page, int pageSize)
         {
+            var skip = (page - 1) * pageSize;
+
             var filter = Builders<AuditLog>.Filter.Eq(x => x.UserId, userId);
-            return await _collection.Find(filter).ToListAsync();
+            return await _collection.Find(filter)
+                .Sort(Builders<AuditLog>.Sort.Descending(x => x.EventAt))
+                .Skip(skip)
+                .Limit(pageSize)
+                .ToListAsync();
         }
 
-        public async Task<List<AuditLog>> GetByActionAsync(string action)
+        public async Task<List<AuditLog>> GetByActionAsync(string action , int page , int pageSize )
         {
+            var skip = (page - 1) * pageSize;
+
             var filter = Builders<AuditLog>.Filter.Eq(x => x.Action, action);
-            return await _collection.Find(filter).ToListAsync();
+            return await _collection.Find(filter)
+                .Sort(Builders<AuditLog>.Sort.Descending(x => x.EventAt))
+                .Skip(skip)
+                .Limit(pageSize).ToListAsync();
         }
 
         public async Task<List<AuditLog>> GetByResourceAsync(string resource)

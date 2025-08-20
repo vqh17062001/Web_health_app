@@ -8,8 +8,8 @@ namespace Web_health_app.ApiService.Repository.Atlas
         Task<AuditLog> CreateAsync(AuditLog auditLog);
         Task<List<AuditLog>> GetAllAsync();
         Task<AuditLog?> GetByIdAsync(string id);
-        Task<List<AuditLog>> GetByUserIdAsync(string userId);
-        Task<List<AuditLog>> GetByActionAsync(string action);
+        Task<List<AuditLog>> GetByUserIdAsync(string userId, int page, int pageSize);
+        Task<List<AuditLog>> GetByActionAsync(string action, int page, int pageSize);
         Task<List<AuditLog>> GetByResourceAsync(string resource);
         Task<List<AuditLog>> GetByDateRangeAsync(DateTime fromDate, DateTime toDate);
         Task<List<AuditLog>> GetByFilterAsync(string? userId = null, string? action = null, string? resource = null, DateTime? fromDate = null, DateTime? toDate = null);

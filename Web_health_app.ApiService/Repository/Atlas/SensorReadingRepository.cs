@@ -88,17 +88,26 @@ namespace Web_health_app.ApiService.Repository.Atlas
             return ConvertToDtoList(sensorReadings);
         }
 
-        public async Task<List<SensorReadingInfoDto>> GetByDeviceIdAsync(string deviceId)
+        public async Task<List<SensorReadingInfoDto>> GetByDeviceIdAsync(string deviceId, int page, int pageSize)
         {
+            var skip = (page - 1) * pageSize;
+
             var filter = Builders<SensorReading>.Filter.Eq("metadata.deviceId", deviceId);
-            var sensorReadings = await _collection.Find(filter).ToListAsync();
+            var sensorReadings = await _collection.Find(filter)
+                .Skip(skip)
+                .Limit(pageSize)
+                .ToListAsync();
             return ConvertToDtoList(sensorReadings);
         }
 
-        public async Task<List<SensorReadingInfoDto>> GetBySensorTypeAsync(string sensorType)
+        public async Task<List<SensorReadingInfoDto>> GetBySensorTypeAsync(string sensorType, int page, int pageSize)
         {
+            var skip = (page - 1) * pageSize;
             var filter = Builders<SensorReading>.Filter.Eq("metadata.sensorType", sensorType);
-            var sensorReadings = await _collection.Find(filter).ToListAsync();
+            var sensorReadings = await _collection.Find(filter)
+                .Skip(skip)
+                .Limit(pageSize)
+                .ToListAsync();
             return ConvertToDtoList(sensorReadings);
         }
 
@@ -250,7 +259,7 @@ namespace Web_health_app.ApiService.Repository.Atlas
             await result.ForEachAsync(doc =>
             {
                 var sensorType = doc["_id"].AsString;
-                var count = doc["count"].AsInt64;
+                var count = doc["count"].AsInt32;
                 statistics[sensorType] = count;
             });
 
@@ -266,8 +275,8 @@ namespace Web_health_app.ApiService.Repository.Atlas
 
         public async Task<List<SensorReadingInfoDto>> GetRecentReadingsAsync(int hours = 24)
         {
-            var cutoffTime = DateTimeOffset.UtcNow.AddHours(-hours);
-            var filter = Builders<SensorReading>.Filter.Gte(x => x.Timestamp, cutoffTime);
+            var cutoff = DateTime.UtcNow.AddHours(-hours);
+            var filter = Builders<SensorReading>.Filter.Gte("timestamp", cutoff);
 
             var sensorReadings = await _collection.Find(filter)
                 .Sort(Builders<SensorReading>.Sort.Descending(x => x.Timestamp))

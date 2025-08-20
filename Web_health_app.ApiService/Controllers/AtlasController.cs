@@ -108,16 +108,23 @@ namespace Web_health_app.ApiService.Controllers
         }
 
         [HttpGet("sensor-readings/device/{deviceId}")]
-        public async Task<ActionResult<List<SensorReadingInfoDto>>> GetSensorReadingsByDevice(string deviceId)
+        public async Task<ActionResult<List<SensorReadingInfoDto>>> GetSensorReadingsByDevice(
+            string deviceId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
-            var readings = await _sensorReadingRepository.GetByDeviceIdAsync(deviceId);
+            var readings = await _sensorReadingRepository.GetByDeviceIdAsync(deviceId, page, pageSize);
             return Ok(readings);
         }
 
         [HttpGet("sensor-readings/type/{sensorType}")]
-        public async Task<ActionResult<List<SensorReadingInfoDto>>> GetSensorReadingsByType(string sensorType)
+        public async Task<ActionResult<List<SensorReadingInfoDto>>> GetSensorReadingsByType(
+            
+         string sensorType,
+         [FromQuery] int page = 1,
+         [FromQuery] int pageSize = 10)
         {
-            var readings = await _sensorReadingRepository.GetBySensorTypeAsync(sensorType);
+            var readings = await _sensorReadingRepository.GetBySensorTypeAsync(sensorType, page, pageSize);
             return Ok(readings);
         }
 
@@ -183,17 +190,24 @@ namespace Web_health_app.ApiService.Controllers
             return Ok(log);
         }
 
-        [HttpGet("audit-logs/user/{userId}")]
-        public async Task<ActionResult<List<AuditLog>>> GetAuditLogsByUser(string userId)
+        [HttpGet("audit-logs/user/")]
+        public async Task<ActionResult<List<AuditLog>>> GetAuditLogsByUser(
+            [FromQuery]  string userId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20
+            )
         {
-            var logs = await _auditLogRepository.GetByUserIdAsync(userId);
+            var logs = await _auditLogRepository.GetByUserIdAsync(userId, page, pageSize);
             return Ok(logs);
         }
 
-        [HttpGet("audit-logs/action/{action}")]
-        public async Task<ActionResult<List<AuditLog>>> GetAuditLogsByAction(string action)
+        [HttpGet("audit-logs/action/")]
+        public async Task<ActionResult<List<AuditLog>>> GetAuditLogsByAction(
+            [FromQuery] string action,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
         {
-            var logs = await _auditLogRepository.GetByActionAsync(action);
+            var logs = await _auditLogRepository.GetByActionAsync(action, page, pageSize);
             return Ok(logs);
         }
 

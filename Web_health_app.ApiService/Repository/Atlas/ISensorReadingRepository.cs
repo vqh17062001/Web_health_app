@@ -11,8 +11,8 @@ namespace Web_health_app.ApiService.Repository.Atlas
         Task<List<SensorReadingInfoDto>> GetAllAsync();
         Task<SensorReadingInfoDto?> GetByIdAsync(string id);
         Task<List<SensorReadingInfoDto>> GetByUserIdAsync(string userId);
-        Task<List<SensorReadingInfoDto>> GetByDeviceIdAsync(string deviceId);
-        Task<List<SensorReadingInfoDto>> GetBySensorTypeAsync(string sensorType);
+        Task<List<SensorReadingInfoDto>> GetByDeviceIdAsync(string deviceId, int page, int pageSize);
+        Task<List<SensorReadingInfoDto>> GetBySensorTypeAsync(string sensorType, int page, int pageSize);
         Task<List<SensorReadingInfoDto>> GetByDateRangeAsync(DateTime fromDate, DateTime toDate);
         Task<List<SensorReadingInfoDto>> GetByUserAndDateRangeAsync(string userId, DateTime fromDate, DateTime toDate);
         Task<List<SensorReadingInfoDto>> GetByDeviceAndDateRangeAsync(string deviceId, DateTime fromDate, DateTime toDate);
