@@ -11,6 +11,84 @@
 
 <link href="/css/DalyHealth/daily-health.css" rel="stylesheet" />
 
+<style>
+    .filter-summary {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 12px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .filter-info {
+        color: #6c757d;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .active-filters {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .filter-tag {
+        background: #007bff;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 16px;
+        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .filter-tag i {
+        font-size: 10px;
+    }
+
+    .btn-close-filter {
+        background: none;
+        border: none;
+        color: white;
+        padding: 0;
+        margin-left: 4px;
+        cursor: pointer;
+        font-size: 10px;
+        opacity: 0.8;
+    }
+
+    .btn-close-filter:hover {
+        opacity: 1;
+    }
+
+    .no-results-message {
+        padding: 40px 20px;
+        text-align: center;
+        color: #6c757d;
+    }
+
+    .no-results-message i {
+        font-size: 48px;
+        margin-bottom: 16px;
+        color: #dee2e6;
+    }
+
+    .no-results-message h4 {
+        margin-bottom: 8px;
+        color: #495057;
+    }
+
+    .no-results-message p {
+        margin-bottom: 20px;
+    }
+</style>
+
 <div class="daily-health-page">
     <!-- Page Header -->
     <div class="page-header">
@@ -44,33 +122,85 @@
         <!-- Filter and Search Section -->
         <div class="filter-section">
             <div class="row">
-                <div class="col-lg-8 col-md-7">
+                <div class="col-lg-6 col-md-6">
                     <div class="search-container">
                         <div class="search-box">
                             <i class="fas fa-search search-icon"></i>
-                            <input type="text" class="form-control"
+                            <input type="text" class="form-control" @bind="searchTerm" @oninput="OnSearchChanged"
                                 placeholder="Tìm kiếm học sinh theo tên, lớp hoặc mã số..." />
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-4 col-md-5">
+                <div class="col-lg-6 col-md-6">
                     <div class="filter-controls">
-                        <select class="form-select">
-                            <option>Tất cả lớp</option>
-                            <option>Lớp 10A1</option>
-                            <option>Lớp 10A2</option>
-                            <option>Lớp 11B1</option>
-                            <option>Lớp 12C1</option>
+                        <select class="form-select" @bind="selectedDepartment" @bind:after="OnDepartmentChanged">
+                            <option value="">Tất cả đơn vị</option>
+                            @foreach (var dept in availableDepartments)
+                            {
+                                <option value="@dept">@dept</option>
+                            }
                         </select>
-                        <select class="form-select">
-                            <option>Hôm nay</option>
-                            <option>7 ngày qua</option>
-                            <option>30 ngày qua</option>
-                            <option>Tùy chọn</option>
+                        <select class="form-select" @bind="selectedRole" @bind:after="OnRoleChanged">
+                            <option value="">Tất cả vai trò</option>
+                            @foreach (var role in availableRoles)
+                            {
+                                <option value="@role">@role</option>
+                            }
                         </select>
+                        
                     </div>
                 </div>
             </div>
+            
+            <!-- Filter Summary -->
+            @if (!string.IsNullOrEmpty(selectedDepartment) || !string.IsNullOrEmpty(selectedRole) || !string.IsNullOrEmpty(searchTerm))
+            {
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <div class="filter-summary">
+                            <span class="filter-info">
+                                Hiển thị @filteredStudents.Count trên @students.Count học sinh
+                            </span>
+                            <div class="active-filters">
+                                @if (!string.IsNullOrEmpty(selectedDepartment))
+                                {
+                                    <span class="filter-tag">
+                                        <i class="fas fa-building"></i>
+                                        @selectedDepartment
+                                        <button type="button" class="btn-close-filter" @onclick="() => ClearDepartmentFilter()">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </span>
+                                }
+                                @if (!string.IsNullOrEmpty(selectedRole))
+                                {
+                                    <span class="filter-tag">
+                                        <i class="fas fa-user-tag"></i>
+                                        @selectedRole
+                                        <button type="button" class="btn-close-filter" @onclick="() => ClearRoleFilter()">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </span>
+                                }
+                                @if (!string.IsNullOrEmpty(searchTerm))
+                                {
+                                    <span class="filter-tag">
+                                        <i class="fas fa-search"></i>
+                                        "@searchTerm"
+                                        <button type="button" class="btn-close-filter" @onclick="() => ClearSearchFilter()">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </span>
+                                }
+                                <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="ClearAllFilters">
+                                    <i class="fas fa-eraser"></i>
+                                    Xóa tất cả bộ lọc
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
 
         <!-- Students Health Data Grid -->
@@ -85,15 +215,30 @@
                         <p>Đang tải dữ liệu học sinh...</p>
                     </div>
                 }
-                else if (students == null || !students.Any())
+                else if (filteredStudents == null || !filteredStudents.Any())
                 {
                     <div class="col-12 text-center">
-                        <p>Không có dữ liệu học sinh</p>
+                        @if (!string.IsNullOrEmpty(selectedDepartment) || !string.IsNullOrEmpty(selectedRole) || !string.IsNullOrEmpty(searchTerm))
+                        {
+                            <div class="no-results-message">
+                                <i class="fas fa-filter"></i>
+                                <h4>Không tìm thấy kết quả</h4>
+                                <p>Không có học sinh nào phù hợp với bộ lọc hiện tại</p>
+                                <button class="btn btn-outline-primary" @onclick="ClearAllFilters">
+                                    <i class="fas fa-eraser"></i>
+                                    Xóa tất cả bộ lọc
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <p>Không có dữ liệu học sinh</p>
+                        }
                     </div>
                 }
                 else
                 {
-                    @foreach (var student in students)
+                    @foreach (var student in filteredStudents)
                     {
                         <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
                             <div class="student-health-card">
@@ -289,8 +434,7 @@
                         </a>
                     </li>
                     <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                    <li class="page-item"><a class="page-link" href="#">2</a></li>
-                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                 
                     <li class="page-item">
                         <a class="page-link" href="#" aria-label="Next">
                             <span aria-hidden="true">&raquo;</span>
@@ -305,14 +449,25 @@
 @code {
     private bool isLoading = true;
     private List<User> students = new List<User>();
+    private List<User> filteredStudents = new List<User>();
     private Dictionary<string, dynamic> deviceStatuses = new Dictionary<string, dynamic>();
     private Dictionary<string, HealthData> healthDataCache = new Dictionary<string, HealthData>();
+
+    // Filter properties
+    private string searchTerm = "";
+    private string selectedDepartment = "";
+    private string selectedRole = "";
+    
+    private List<string> availableDepartments = new List<string>();
+    private List<string> availableRoles = new List<string>();
 
     protected override async Task OnInitializedAsync()
     {
         await LoadStudentsData();
         await LoadDeviceStatuses();
         await LoadHealthData();
+        PopulateFilterOptions();
+        ApplyFilters();
         isLoading = false;
     }
 
@@ -366,10 +521,9 @@
             {
                 var readings = await AtlasApi.GetLatestSensorReadingsByUserAsync(student.Id);
                 //var reMoveItem = readings.Where(x => x.Timestamp > DateTime.UtcNow.AddHours(-24));
-                // var cutoff = DateTimeOffset.UtcNow.AddHours(-24);
 
-
-                // readings.RemoveAll(r => r.Timestamp < cutoff);
+             
+            
 
 
                 if (readings != null && readings.Any())
@@ -569,13 +723,13 @@
                 {
                     // Assume value is in minutes, convert to hours
                     var hours = Math.Round(value / 60.0, 1);
-                    
-                        healthData.SleepHours = hours;
-                        healthData.lastSyncSleepHours = reading.Timestamp;
 
-                        healthData.SleepQuality = GetSleepQuality(healthData.SleepHours);
-                        healthData.SleepQualityText = GetSleepQualityText(healthData.SleepQuality);
-                    
+                    healthData.SleepHours = hours;
+                    healthData.lastSyncSleepHours = reading.Timestamp;
+
+                    healthData.SleepQuality = GetSleepQuality(healthData.SleepHours);
+                    healthData.SleepQualityText = GetSleepQualityText(healthData.SleepQuality);
+
                 }
             }
         }
@@ -739,7 +893,7 @@
     }
     private string GetSpo2Quality(int spo2)
     {
-       
+
         if (96 <= spo2 && spo2 <= 100) return "excellent";
         if (95 <= spo2 && spo2 < 96) return "average";
         return "poor";
@@ -770,6 +924,112 @@
         // Navigate to detailed view
         Console.WriteLine($"Viewing details for user: {userId}");
     }
+
+    #region Filtering Methods
+
+    private void PopulateFilterOptions()
+    {
+        // Get unique departments and roles
+        availableDepartments = students
+            .Where(s => !string.IsNullOrEmpty(s.Department))
+            .Select(s => s.Department)
+            .Distinct()
+            .OrderBy(d => d)
+            .ToList();
+
+        availableRoles = students
+            .Where(s => !string.IsNullOrEmpty(s.Role))
+            .Select(s => s.Role)
+            .Distinct()
+            .OrderBy(r => r)
+            .ToList();
+    }
+
+    private void ApplyFilters()
+    {
+        filteredStudents = students.Where(student =>
+        {
+            // Search filter
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                var searchLower = searchTerm.ToLower();
+                if (!(student.FullName?.ToLower().Contains(searchLower) == true ||
+                      student.Username?.ToLower().Contains(searchLower) == true ||
+                      student.Department?.ToLower().Contains(searchLower) == true ||
+                      student.Role?.ToLower().Contains(searchLower) == true))
+                {
+                    return false;
+                }
+            }
+
+            // Department filter
+            if (!string.IsNullOrEmpty(selectedDepartment) && student.Department != selectedDepartment)
+            {
+                return false;
+            }
+
+            // Role filter
+            if (!string.IsNullOrEmpty(selectedRole) && student.Role != selectedRole)
+            {
+                return false;
+            }
+
+            return true;
+        }).ToList();
+    }
+
+    private async Task OnSearchChanged(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? "";
+        ApplyFilters();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnDepartmentChanged()
+    {
+        ApplyFilters();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnRoleChanged()
+    {
+        ApplyFilters();
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+
+    private async Task ClearDepartmentFilter()
+    {
+        selectedDepartment = "";
+        ApplyFilters();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ClearRoleFilter()
+    {
+        selectedRole = "";
+        ApplyFilters();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ClearSearchFilter()
+    {
+        searchTerm = "";
+        ApplyFilters();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ClearAllFilters()
+    {
+        searchTerm = "";
+        selectedDepartment = "";
+        selectedRole = "";
+        ApplyFilters();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    #endregion
 
     // Helper classes
     public class DeviceStatusInfo
