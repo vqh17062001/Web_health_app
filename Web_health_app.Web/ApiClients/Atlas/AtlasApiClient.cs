@@ -213,7 +213,7 @@ namespace Web_health_app.Web.ApiClients.Atlas
             return null;
         }
 
-        public async Task<List<SensorReadingInfoDto>?> GetLatestSensorReadingsByUserAsync(string userId, int limit = 10, string? sensorType = null)
+        public async Task<List<SensorReadingInfoDto>?> GetLatestSensorReadingsByUserAsync(string userId, int limit = 70, string? sensorType = null)
         {
             await SetAuthorizeHeader();
             var url = $"api/atlas/sensor-readings/user/{userId}/latest?limit={limit}";

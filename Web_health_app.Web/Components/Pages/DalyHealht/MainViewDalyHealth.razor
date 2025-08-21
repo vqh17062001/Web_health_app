@@ -1,5 +1,6 @@
 ﻿@page "/dalyhealth/mainview"
 @using Microsoft.AspNetCore.Authorization
+@using System.Globalization
 @using Web_health_app.Web.ApiClients.Atlas
 @using Web_health_app.ApiService.Entities.NonSQLTable
 @using Web_health_app.Models.Models.NonSqlDTO
@@ -110,7 +111,7 @@
                                         }
                                         @if (deviceStatus.IsOnline)
                                         {
-                                            <span class="status-badge active">Đang hoạt động</span>
+                                            <span class="status-badge active">Online</span>
                                         }
                                         else if (deviceStatus.HasDevices)
                                         {
@@ -152,10 +153,12 @@
                                                 <i class="fas fa-walking"></i>
                                             </div>
                                             <div class="metric-data">
-                                                <span class="metric-value">@healthData.Steps</span>
+                                                <span class="metric-value">@healthData.Steps / 6000</span>
                                                 <span class="metric-label">Bước chân</span>
+                                                <span class="metric-label"> Last Sync: @FormatHanoi(healthData.lastSyncSteps)</span>
+
                                                 <div class="progress-bar">
-                                                    <div class="progress-fill" style="width: @(healthData.StepsProgress)%"></div>
+                                                    <div class="progress-fill" style='@($"width:{healthData.StepsProgress.ToString(CultureInfo.InvariantCulture)}%");'></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -165,10 +168,13 @@
                                                 <i class="fas fa-fire"></i>
                                             </div>
                                             <div class="metric-data">
-                                                <span class="metric-value">@healthData.Calories</span>
+                                                <span class="metric-value">@healthData.Calories </span>
                                                 <span class="metric-label">Calories</span>
+                                                <span class="metric-label"> Last Sync: @FormatHanoi(healthData.lastSyncCalories)</span>
+
                                                 <div class="progress-bar">
-                                                    <div class="progress-fill" style="width: @(healthData.CaloriesProgress)%"></div>
+                                                    <div class="progress-fill" style='@($"width:{healthData.CaloriesProgress.ToString(CultureInfo.InvariantCulture)}%");'></div>
+
                                                 </div>
                                             </div>
                                         </div>
@@ -180,10 +186,28 @@
                                             <div class="metric-data">
                                                 <span class="metric-value">@healthData.HeartRate BPM</span>
                                                 <span class="metric-label">Nhịp tim</span>
-                                                <div class="heart-rate-status @healthData.HeartRateStatus.ToLower()">
+                                                <span class="metric-label"> Last Sync: @FormatHanoi(healthData.lastSyncHeartRate)</span>
+
+                                                <div class="heart-rate-status @GetHeartRateQuality(healthData.HeartRate).ToLower()">
                                                     @healthData.HeartRateStatus</div>
                                             </div>
                                         </div>
+
+                                        <div class="metric-item">
+                                            <div class="metric-icon heart-icon">
+                                                <i class="fas fa-heart"></i>
+                                            </div>
+                                            <div class="metric-data">
+                                                <span class="metric-value">@healthData.Spo2Percentage %</span>
+                                                <span class="metric-label">SpO2</span>
+                                                <span class="metric-label"> Last Sync: @FormatHanoi(healthData.lastSyncSpo2Percentage)</span>
+
+                                                <div class="sleep-quality @GetSpo2Quality(healthData.Spo2Percentage).ToLower()">
+                                                    @healthData.Spo2PercentageStatus
+                                                </div>
+                                            </div>
+                                        </div>
+
 
                                         <div class="metric-item">
                                             <div class="metric-icon sleep-icon">
@@ -192,6 +216,8 @@
                                             <div class="metric-data">
                                                 <span class="metric-value">@healthData.SleepHours h</span>
                                                 <span class="metric-label">Giấc ngủ</span>
+                                                <span class="metric-label"> Last Sync: @FormatHanoi(healthData.lastSyncSleepHours)</span>
+
                                                 <div class="sleep-quality @healthData.SleepQuality.ToLower()">
                                                     @healthData.SleepQualityText</div>
                                             </div>
@@ -339,6 +365,13 @@
             foreach (var student in students)
             {
                 var readings = await AtlasApi.GetLatestSensorReadingsByUserAsync(student.Id);
+                //var reMoveItem = readings.Where(x => x.Timestamp > DateTime.UtcNow.AddHours(-24));
+                // var cutoff = DateTimeOffset.UtcNow.AddHours(-24);
+
+
+                // readings.RemoveAll(r => r.Timestamp < cutoff);
+
+
                 if (readings != null && readings.Any())
                 {
                     healthDataCache[student.Id] = ProcessHealthData(readings);
@@ -406,6 +439,10 @@
     {
         var healthData = new HealthData();
 
+        // Timestamp là DateTime hoặc DateTimeOffset (không nullable)
+        readings.Sort((a, b) => a.Timestamp.CompareTo(b.Timestamp)); // tăng dần
+
+
         if (!readings.Any())
             return healthData;
 
@@ -415,7 +452,7 @@
         foreach (var reading in readings)
         {
             var sensorType = reading.Metadata?.SensorType?.ToLower();
-            
+
             // Process data based on sensor type
             switch (sensorType)
             {
@@ -513,6 +550,8 @@
                 if (value > 0 && value < 300) // Reasonable heart rate range
                 {
                     healthData.HeartRate = (int)value;
+                    healthData.lastSyncHeartRate = reading.Timestamp;
+
                     healthData.HeartRateStatus = GetHeartRateStatus(healthData.HeartRate);
                 }
             }
@@ -523,19 +562,20 @@
     {
         foreach (var data in reading.Readings)
         {
-            if (data.Key?.ToLower().Contains("sleep") == true || data.Key?.ToLower().Contains("duration") == true)
+            if (data.Key?.ToLower().Contains("sleep") == true || data.Key?.ToLower().Contains("sleep_duration_minutes") == true)
             {
                 var value = GetNumericValue(data.Value);
                 if (value > 0)
                 {
                     // Assume value is in minutes, convert to hours
                     var hours = Math.Round(value / 60.0, 1);
-                    if (hours > healthData.SleepHours)
-                    {
+                    
                         healthData.SleepHours = hours;
+                        healthData.lastSyncSleepHours = reading.Timestamp;
+
                         healthData.SleepQuality = GetSleepQuality(healthData.SleepHours);
                         healthData.SleepQualityText = GetSleepQualityText(healthData.SleepQuality);
-                    }
+                    
                 }
             }
         }
@@ -595,25 +635,41 @@
         {
             var key = data.Key?.ToLower() ?? "";
             var value = GetNumericValue(data.Value);
-            
+
             if (value <= 0) continue;
 
             if (key.Contains("step"))
             {
-                healthData.Steps = Math.Max(healthData.Steps, (int)value);
-                healthData.StepsProgress = Math.Min(100, (healthData.Steps / 100.0));
+
+                healthData.Steps = (int)value;
+                healthData.lastSyncSteps = reading.Timestamp;
+                healthData.StepsProgress = Math.Min(100, (healthData.Steps / 60.0));
             }
             else if (key.Contains("calorie"))
             {
-                healthData.Calories = Math.Max(healthData.Calories, (int)value);
-                healthData.CaloriesProgress = Math.Min(100, (healthData.Calories / 25.0));
+                healthData.Calories =  (int)value;
+                healthData.lastSyncCalories = reading.Timestamp;
+
+                healthData.CaloriesProgress = Math.Min(100, (healthData.Calories / 36));
             }
             else if (key.Contains("heart") || key.Contains("bpm"))
             {
                 if (value < 300)
                 {
                     healthData.HeartRate = (int)value;
+                    healthData.lastSyncHeartRate = reading.Timestamp;
+
                     healthData.HeartRateStatus = GetHeartRateStatus(healthData.HeartRate);
+                }
+            }
+            else if (key.Contains("spo2_percentage"))
+            {
+                if (value > 0)
+                {
+                    healthData.Spo2Percentage = (int)value;
+                    healthData.lastSyncSpo2Percentage = reading.Timestamp;
+
+                    healthData.Spo2PercentageStatus = GetSpo2Status(healthData.Spo2Percentage);
                 }
             }
         }
@@ -658,6 +714,37 @@
         return "Cao";
     }
 
+    private string GetHeartRateQuality(int heartRate)
+    {
+
+        if (heartRate == 0) return "poor";
+        if (heartRate < 40) return "poor";
+
+        if (heartRate < 60) return "elevated";
+        if (heartRate <= 80) return "normal";
+        if (heartRate <= 100) return "normal";
+        if (heartRate <= 120) return "elevated";
+        return "poor";
+    }
+
+    private string GetSpo2Status (int spo2)
+    {
+        if (spo2 < 90) return "Nguy Hiểm!";
+        if (spo2 <= 92) return "Suy Hô Hấp!";
+
+        if (93 <= spo2 && spo2 < 95) return "Chỉ số oxy trong máu thấp";
+        if (95 <= spo2 && spo2 < 96) return "Chỉ số oxy trong máu trung bình";
+        if (96 <= spo2 && spo2 <= 100) return " Chỉ số oxy trong máu tốt";
+        return "Lỗi cảm biến!";
+    }
+    private string GetSpo2Quality(int spo2)
+    {
+       
+        if (96 <= spo2 && spo2 <= 100) return "excellent";
+        if (95 <= spo2 && spo2 < 96) return "average";
+        return "poor";
+    }
+
     private string GetSleepQuality(double hours)
     {
         if (hours >= 8) return "excellent";
@@ -695,17 +782,53 @@
     public class HealthData
     {
         public bool HasData { get; set; }
+
         public int Steps { get; set; }
         public double StepsProgress { get; set; }
+        public DateTimeOffset lastSyncSteps { get; set; }
+
+
         public int Calories { get; set; }
         public double CaloriesProgress { get; set; }
+        public DateTimeOffset lastSyncCalories { get; set; }
+
+
         public int HeartRate { get; set; }
         public string HeartRateStatus { get; set; } = "Không có dữ liệu";
+        public DateTimeOffset lastSyncHeartRate { get; set; }
+
+
         public double SleepHours { get; set; }
+        public DateTimeOffset lastSyncSleepHours { get; set; }
+
         public string SleepQuality { get; set; } = "average";
         public string SleepQualityText { get; set; } = "Không có dữ liệu";
+
         public int Exercise { get; set; }
         public double Water { get; set; }
-        public double Temperature { get; set; } = 36.5;
+        public double Temperature { get; set; }
+
+        public int Spo2Percentage { get; set; }
+        public string Spo2PercentageStatus { get; set; } = "Không có dữ liệu";
+        public DateTimeOffset lastSyncSpo2Percentage { get; set; }
+
+        }
+
+
+    private static readonly TimeZoneInfo HanoiTz = GetHanoiTz();
+
+    private static TimeZoneInfo GetHanoiTz()
+    {
+        // Windows dùng "SE Asia Standard Time"; Linux/macOS dùng "Asia/Ho_Chi_Minh"
+        try { return TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"); } // Windows
+        catch { return TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh"); }    // Linux/macOS
+    }
+
+    private static string FormatHanoi(DateTimeOffset? utc)
+    {
+        if (utc is null) return "—";
+        var local = TimeZoneInfo.ConvertTime(utc.Value, HanoiTz);
+        return local.ToString("dd/MM/yyyy HH:mm:ss", new CultureInfo("vi-VN"));
+        // Nếu muốn hiển thị offset: "dd/MM/yyyy HH:mm:ss 'GMT'zzz"
     }
 }
