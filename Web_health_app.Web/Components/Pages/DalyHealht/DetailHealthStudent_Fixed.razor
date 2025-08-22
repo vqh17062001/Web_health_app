@@ -1,0 +1,696 @@
+@* @page "/dalyhealth/detailhealthstudent/{studentUserId}" *@
+@using Microsoft.AspNetCore.Authorization
+@using System.Globalization
+@using Web_health_app.Web.ApiClients.Atlas
+@using Web_health_app.ApiService.Entities.NonSQLTable
+@using Web_health_app.Models.Models.NonSqlDTO
+@using System.Text.Json
+@attribute [Authorize(Roles = "ACCESS.DetailHealthStudent")]
+
+@using Web_health_app.Web.Components.Layout
+
+@inject AtlasApiClient AtlasApi
+@inject NavigationManager Navigation
+
+@layout EmptyLayout
+
+<link href="/css/DalyHealth/detail-health-student.css" rel="stylesheet" />
+
+<style>
+    .stats-comparison-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-comparison-card {
+        background: #fff;
+        border: 1px solid #e3e6f0;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    }
+
+    .stat-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .stat-header i {
+        font-size: 1.5rem;
+        margin-right: 0.75rem;
+        width: 2rem;
+        text-align: center;
+    }
+
+    .stat-comparison-card.steps .stat-header i { color: #5e72e4; }
+    .stat-comparison-card.heart-rate .stat-header i { color: #f5365c; }
+    .stat-comparison-card.calories .stat-header i { color: #fb6340; }
+    .stat-comparison-card.sleep .stat-header i { color: #11cdef; }
+
+    .stat-values {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .current-value, .average-value {
+        text-align: center;
+    }
+
+    .current-value .label, .average-value .label {
+        display: block;
+        font-size: 0.875rem;
+        color: #6e707e;
+        margin-bottom: 0.25rem;
+    }
+
+    .current-value .value, .average-value .value {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #5a5c69;
+    }
+
+    .trend-indicator {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .period-summary {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        border-left: 4px solid #5e72e4;
+        margin-top: 2rem;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem;
+        background: white;
+        border-radius: 0.375rem;
+        border: 1px solid #e3e6f0;
+    }
+
+    .daily-breakdown {
+        background: #fff;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        border: 1px solid #e3e6f0;
+        margin-top: 1.5rem;
+    }
+
+    .breakdown-table {
+        overflow-x: auto;
+    }
+
+    .table-header, .table-row {
+        display: grid;
+        grid-template-columns: 80px 100px 100px 100px 80px 120px;
+        gap: 1rem;
+        padding: 0.75rem;
+        align-items: center;
+    }
+
+    .table-header {
+        background: #f8f9fa;
+        border-radius: 0.375rem;
+        font-weight: 600;
+        color: #5a5c69;
+        border-bottom: 2px solid #e3e6f0;
+    }
+
+    .table-row {
+        border-bottom: 1px solid #e3e6f0;
+    }
+
+    .table-row:hover {
+        background: #f8f9fa;
+    }
+</style>
+
+<div class="detail-health-page">
+    @if (!isLoading && student != null)
+    {
+        <div class="container-fluid">
+            <!-- Health Statistics Overview -->
+            <div class="charts-section">
+                <div class="row g-4">
+                    <div class="col-12">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h4>
+                                    <i class="fas fa-chart-bar"></i>
+                                    Thống kê chỉ số sức khỏe
+                                </h4>
+                                <div class="chart-controls">
+                                    <button class="btn btn-sm btn-outline-secondary @(selectedPeriod == "today" ? "active" : "")" 
+                                            @onclick="@(() => ChangePeriod("today"))">Hôm nay</button>
+                                    <button class="btn btn-sm btn-outline-secondary @(selectedPeriod == "week" ? "active" : "")" 
+                                            @onclick="@(() => ChangePeriod("week"))">7 ngày</button>
+                                    <button class="btn btn-sm btn-outline-secondary @(selectedPeriod == "2weeks" ? "active" : "")" 
+                                            @onclick="@(() => ChangePeriod("2weeks"))">2 tuần</button>
+                                    <button class="btn btn-sm btn-outline-secondary @(selectedPeriod == "month" ? "active" : "")" 
+                                            @onclick="@(() => ChangePeriod("month"))">30 ngày</button>
+                                </div>
+                            </div>
+                            <div class="chart-content">
+                                @{
+                                    var periodStats = GetHealthStatsByPeriod(selectedPeriod);
+                                }
+                                
+                                <!-- Current vs Average Comparison -->
+                                <div class="stats-comparison-grid">
+                                    <!-- Steps Comparison -->
+                                    <div class="stat-comparison-card steps">
+                                        <div class="stat-header">
+                                            <i class="fas fa-walking"></i>
+                                            <h5>Bước chân</h5>
+                                        </div>
+                                        <div class="stat-values">
+                                            <div class="current-value">
+                                                <span class="label">Hiện tại</span>
+                                                <span class="value">@periodStats.CurrentSteps.ToString("#,0")</span>
+                                            </div>
+                                            <div class="average-value">
+                                                <span class="label">Trung bình @GetPeriodLabel(selectedPeriod)</span>
+                                                <span class="value">@periodStats.AvgSteps.ToString("#,0")</span>
+                                            </div>
+                                            <div class="trend-indicator">
+                                                @{
+                                                    var stepsTrend = periodStats.CurrentSteps - periodStats.AvgSteps;
+                                                }
+                                                <i class="fas fa-@(stepsTrend > 0 ? "arrow-up text-success" : stepsTrend < 0 ? "arrow-down text-danger" : "minus text-muted")"></i>
+                                                <span class="@(stepsTrend > 0 ? "text-success" : stepsTrend < 0 ? "text-danger" : "text-muted")">
+                                                    @(stepsTrend != 0 ? Math.Abs(stepsTrend).ToString("#,0") : "Không đổi")
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Heart Rate Comparison -->
+                                    <div class="stat-comparison-card heart-rate">
+                                        <div class="stat-header">
+                                            <i class="fas fa-heart"></i>
+                                            <h5>Nhịp tim (BPM)</h5>
+                                        </div>
+                                        <div class="stat-values">
+                                            <div class="current-value">
+                                                <span class="label">Hiện tại</span>
+                                                <span class="value">@periodStats.CurrentHeartRate.ToString("F0")</span>
+                                            </div>
+                                            <div class="average-value">
+                                                <span class="label">Trung bình @GetPeriodLabel(selectedPeriod)</span>
+                                                <span class="value">@periodStats.AvgHeartRate.ToString("F0")</span>
+                                            </div>
+                                            <div class="trend-indicator">
+                                                @{
+                                                    var hrTrend = periodStats.CurrentHeartRate - periodStats.AvgHeartRate;
+                                                }
+                                                <i class="fas fa-@(hrTrend > 0 ? "arrow-up text-warning" : hrTrend < 0 ? "arrow-down text-success" : "minus text-muted")"></i>
+                                                <span class="@(hrTrend > 0 ? "text-warning" : hrTrend < 0 ? "text-success" : "text-muted")">
+                                                    @(hrTrend != 0 ? Math.Abs(hrTrend).ToString("F0") : "Không đổi")
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Calories Comparison -->
+                                    <div class="stat-comparison-card calories">
+                                        <div class="stat-header">
+                                            <i class="fas fa-fire"></i>
+                                            <h5>Calories</h5>
+                                        </div>
+                                        <div class="stat-values">
+                                            <div class="current-value">
+                                                <span class="label">Hiện tại</span>
+                                                <span class="value">@periodStats.CurrentCalories.ToString("#,0")</span>
+                                            </div>
+                                            <div class="average-value">
+                                                <span class="label">Trung bình @GetPeriodLabel(selectedPeriod)</span>
+                                                <span class="value">@periodStats.AvgCalories.ToString("#,0")</span>
+                                            </div>
+                                            <div class="trend-indicator">
+                                                @{
+                                                    var caloriesTrend = periodStats.CurrentCalories - periodStats.AvgCalories;
+                                                }
+                                                <i class="fas fa-@(caloriesTrend > 0 ? "arrow-up text-success" : caloriesTrend < 0 ? "arrow-down text-danger" : "minus text-muted")"></i>
+                                                <span class="@(caloriesTrend > 0 ? "text-success" : caloriesTrend < 0 ? "text-danger" : "text-muted")">
+                                                    @(caloriesTrend != 0 ? Math.Abs(caloriesTrend).ToString("#,0") : "Không đổi")
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Sleep Comparison -->
+                                    <div class="stat-comparison-card sleep">
+                                        <div class="stat-header">
+                                            <i class="fas fa-bed"></i>
+                                            <h5>Giấc ngủ (giờ)</h5>
+                                        </div>
+                                        <div class="stat-values">
+                                            <div class="current-value">
+                                                <span class="label">Hiện tại</span>
+                                                <span class="value">@periodStats.CurrentSleep.ToString("F1")h</span>
+                                            </div>
+                                            <div class="average-value">
+                                                <span class="label">Trung bình @GetPeriodLabel(selectedPeriod)</span>
+                                                <span class="value">@periodStats.AvgSleep.ToString("F1")h</span>
+                                            </div>
+                                            <div class="trend-indicator">
+                                                @{
+                                                    var sleepTrend = periodStats.CurrentSleep - periodStats.AvgSleep;
+                                                }
+                                                <i class="fas fa-@(sleepTrend > 0 ? "arrow-up text-success" : sleepTrend < 0 ? "arrow-down text-warning" : "minus text-muted")"></i>
+                                                <span class="@(sleepTrend > 0 ? "text-success" : sleepTrend < 0 ? "text-warning" : "text-muted")">
+                                                    @(sleepTrend != 0 ? Math.Abs(sleepTrend).ToString("F1") + "h" : "Không đổi")
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Period Summary -->
+                                <div class="period-summary">
+                                    <h5><i class="fas fa-chart-line"></i> Tóm tắt @GetPeriodLabel(selectedPeriod)</h5>
+                                    <div class="summary-grid">
+                                        <div class="summary-item">
+                                            <span class="label">Tổng số ngày có dữ liệu:</span>
+                                            <span class="value">@periodStats.DaysWithData/@GetPeriodDays(selectedPeriod) ngày</span>
+                                        </div>
+                                        <div class="summary-item">
+                                            <span class="label">Ngày hoàn thành mục tiêu bước chân:</span>
+                                            <span class="value">@periodStats.DaysWithStepsGoal/@periodStats.DaysWithData ngày</span>
+                                        </div>
+                                        <div class="summary-item">
+                                            <span class="label">Tổng bước chân:</span>
+                                            <span class="value">@periodStats.TotalSteps.ToString("#,0") bước</span>
+                                        </div>
+                                        <div class="summary-item">
+                                            <span class="label">Tổng calories đốt cháy:</span>
+                                            <span class="value">@periodStats.TotalCalories.ToString("#,0") cal</span>
+                                        </div>
+                                        <div class="summary-item">
+                                            <span class="label">Thời gian ngủ trung bình:</span>
+                                            <span class="value">@periodStats.AvgSleep.ToString("F1") giờ/đêm</span>
+                                        </div>
+                                        <div class="summary-item">
+                                            <span class="label">Nhịp tim nghỉ ngơi trung bình:</span>
+                                            <span class="value">@periodStats.AvgRestingHeartRate.ToString("F0") BPM</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Daily Breakdown (for weekly/monthly view) -->
+                                @if (selectedPeriod != "today")
+                                {
+                                    <div class="daily-breakdown">
+                                        <h5><i class="fas fa-calendar-alt"></i> Phân tích theo ngày</h5>
+                                        <div class="breakdown-table">
+                                            <div class="table-header">
+                                                <span>Ngày</span>
+                                                <span>Bước chân</span>
+                                                <span>Calories</span>
+                                                <span>Nhịp tim TB</span>
+                                                <span>Giờ ngủ</span>
+                                                <span>Trạng thái</span>
+                                            </div>
+                                            @foreach (var day in GetDailyBreakdown(selectedPeriod))
+                                            {
+                                                <div class="table-row">
+                                                    <span class="date">@day.Date.ToString("dd/MM")</span>
+                                                    <span class="steps">@day.Steps.ToString("#,0")</span>
+                                                    <span class="calories">@day.Calories.ToString("#,0")</span>
+                                                    <span class="heart-rate">@day.HeartRate.ToString("F0")</span>
+                                                    <span class="sleep">@day.Sleep.ToString("F1")h</span>
+                                                    <span class="status">
+                                                        <i class="fas fa-circle @(day.IsGoodDay ? "text-success" : "text-warning")"></i>
+                                                        @(day.IsGoodDay ? "Tốt" : "Cần cải thiện")
+                                                    </span>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (isLoading)
+    {
+        <div class="container-fluid">
+            <div class="d-flex justify-content-center align-items-center" style="height: 400px;">
+                <div class="text-center">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h5>Đang tải dữ liệu sức khỏe...</h5>
+                    <p class="text-muted">Vui lòng đợi trong giây lát</p>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="container-fluid">
+            <div class="alert alert-warning text-center" role="alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h5>Không có dữ liệu</h5>
+                <p>Không tìm thấy thông tin sức khỏe cho học sinh này.</p>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string StudentUserId { get; set; } = string.Empty;
+    [Inject] private AtlasApiClient _atlasApiClient { get; set; } = default!;
+    [Inject] private NavigationManager _navigationManager { get; set; } = default!;
+
+    private User? student;
+    private List<SensorReadingInfoDto> sensorReadings = new();
+    private bool isLoading = true;
+    private string selectedPeriod = "today";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStudentData();
+    }
+
+    private async Task LoadStudentData()
+    {
+        try
+        {
+            isLoading = true;
+            if (string.IsNullOrEmpty(StudentUserId)) return;
+
+            student = await _atlasApiClient.GetUserAsync(StudentUserId);
+            if (student == null) return;
+
+            var fromDate = DateTimeOffset.UtcNow.AddDays(-30);
+            var toDate = DateTimeOffset.UtcNow.AddDays(1);
+
+            var readingsData = await _atlasApiClient.GetSensorReadingsByDateRangeAsync(StudentUserId, fromDate, toDate);
+            if (readingsData != null && readingsData.Any())
+            {
+                sensorReadings = readingsData;
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle error
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ChangePeriod(string period)
+    {
+        selectedPeriod = period;
+        StateHasChanged();
+    }
+
+    private string GetPeriodLabel(string period)
+    {
+        return period switch
+        {
+            "today" => "hôm nay",
+            "week" => "7 ngày qua",
+            "2weeks" => "2 tuần qua",
+            "month" => "30 ngày qua",
+            _ => "hôm nay"
+        };
+    }
+
+    private int GetPeriodDays(string period)
+    {
+        return period switch
+        {
+            "today" => 1,
+            "week" => 7,
+            "2weeks" => 14,
+            "month" => 30,
+            _ => 1
+        };
+    }
+
+    private HealthStatistics GetHealthStatsByPeriod(string period)
+    {
+        var days = GetPeriodDays(period);
+        var fromDate = DateTimeOffset.UtcNow.AddDays(-days);
+        var periodReadings = sensorReadings.Where(r => r.Timestamp >= fromDate).ToList();
+
+        if (!periodReadings.Any())
+        {
+            return new HealthStatistics();
+        }
+
+        // Calculate current values (latest readings)
+        var currentHealthMetrics = GetHealthMetrics();
+
+        // Calculate averages and statistics
+        var dailyStats = GetDailyStatistics(periodReadings, days);
+
+        return new HealthStatistics
+        {
+            CurrentSteps = currentHealthMetrics.Steps,
+            CurrentHeartRate = currentHealthMetrics.HeartRate,
+            CurrentCalories = currentHealthMetrics.Calories,
+            CurrentSleep = currentHealthMetrics.Sleep,
+
+            AvgSteps = dailyStats.Any() ? (int)dailyStats.Average(d => d.Steps) : 0,
+            AvgHeartRate = dailyStats.Any() ? dailyStats.Average(d => d.HeartRate) : 0,
+            AvgCalories = dailyStats.Any() ? (int)dailyStats.Average(d => d.Calories) : 0,
+            AvgSleep = dailyStats.Any() ? dailyStats.Average(d => d.Sleep) : 0,
+
+            MinHeartRate = dailyStats.Any() ? dailyStats.Min(d => d.HeartRate) : 0,
+            MaxHeartRate = dailyStats.Any() ? dailyStats.Max(d => d.HeartRate) : 0,
+            AvgRestingHeartRate = dailyStats.Any() ? dailyStats.Where(d => d.HeartRate > 0).DefaultIfEmpty().Average(d => d?.HeartRate ?? 0) : 0,
+
+            TotalSteps = dailyStats.Sum(d => d.Steps),
+            TotalCalories = dailyStats.Sum(d => d.Calories),
+
+            DaysWithData = dailyStats.Count(d => d.HasData),
+            DaysWithStepsGoal = dailyStats.Count(d => d.Steps >= 6000)
+        };
+    }
+
+    private List<DailyStat> GetDailyStatistics(List<SensorReadingInfoDto> readings, int days)
+    {
+        var dailyStats = new List<DailyStat>();
+        var startDate = DateTimeOffset.UtcNow.AddDays(-days).Date;
+
+        for (int i = 0; i < days; i++)
+        {
+            var currentDate = startDate.AddDays(i);
+            var dayReadings = readings.Where(r => r.Timestamp.Date == currentDate).ToList();
+
+            var dailyStat = new DailyStat
+            {
+                Date = currentDate,
+                HasData = dayReadings.Any()
+            };
+
+            if (dayReadings.Any())
+            {
+                var dayMetrics = ProcessDayReadings(dayReadings);
+                dailyStat.Steps = dayMetrics.Steps;
+                dailyStat.HeartRate = dayMetrics.HeartRate;
+                dailyStat.Calories = dayMetrics.Calories;
+                dailyStat.Sleep = dayMetrics.Sleep;
+                dailyStat.IsGoodDay = dayMetrics.Steps >= 6000 && dayMetrics.Sleep >= 6;
+            }
+
+            dailyStats.Add(dailyStat);
+        }
+
+        return dailyStats;
+    }
+
+    private HealthMetrics ProcessDayReadings(List<SensorReadingInfoDto> dayReadings)
+    {
+        var healthMetrics = new HealthMetrics();
+
+        foreach (var reading in dayReadings)
+        {
+            foreach (var data in reading.Readings)
+            {
+                var key = data.Key?.ToLower() ?? "";
+                var value = GetNumericValue(data.Value);
+
+                if (value <= 0) continue;
+
+                if (key.Contains("step"))
+                {
+                    healthMetrics.Steps = Math.Max(healthMetrics.Steps, (int)value);
+                }
+                else if (key.Contains("calorie"))
+                {
+                    healthMetrics.Calories = Math.Max(healthMetrics.Calories, (int)value);
+                }
+                else if (key.Contains("heart") || key.Contains("bpm"))
+                {
+                    if (value < 300)
+                    {
+                        healthMetrics.HeartRate = value;
+                    }
+                }
+                else if (key.Contains("sleep"))
+                {
+                    var hours = Math.Round(value / 60.0, 1);
+                    healthMetrics.Sleep = Math.Max(healthMetrics.Sleep, hours);
+                }
+            }
+        }
+
+        return healthMetrics;
+    }
+
+    private HealthMetrics GetHealthMetrics()
+    {
+        if (!sensorReadings.Any())
+        {
+            return new HealthMetrics();
+        }
+
+        var healthMetrics = new HealthMetrics();
+
+        foreach (var reading in sensorReadings.OrderByDescending(r => r.Timestamp).Take(100))
+        {
+            foreach (var data in reading.Readings)
+            {
+                var key = data.Key?.ToLower() ?? "";
+                var value = GetNumericValue(data.Value);
+
+                if (value <= 0) continue;
+
+                if (key.Contains("step") && healthMetrics.Steps == 0)
+                {
+                    healthMetrics.Steps = (int)value;
+                }
+                else if (key.Contains("calorie") && healthMetrics.Calories == 0)
+                {
+                    healthMetrics.Calories = (int)value;
+                }
+                else if ((key.Contains("heart") || key.Contains("bpm")) && healthMetrics.HeartRate == 0)
+                {
+                    if (value < 300)
+                    {
+                        healthMetrics.HeartRate = value;
+                    }
+                }
+                else if (key.Contains("sleep") && healthMetrics.Sleep == 0)
+                {
+                    var hours = Math.Round(value / 60.0, 1);
+                    healthMetrics.Sleep = hours;
+                }
+            }
+        }
+
+        return healthMetrics;
+    }
+
+    private double GetNumericValue(object? value)
+    {
+        if (value == null) return 0;
+
+        try
+        {
+            if (value is JsonElement jsonElement)
+            {
+                return jsonElement.ValueKind switch
+                {
+                    JsonValueKind.Number => jsonElement.GetDouble(),
+                    JsonValueKind.String => double.TryParse(jsonElement.GetString(), out var result) ? result : 0,
+                    _ => 0
+                };
+            }
+            else if (value is string stringValue)
+            {
+                return double.TryParse(stringValue, out var result) ? result : 0;
+            }
+            else
+            {
+                return Convert.ToDouble(value);
+            }
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    private List<DailyStat> GetDailyBreakdown(string period)
+    {
+        var days = GetPeriodDays(period);
+        var fromDate = DateTimeOffset.UtcNow.AddDays(-days);
+        var periodReadings = sensorReadings.Where(r => r.Timestamp >= fromDate).ToList();
+        
+        return GetDailyStatistics(periodReadings, days)
+            .Where(d => d.HasData)
+            .OrderByDescending(d => d.Date)
+            .Take(14)
+            .ToList();
+    }
+
+    private class HealthStatistics
+    {
+        public int CurrentSteps { get; set; }
+        public double CurrentHeartRate { get; set; }
+        public int CurrentCalories { get; set; }
+        public double CurrentSleep { get; set; }
+
+        public int AvgSteps { get; set; }
+        public double AvgHeartRate { get; set; }
+        public int AvgCalories { get; set; }
+        public double AvgSleep { get; set; }
+
+        public double MinHeartRate { get; set; }
+        public double MaxHeartRate { get; set; }
+        public double AvgRestingHeartRate { get; set; }
+
+        public int TotalSteps { get; set; }
+        public int TotalCalories { get; set; }
+
+        public int DaysWithData { get; set; }
+        public int DaysWithStepsGoal { get; set; }
+    }
+
+    private class DailyStat
+    {
+        public DateTime Date { get; set; }
+        public int Steps { get; set; }
+        public double HeartRate { get; set; }
+        public int Calories { get; set; }
+        public double Sleep { get; set; }
+        public bool HasData { get; set; }
+        public bool IsGoodDay { get; set; }
+    }
+
+    private class HealthMetrics
+    {
+        public double HeartRate { get; set; }
+        public int Steps { get; set; }
+        public double Sleep { get; set; }
+        public int Calories { get; set; }
+    }
+}
