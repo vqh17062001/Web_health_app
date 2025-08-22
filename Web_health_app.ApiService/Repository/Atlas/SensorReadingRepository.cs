@@ -111,14 +111,28 @@ namespace Web_health_app.ApiService.Repository.Atlas
             return ConvertToDtoList(sensorReadings);
         }
 
-        public async Task<List<SensorReadingInfoDto>> GetByDateRangeAsync(DateTime fromDate, DateTime toDate)
+        public async Task<List<SensorReadingInfoDto>> GetByDateRangeAsync(string userId, string sensorType, DateTimeOffset fromDate, DateTimeOffset toDate)
         {
             var builder = Builders<SensorReading>.Filter;
-            var filter = builder.And(
-                builder.Gte(x => x.Timestamp, new DateTimeOffset(fromDate)),
-                builder.Lte(x => x.Timestamp, new DateTimeOffset(toDate))
-            );
-            var sensorReadings = await _collection.Find(filter).ToListAsync();
+            fromDate = fromDate.ToUniversalTime();
+            toDate = toDate.ToUniversalTime();
+
+            var filters = new List<FilterDefinition<SensorReading>> {
+                builder.Eq(x => x.Metadata.UserId, userId),
+                builder.Gte("timestamp", new BsonDateTime(fromDate.DateTime)),
+                builder.Lte("timestamp", new BsonDateTime(toDate.DateTime))
+
+           };
+          
+
+            if (!string.IsNullOrEmpty(sensorType))
+            {
+                filters.Add(builder.Eq("metadata.sensorType", sensorType));
+            }
+            var filter = builder.And(filters);
+            var sensorReadings = await _collection.Find(filter)
+                .Sort(Builders<SensorReading>.Sort.Descending(x => x.Timestamp))
+                .ToListAsync();
             return ConvertToDtoList(sensorReadings);
         }
 
@@ -148,12 +162,20 @@ namespace Web_health_app.ApiService.Repository.Atlas
 
         public async Task<List<SensorReadingInfoDto>> GetLatestByUserAsync(string userId, int limit = 10, string sensorType = null)
         {
-            var filter = Builders<SensorReading>.Filter
-            .Eq(x => x.Metadata.UserId, userId);
-            if (sensorType != null) {
+            var builder = Builders<SensorReading>.Filter;
 
-                filter = Builders<SensorReading>.Filter.Eq("metadata.sensorType", sensorType);
+            var filters = new List<FilterDefinition<SensorReading>> {
+
+             builder.Eq(x => x.Metadata.UserId, userId)
+            };
+
+            if (!string.IsNullOrEmpty(sensorType)) {
+
+                filters.Add(builder.Eq("metadata.sensorType", sensorType));
             }
+
+            var filter = builder.And(filters);
+
             var sensorReadings = await _collection.Find(filter)
                 .Sort(Builders<SensorReading>.Sort.Descending(x => x.Timestamp))
                 .Limit(limit)

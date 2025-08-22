@@ -162,10 +162,13 @@ namespace Web_health_app.ApiService.Controllers
 
         [HttpGet("sensor-readings/date-range")]
         public async Task<ActionResult<List<SensorReadingInfoDto>>> GetSensorReadingsByDateRange(
-            [FromQuery] DateTime fromDate,
-            [FromQuery] DateTime toDate)
+            [FromQuery] string userId,
+           
+            [FromQuery] DateTimeOffset fromDate,
+            [FromQuery] DateTimeOffset toDate,
+            [FromQuery] string sensorType = "")
         {
-            var readings = await _sensorReadingRepository.GetByDateRangeAsync(fromDate, toDate);
+            var readings = await _sensorReadingRepository.GetByDateRangeAsync(userId, sensorType,fromDate, toDate);
             return Ok(readings);
         }
 

@@ -201,10 +201,10 @@ namespace Web_health_app.Web.ApiClients.Atlas
             return null;
         }
 
-        public async Task<List<SensorReadingInfoDto>?> GetSensorReadingsByDateRangeAsync(DateTime fromDate, DateTime toDate)
+        public async Task<List<SensorReadingInfoDto>?> GetSensorReadingsByDateRangeAsync(string userId, DateTimeOffset fromDate, DateTimeOffset toDate, string sensorType = "")
         {
             await SetAuthorizeHeader();
-            var response = await _httpClient.GetAsync($"api/atlas/sensor-readings/date-range?fromDate={fromDate:yyyy-MM-dd}&toDate={toDate:yyyy-MM-dd}");
+            var response = await _httpClient.GetAsync($"api/atlas/sensor-readings/date-range?userId={userId}&sensorType={sensorType}&fromDate={fromDate:yyyy-MM-dd}&toDate={toDate:yyyy-MM-dd}");
             if (response.IsSuccessStatusCode)
             {
                 var json = await response.Content.ReadAsStringAsync();
@@ -213,7 +213,7 @@ namespace Web_health_app.Web.ApiClients.Atlas
             return null;
         }
 
-        public async Task<List<SensorReadingInfoDto>?> GetLatestSensorReadingsByUserAsync(string userId, int limit = 70, string? sensorType = null)
+        public async Task<List<SensorReadingInfoDto>?> GetLatestSensorReadingsByUserAsync(string userId, int limit = 100, string? sensorType = null)
         {
             await SetAuthorizeHeader();
             var url = $"api/atlas/sensor-readings/user/{userId}/latest?limit={limit}";

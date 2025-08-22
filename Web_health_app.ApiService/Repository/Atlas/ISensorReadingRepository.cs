@@ -13,7 +13,7 @@ namespace Web_health_app.ApiService.Repository.Atlas
         Task<List<SensorReadingInfoDto>> GetByUserIdAsync(string userId);
         Task<List<SensorReadingInfoDto>> GetByDeviceIdAsync(string deviceId, int page, int pageSize);
         Task<List<SensorReadingInfoDto>> GetBySensorTypeAsync(string sensorType, int page, int pageSize);
-        Task<List<SensorReadingInfoDto>> GetByDateRangeAsync(DateTime fromDate, DateTime toDate);
+        Task<List<SensorReadingInfoDto>> GetByDateRangeAsync(string userId, string sensorType, DateTimeOffset fromDate, DateTimeOffset toDate);
         Task<List<SensorReadingInfoDto>> GetByUserAndDateRangeAsync(string userId, DateTime fromDate, DateTime toDate);
         Task<List<SensorReadingInfoDto>> GetByDeviceAndDateRangeAsync(string deviceId, DateTime fromDate, DateTime toDate);
         Task<List<SensorReadingInfoDto>> GetLatestByUserAsync(string userId, int limit = 10, string sensorType = null);

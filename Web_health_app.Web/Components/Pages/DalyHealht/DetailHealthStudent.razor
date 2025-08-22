@@ -1,11 +1,51 @@
-﻿@page "/dalyhealth/detailhealthstudent"
+﻿@page "/dalyhealth/detailhealthstudent/{studentUserId}"
+@using Microsoft.AspNetCore.Authorization
+@using System.Globalization
+@using Web_health_app.Web.ApiClients.Atlas
+@using Web_health_app.ApiService.Entities.NonSQLTable
+@using Web_health_app.Models.Models.NonSqlDTO
+@using System.Text.Json
+@attribute [Authorize(Roles = "ACCESS.DetailHealthStudent")]
 
 @using Web_health_app.Web.Components.Layout
 
+@inject AtlasApiClient AtlasApi
+@inject NavigationManager Navigation
 
-@layout MainLayout
+@layout EmptyLayout
 
 <link href="/css/DalyHealth/detail-health-student.css" rel="stylesheet" />
+
+<style>
+    .status-icon.connected {
+        color: #28a745;
+    }
+    
+    .status-icon.disconnected {
+        color: #dc3545;
+    }
+    
+    .sync-status.success {
+        color: #28a745;
+    }
+    
+    .sync-status.warning {
+        color: #ffc107;
+    }
+    
+    .sync-details h6 {
+        margin-bottom: 1rem;
+        color: #495057;
+        font-weight: 600;
+    }
+    
+    .device-info {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+</style>
 
 <div class="detail-health-page">
     <!-- Page Header -->
@@ -13,37 +53,74 @@
         <div class="container-fluid">
             <div class="header-content">
                 <div class="back-button">
-                    <button class="btn btn-outline-secondary" onclick="window.history.back()">
+                    <button class="btn btn-outline-secondary" @onclick="GoBack">
                         <i class="fas fa-arrow-left"></i>
                         Quay lại
                     </button>
                 </div>
                 <div class="header-info">
                     <div class="student-avatar-large">
-                        <img src="/images/avatars/student1.jpg" alt="Nguyễn Văn An"
-                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
                         <div class="avatar-fallback">
                             <i class="fas fa-user"></i>
                         </div>
                     </div>
-                    <div class="student-details">
-                        <h2>Nguyễn Văn An</h2>
-                        <p class="student-info">Lớp 10A1 - Mã: HS001</p>
-                        <div class="sync-info">
-                            <span class="sync-status">
-                                <i class="fas fa-check-circle text-success"></i>
-                                Đã đồng bộ
-                            </span>
-                            <span class="last-sync">Cập nhật lần cuối: 5 phút trước</span>
+                    @if (student != null)
+                    {
+                        <div class="student-details">
+                            <h2>@student.FullName</h2>
+                            <p class="student-info">@student.Department - @student.Role</p>
+                            <div class="sync-info">
+                                @{
+                                    var deviceStatus = GetDeviceStatus();
+                                }
+                                @if (deviceStatus.IsOnline)
+                                {
+                                    <span class="sync-status">
+                                        <i class="fas fa-check-circle text-success"></i>
+                                        Đang hoạt động
+                                    </span>
+                                    <span class="last-sync">Cập nhật lần cuối: @deviceStatus.LastSync</span>
+                                }
+                                else if (deviceStatus.HasDevices)
+                                {
+                                    <span class="sync-status">
+                                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                                        Offline
+                                    </span>
+                                    <span class="last-sync">Cập nhật lần cuối: @deviceStatus.LastSync</span>
+                                }
+                                else
+                                {
+                                    <span class="sync-status">
+                                        <i class="fas fa-times-circle text-danger"></i>
+                                        Chưa kết nối thiết bị
+                                    </span>
+                                    <span class="last-sync">Chưa có dữ liệu đồng bộ</span>
+                                }
+                            </div>
                         </div>
-                    </div>
+                    }
+                    else if (isLoading)
+                    {
+                        <div class="student-details">
+                            <h2>Đang tải...</h2>
+                            <p class="student-info">Đang lấy thông tin học sinh</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="student-details">
+                            <h2>Không tìm thấy</h2>
+                            <p class="student-info">Không tìm thấy thông tin học sinh</p>
+                        </div>
+                    }
                 </div>
                 <div class="header-actions">
-                    <button class="btn btn-outline-primary">
-                        <i class="fas fa-sync-alt"></i>
-                        Đồng bộ lại
+                    <button class="btn btn-outline-primary" @onclick="RefreshData" disabled="@isLoading">
+                        <i class="fas fa-sync-alt @(isLoading ? "fa-spin" : "")"></i>
+                        @(isLoading ? "Đang tải..." : "Đồng bộ lại")
                     </button>
-                    <button class="btn btn-primary">
+                    <button class="btn btn-primary" disabled="@(student == null)">
                         <i class="fas fa-download"></i>
                         Xuất báo cáo
                     </button>
@@ -52,501 +129,1428 @@
         </div>
     </div>
 
+    <!-- Error Message / Debug Info -->
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="container-fluid mt-3">
+            <div class="alert alert-danger" role="alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                @errorMessage
+            </div>
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="container-fluid mt-3">
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-spinner fa-spin"></i>
+                Đang tải dữ liệu...
+            </div>
+        </div>
+    }
+
+    <!-- Debug Info (only show when there's data) -->
+    @if (!isLoading && student != null)
+    {
+        <div class="container-fluid mt-3">
+            <div class="alert alert-info" role="alert">
+                <strong>Debug Info:</strong><br />
+                - Student: @student.FullName (@student.Id)<br />
+                - Sensor Readings: @sensorReadings.Count records<br />
+                - Device Status: @(deviceStatus != null ? $"{deviceStatus.TotalDevices} devices" : "No device data")<br />
+                @{
+                    var debugHealthMetrics = GetHealthMetrics();
+                    var sensorTypes = sensorReadings.Select(r => r.Metadata.SensorType).Where(s =>
+                    !string.IsNullOrEmpty(s)).Distinct().ToList();
+                }
+                - Health Data: HR=@debugHealthMetrics.HeartRate, Steps=@debugHealthMetrics.Steps,
+                Sleep=@debugHealthMetrics.Sleep, Calories=@debugHealthMetrics.Calories<br />
+                - Sensor Types Available: @string.Join(", ", sensorTypes)<br />
+                - Data Readings Count: HR=@debugHealthMetrics.HeartRateReadings.Count,
+                Steps=@debugHealthMetrics.StepsReadings.Count, Sleep=@debugHealthMetrics.SleepReadings.Count,
+                Calories=@debugHealthMetrics.CalorieReadings.Count<br />
+                @if (deviceStatus != null)
+                {
+                    <text><strong>Device Details:</strong><br /></text>
+                    <text>- Total Devices: @deviceStatus.TotalDevices<br /></text>
+                    <text>- Online Devices: @deviceStatus.OnlineDevices<br /></text>
+                    <text>- Offline Devices: @deviceStatus.OfflineDevices<br /></text>
+                    @if (deviceStatus.Devices != null && deviceStatus.Devices.Any())
+                    {
+                        @foreach (var device in deviceStatus.Devices)
+                        {
+                            <span>- Device: @device.Model (@device.DeviceId)</span><br />
+                            <span>&nbsp;&nbsp;Status: @device.Status | IsOnline: @device.IsOnline</span><br />
+                            <span>&nbsp;&nbsp;OS: @device.OsVersion | SDK: @device.SdkVersion</span><br />
+                            <span>&nbsp;&nbsp;LastSync: @device.LastSyncAt</span><br />
+                            <span>&nbsp;&nbsp;Registered: @device.RegisteredAt</span><br />
+                        }
+                    }
+                    else
+                    {
+                        <span>- No devices found in collection</span><br />
+                    }
+                }
+                else
+                {
+                    <span>- Device Status is null</span><br />
+                }
+                <br />
+                <button class="btn btn-sm btn-outline-primary mt-2" @onclick="RefreshData">
+                    <i class="fas fa-refresh"></i>
+                    Debug Refresh
+                </button>
+            </div>
+        </div>
+    }
+
     <!-- Health Overview Cards -->
-    <div class="container-fluid">
-        <div class="overview-section">
-            <div class="row g-4">
-                <div class="col-lg-3 col-md-6">
-                    <div class="health-overview-card steps">
-                        <div class="card-icon">
-                            <i class="fas fa-walking"></i>
-                        </div>
-                        <div class="card-content">
-                            <h3>8,234</h3>
-                            <p>Bước chân hôm nay</p>
-                            <div class="progress-container">
-                                <div class="progress-bar">
-                                    <div class="progress-fill" style="width: 82%"></div>
-                                </div>
-                                <small>Mục tiêu: 10,000 bước</small>
-                            </div>
-                        </div>
-                        <div class="trend-indicator positive">
-                            <i class="fas fa-arrow-up"></i>
-                            +12% so với hôm qua
-                        </div>
-                    </div>
-                </div>
+    @if (!isLoading && student != null)
+    {
+        <div class="container-fluid">
+            <div class="overview-section">
+                <div class="row g-4">
+                    @{
+                        var healthMetrics = GetHealthMetrics();
+                    }
 
-                <div class="col-lg-3 col-md-6">
-                    <div class="health-overview-card calories">
-                        <div class="card-icon">
-                            <i class="fas fa-fire"></i>
-                        </div>
-                        <div class="card-content">
-                            <h3>1,845</h3>
-                            <p>Calories đã đốt</p>
-                            <div class="progress-container">
-                                <div class="progress-bar">
-                                    <div class="progress-fill" style="width: 77%"></div>
-                                </div>
-                                <small>Mục tiêu: 2,400 calories</small>
-                            </div>
-                        </div>
-                        <div class="trend-indicator positive">
-                            <i class="fas fa-arrow-up"></i>
-                            +8% so với hôm qua
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-3 col-md-6">
-                    <div class="health-overview-card heart-rate">
-                        <div class="card-icon">
-                            <i class="fas fa-heart"></i>
-                        </div>
-                        <div class="card-content">
-                            <h3>68 BPM</h3>
-                            <p>Nhịp tim trung bình</p>
-                            <div class="heart-rate-zones">
-                                <div class="zone-item">
-                                    <span class="zone-label">Nghỉ ngơi:</span>
-                                    <span class="zone-value">62-68 BPM</span>
-                                </div>
-                                <div class="zone-item">
-                                    <span class="zone-label">Tập luyện:</span>
-                                    <span class="zone-value">120-140 BPM</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="trend-indicator neutral">
-                            <i class="fas fa-minus"></i>
-                            Bình thường
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-3 col-md-6">
-                    <div class="health-overview-card sleep">
-                        <div class="card-icon">
-                            <i class="fas fa-bed"></i>
-                        </div>
-                        <div class="card-content">
-                            <h3>7h 45m</h3>
-                            <p>Giấc ngủ đêm qua</p>
-                            <div class="sleep-quality">
-                                <div class="quality-score excellent">
-                                    <span class="score">87%</span>
-                                    <span class="label">Chất lượng tốt</span>
-                                </div>
-                                <div class="sleep-stages">
-                                    <small>Ngủ sâu: 2h 15m</small>
-                                    <small>Ngủ nhẹ: 4h 30m</small>
-                                    <small>REM: 1h 00m</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="trend-indicator positive">
-                            <i class="fas fa-arrow-up"></i>
-                            +15 phút so với hôm qua
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Detailed Charts Section -->
-        <div class="charts-section">
-            <div class="row g-4">
-                <!-- Daily Activity Chart -->
-                <div class="col-lg-8">
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h4>
-                                <i class="fas fa-chart-line"></i>
-                                Hoạt động trong ngày
-                            </h4>
-                            <div class="chart-controls">
-                                <button class="btn btn-sm btn-outline-secondary active">Hôm nay</button>
-                                <button class="btn btn-sm btn-outline-secondary">7 ngày</button>
-                                <button class="btn btn-sm btn-outline-secondary">30 ngày</button>
-                            </div>
-                        </div>
-                        <div class="chart-content">
-                            <div class="activity-timeline">
-                                <div class="timeline-header">
-                                    <span>Thời gian</span>
-                                    <span>Bước chân</span>
-                                    <span>Calories</span>
-                                    <span>Nhịp tim</span>
-                                </div>
-                                <div class="timeline-items">
-                                    <div class="timeline-item">
-                                        <span class="time">06:00</span>
-                                        <div class="activity-bar steps" style="width: 20%">
-                                            <span class="value">450</span>
-                                        </div>
-                                        <div class="activity-bar calories" style="width: 15%">
-                                            <span class="value">89</span>
-                                        </div>
-                                        <div class="activity-bar heart-rate" style="width: 30%">
-                                            <span class="value">65</span>
-                                        </div>
-                                    </div>
-                                    <div class="timeline-item">
-                                        <span class="time">09:00</span>
-                                        <div class="activity-bar steps" style="width: 60%">
-                                            <span class="value">1,250</span>
-                                        </div>
-                                        <div class="activity-bar calories" style="width: 45%">
-                                            <span class="value">245</span>
-                                        </div>
-                                        <div class="activity-bar heart-rate" style="width: 45%">
-                                            <span class="value">78</span>
-                                        </div>
-                                    </div>
-                                    <div class="timeline-item">
-                                        <span class="time">12:00</span>
-                                        <div class="activity-bar steps" style="width: 40%">
-                                            <span class="value">890</span>
-                                        </div>
-                                        <div class="activity-bar calories" style="width: 35%">
-                                            <span class="value">178</span>
-                                        </div>
-                                        <div class="activity-bar heart-rate" style="width: 35%">
-                                            <span class="value">72</span>
-                                        </div>
-                                    </div>
-                                    <div class="timeline-item">
-                                        <span class="time">15:00</span>
-                                        <div class="activity-bar steps" style="width: 80%">
-                                            <span class="value">1,680</span>
-                                        </div>
-                                        <div class="activity-bar calories" style="width: 70%">
-                                            <span class="value">356</span>
-                                        </div>
-                                        <div class="activity-bar heart-rate" style="width: 60%">
-                                            <span class="value">95</span>
-                                        </div>
-                                    </div>
-                                    <div class="timeline-item">
-                                        <span class="time">18:00</span>
-                                        <div class="activity-bar steps" style="width: 90%">
-                                            <span class="value">2,150</span>
-                                        </div>
-                                        <div class="activity-bar calories" style="width: 85%">
-                                            <span class="value">445</span>
-                                        </div>
-                                        <div class="activity-bar heart-rate" style="width: 80%">
-                                            <span class="value">125</span>
-                                        </div>
-                                    </div>
-                                    <div class="timeline-item">
-                                        <span class="time">21:00</span>
-                                        <div class="activity-bar steps" style="width: 70%">
-                                            <span class="value">1,864</span>
-                                        </div>
-                                        <div class="activity-bar calories" style="width: 60%">
-                                            <span class="value">332</span>
-                                        </div>
-                                        <div class="activity-bar heart-rate" style="width: 40%">
-                                            <span class="value">71</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Weekly Summary -->
-                <div class="col-lg-4">
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h4>
-                                <i class="fas fa-calendar-week"></i>
-                                Tóm tắt tuần
-                            </h4>
-                        </div>
-                        <div class="chart-content">
-                            <div class="weekly-stats">
-                                <div class="stat-item">
-                                    <div class="stat-icon steps">
-                                        <i class="fas fa-walking"></i>
-                                    </div>
-                                    <div class="stat-data">
-                                        <h5>65,234</h5>
-                                        <p>Tổng bước chân</p>
-                                        <div class="stat-change positive">
-                                            <i class="fas fa-arrow-up"></i>
-                                            +8% so với tuần trước
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="stat-item">
-                                    <div class="stat-icon calories">
-                                        <i class="fas fa-fire"></i>
-                                    </div>
-                                    <div class="stat-data">
-                                        <h5>12,845</h5>
-                                        <p>Tổng calories</p>
-                                        <div class="stat-change positive">
-                                            <i class="fas fa-arrow-up"></i>
-                                            +12% so với tuần trước
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="stat-item">
-                                    <div class="stat-icon heart-rate">
-                                        <i class="fas fa-heart"></i>
-                                    </div>
-                                    <div class="stat-data">
-                                        <h5>72 BPM</h5>
-                                        <p>Nhịp tim TB</p>
-                                        <div class="stat-change neutral">
-                                            <i class="fas fa-minus"></i>
-                                            Không đổi
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="stat-item">
-                                    <div class="stat-icon sleep">
-                                        <i class="fas fa-bed"></i>
-                                    </div>
-                                    <div class="stat-data">
-                                        <h5>7h 32m</h5>
-                                        <p>Giấc ngủ TB</p>
-                                        <div class="stat-change positive">
-                                            <i class="fas fa-arrow-up"></i>
-                                            +20 phút
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Health Insights Section -->
-        <div class="insights-section">
-            <div class="row g-4">
-                <div class="col-lg-6">
-                    <div class="insights-card">
-                        <div class="card-header">
-                            <h4>
-                                <i class="fas fa-lightbulb"></i>
-                                Nhận xét sức khỏe
-                            </h4>
-                        </div>
-                        <div class="card-body">
-                            <div class="insight-item positive">
-                                <div class="insight-icon">
-                                    <i class="fas fa-thumbs-up"></i>
-                                </div>
-                                <div class="insight-content">
-                                    <h5>Hoạt động tốt</h5>
-                                    <p>Học sinh đã đạt mục tiêu bước chân 5/7 ngày trong tuần qua. Hãy tiếp tục duy trì!
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="insight-item warning">
-                                <div class="insight-icon">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                </div>
-                                <div class="insight-content">
-                                    <h5>Cần cải thiện giấc ngủ</h5>
-                                    <p>Thời gian ngủ có xu hướng giảm trong 3 ngày qua. Khuyến nghị đi ngủ sớm hơn 30
-                                        phút.</p>
-                                </div>
-                            </div>
-
-                            <div class="insight-item info">
-                                <div class="insight-icon">
-                                    <i class="fas fa-info-circle"></i>
-                                </div>
-                                <div class="insight-content">
-                                    <h5>Nhịp tim ổn định</h5>
-                                    <p>Nhịp tim nghỉ ngơi trong khoảng bình thường. Có thể tăng cường bài tập cardio.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-6">
-                    <div class="goals-card">
-                        <div class="card-header">
-                            <h4>
-                                <i class="fas fa-bullseye"></i>
-                                Mục tiêu sức khỏe
-                            </h4>
-                        </div>
-                        <div class="card-body">
-                            <div class="goal-item">
-                                <div class="goal-header">
-                                    <span class="goal-title">Bước chân hàng ngày</span>
-                                    <span class="goal-progress">82%</span>
-                                </div>
-                                <div class="goal-bar">
-                                    <div class="goal-fill" style="width: 82%"></div>
-                                </div>
-                                <div class="goal-details">
-                                    <span>8,234 / 10,000 bước</span>
-                                    <span class="goal-status achieved">Đã đạt 5/7 ngày</span>
-                                </div>
-                            </div>
-
-                            <div class="goal-item">
-                                <div class="goal-header">
-                                    <span class="goal-title">Calories đốt cháy</span>
-                                    <span class="goal-progress">77%</span>
-                                </div>
-                                <div class="goal-bar">
-                                    <div class="goal-fill calories" style="width: 77%"></div>
-                                </div>
-                                <div class="goal-details">
-                                    <span>1,845 / 2,400 calories</span>
-                                    <span class="goal-status in-progress">Đang tiến bộ</span>
-                                </div>
-                            </div>
-
-                            <div class="goal-item">
-                                <div class="goal-header">
-                                    <span class="goal-title">Thời gian ngủ</span>
-                                    <span class="goal-progress">97%</span>
-                                </div>
-                                <div class="goal-bar">
-                                    <div class="goal-fill sleep" style="width: 97%"></div>
-                                </div>
-                                <div class="goal-details">
-                                    <span>7h 45m / 8h</span>
-                                    <span class="goal-status achieved">Gần đạt mục tiêu</span>
-                                </div>
-                            </div>
-
-                            <div class="goal-item">
-                                <div class="goal-header">
-                                    <span class="goal-title">Hoạt động tuần</span>
-                                    <span class="goal-progress">71%</span>
-                                </div>
-                                <div class="goal-bar">
-                                    <div class="goal-fill activity" style="width: 71%"></div>
-                                </div>
-                                <div class="goal-details">
-                                    <span>5 / 7 ngày hoạt động</span>
-                                    <span class="goal-status in-progress">Cần cải thiện</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Samsung Health Integration Status -->
-        <div class="integration-section">
-            <div class="integration-card">
-                <div class="card-header">
-                    <h4>
-                        <i class="fab fa-android"></i>
-                        Trạng thái đồng bộ Samsung Health
-                    </h4>
-                </div>
-                <div class="card-body">
-                    <div class="integration-status">
-                        <div class="status-item">
-                            <div class="status-icon connected">
-                                <i class="fas fa-check-circle"></i>
-                            </div>
-                            <div class="status-info">
-                                <h5>Kết nối thành công</h5>
-                                <p>Ứng dụng đã được cấp quyền truy cập dữ liệu sức khỏe</p>
-                            </div>
-                            <div class="status-time">
-                                <span>Kết nối: 15/07/2024</span>
-                            </div>
-                        </div>
-
-                        <div class="sync-details">
-                            <div class="sync-item">
+                    <div class="col-lg-3 col-md-6">
+                        <div class="health-overview-card steps">
+                            <div class="card-icon">
                                 <i class="fas fa-walking"></i>
-                                <span>Bước chân</span>
-                                <div class="sync-status success">
-                                    <i class="fas fa-check"></i>
-                                    Đã đồng bộ
-                                </div>
                             </div>
-                            <div class="sync-item">
+                            <div class="card-content">
+                                @if (healthMetrics.Steps > 0)
+                                {
+                                    <h3>@healthMetrics.Steps.ToString("#,0")</h3>
+                                    <p>Bước chân hôm nay</p>
+                                    <div class="progress-container">
+                                        @{
+                                            var stepsGoal = 6000;
+                                            var stepsProgress = stepsGoal > 0 ? Math.Min(100, (healthMetrics.Steps * 100) / stepsGoal) : 0;
+                                        }
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: @(stepsProgress)%"></div>
+                                        </div>
+                                        <small>Mục tiêu: @stepsGoal.ToString("#,0") bước</small>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <h3>--</h3>
+                                    <p>Chưa có dữ liệu bước chân</p>
+                                    <div class="progress-container">
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: 0%"></div>
+                                        </div>
+                                        <small>Mục tiêu: 6,000 bước</small>
+                                    </div>
+                                }
+                            </div>
+                            <div class="trend-indicator @(GetStepsStatus(healthMetrics.Steps))">
+                                <i class="fas fa-@(healthMetrics.Steps > 0 ? "walking" : "times")"></i>
+                                @GetStepsStatusText(healthMetrics.Steps)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-3 col-md-6">
+                        <div class="health-overview-card calories">
+                            <div class="card-icon">
                                 <i class="fas fa-fire"></i>
-                                <span>Calories</span>
-                                <div class="sync-status success">
-                                    <i class="fas fa-check"></i>
-                                    Đã đồng bộ
-                                </div>
                             </div>
-                            <div class="sync-item">
+                            <div class="card-content">
+                                @if (healthMetrics.Calories > 0)
+                                {
+                                    <h3>@healthMetrics.Calories.ToString("#,0")</h3>
+                                    <p>Calories đã đốt</p>
+                                    <div class="progress-container">
+                                        @{
+                                            var caloriesGoal = 2400;
+                                            var caloriesProgress = caloriesGoal > 0 ? Math.Min(100, (healthMetrics.Calories * 100) / caloriesGoal) : 0;
+                                        }
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: @(caloriesProgress)%"></div>
+                                        </div>
+                                        <small>Mục tiêu: @caloriesGoal.ToString("#,0") calories</small>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <h3>--</h3>
+                                    <p>Chưa có dữ liệu calories</p>
+                                    <div class="progress-container">
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: 0%"></div>
+                                        </div>
+                                        <small>Mục tiêu: 2,400 calories</small>
+                                    </div>
+                                }
+                            </div>
+                            <div class="trend-indicator @(GetCaloriesStatus(healthMetrics.Calories))">
+                                <i class="fas fa-@(healthMetrics.Calories > 0 ? "fire" : "times")"></i>
+                                @GetCaloriesStatusText(healthMetrics.Calories)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-3 col-md-6">
+                        <div class="health-overview-card heart-rate">
+                            <div class="card-icon">
                                 <i class="fas fa-heart"></i>
-                                <span>Nhịp tim</span>
-                                <div class="sync-status success">
-                                    <i class="fas fa-check"></i>
-                                    Đã đồng bộ
-                                </div>
                             </div>
-                            <div class="sync-item">
+                            <div class="card-content">
+                                @if (healthMetrics.HeartRate > 0)
+                                {
+                                    <h3>@healthMetrics.HeartRate.ToString("F0") BPM</h3>
+                                    <p>Nhịp tim trung bình</p>
+                                    <div class="heart-rate-zones">
+                                        <div class="zone-item">
+                                            <span class="zone-label">Nghỉ ngơi:</span>
+                                            <span class="zone-value">60-100 BPM</span>
+                                        </div>
+                                        <div class="zone-item">
+                                            <span class="zone-label">Tập luyện:</span>
+                                            <span class="zone-value">120-140 BPM</span>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <h3>-- BPM</h3>
+                                    <p>Chưa có dữ liệu nhịp tim</p>
+                                    <div class="heart-rate-zones">
+                                        <div class="zone-item">
+                                            <span class="zone-label">Nghỉ ngơi:</span>
+                                            <span class="zone-value">60-100 BPM</span>
+                                        </div>
+                                        <div class="zone-item">
+                                            <span class="zone-label">Tập luyện:</span>
+                                            <span class="zone-value">120-140 BPM</span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            <div class="trend-indicator @(GetHeartRateStatus(healthMetrics.HeartRate))">
+                                <i class="fas fa-@(healthMetrics.HeartRate > 0 ? "heartbeat" : "times")"></i>
+                                @GetHeartRateStatusText(healthMetrics.HeartRate)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-3 col-md-6">
+                        <div class="health-overview-card sleep">
+                            <div class="card-icon">
                                 <i class="fas fa-bed"></i>
-                                <span>Giấc ngủ</span>
-                                <div class="sync-status success">
-                                    <i class="fas fa-check"></i>
-                                    Đã đồng bộ
+                            </div>
+                            <div class="card-content">
+                                @if (healthMetrics.Sleep > 0)
+                                {
+                                    var hours = (int)healthMetrics.Sleep;
+                                    var minutes = (int)((healthMetrics.Sleep - hours) * 60);
+                                    <h3>@(hours)h @(minutes)m</h3>
+                                    <p>Giấc ngủ đêm qua</p>
+                                    <div class="sleep-quality">
+                                        <div class="quality-score @(GetSleepStatus(healthMetrics.Sleep))">
+                                            <span class="score">@(GetSleepQualityScore(healthMetrics.Sleep))%</span>
+                                            <span class="label">@GetSleepStatusText(healthMetrics.Sleep)</span>
+                                        </div>
+                                        <div class="sleep-stages">
+                                            <small>Tổng thời gian: @(hours)h @(minutes)m</small>
+                                            <small>Chất lượng: @GetSleepQuality(healthMetrics.Sleep)</small>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <h3>-- h --m</h3>
+                                    <p>Chưa có dữ liệu giấc ngủ</p>
+                                    <div class="sleep-quality">
+                                        <div class="quality-score no-data">
+                                            <span class="score">--%</span>
+                                            <span class="label">Chưa có dữ liệu</span>
+                                        </div>
+                                        <div class="sleep-stages">
+                                            <small>Mục tiêu: 7-9 giờ</small>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            <div class="trend-indicator @(GetSleepStatus(healthMetrics.Sleep))">
+                                <i class="fas fa-@(healthMetrics.Sleep > 0 ? "moon" : "times")"></i>
+                                @GetSleepStatusText(healthMetrics.Sleep)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Charts Section -->
+            <div class="charts-section">
+                <div class="row g-4">
+                    <!-- Daily Activity Chart -->
+                    <div class="col-lg-8">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h4>
+                                    <i class="fas fa-chart-line"></i>
+                                    Hoạt động trong ngày
+                                </h4>
+                                <div class="chart-controls">
+                                    <button class="btn btn-sm btn-outline-secondary active">Hôm nay</button>
+                                    <button class="btn btn-sm btn-outline-secondary">7 ngày</button>
+                                    <button class="btn btn-sm btn-outline-secondary">30 ngày</button>
                                 </div>
                             </div>
-                            <div class="sync-item">
-                                <i class="fas fa-weight"></i>
-                                <span>Cân nặng</span>
-                                <div class="sync-status warning">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                    Chưa có dữ liệu
-                                </div>
-                            </div>
-                            <div class="sync-item">
-                                <i class="fas fa-dumbbell"></i>
-                                <span>Bài tập</span>
-                                <div class="sync-status success">
-                                    <i class="fas fa-check"></i>
-                                    Đã đồng bộ
+                            <div class="chart-content">
+                                <div class="activity-timeline">
+                                    <div class="timeline-header">
+                                        <span>Thời gian</span>
+                                        <span>Bước chân</span>
+                                        <span>Calories</span>
+                                        <span>Nhịp tim</span>
+                                    </div>
+                                    <div class="timeline-items">
+                                        <div class="timeline-item">
+                                            <span class="time">06:00</span>
+                                            <div class="activity-bar steps" style="width: 20%">
+                                                <span class="value">450</span>
+                                            </div>
+                                            <div class="activity-bar calories" style="width: 15%">
+                                                <span class="value">89</span>
+                                            </div>
+                                            <div class="activity-bar heart-rate" style="width: 30%">
+                                                <span class="value">65</span>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <span class="time">09:00</span>
+                                            <div class="activity-bar steps" style="width: 60%">
+                                                <span class="value">1,250</span>
+                                            </div>
+                                            <div class="activity-bar calories" style="width: 45%">
+                                                <span class="value">245</span>
+                                            </div>
+                                            <div class="activity-bar heart-rate" style="width: 45%">
+                                                <span class="value">78</span>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <span class="time">12:00</span>
+                                            <div class="activity-bar steps" style="width: 40%">
+                                                <span class="value">890</span>
+                                            </div>
+                                            <div class="activity-bar calories" style="width: 35%">
+                                                <span class="value">178</span>
+                                            </div>
+                                            <div class="activity-bar heart-rate" style="width: 35%">
+                                                <span class="value">72</span>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <span class="time">15:00</span>
+                                            <div class="activity-bar steps" style="width: 80%">
+                                                <span class="value">1,680</span>
+                                            </div>
+                                            <div class="activity-bar calories" style="width: 70%">
+                                                <span class="value">356</span>
+                                            </div>
+                                            <div class="activity-bar heart-rate" style="width: 60%">
+                                                <span class="value">95</span>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <span class="time">18:00</span>
+                                            <div class="activity-bar steps" style="width: 90%">
+                                                <span class="value">2,150</span>
+                                            </div>
+                                            <div class="activity-bar calories" style="width: 85%">
+                                                <span class="value">445</span>
+                                            </div>
+                                            <div class="activity-bar heart-rate" style="width: 80%">
+                                                <span class="value">125</span>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <span class="time">21:00</span>
+                                            <div class="activity-bar steps" style="width: 70%">
+                                                <span class="value">1,864</span>
+                                            </div>
+                                            <div class="activity-bar calories" style="width: 60%">
+                                                <span class="value">332</span>
+                                            </div>
+                                            <div class="activity-bar heart-rate" style="width: 40%">
+                                                <span class="value">71</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="last-sync-info">
-                            <div class="sync-summary">
-                                <span class="sync-time">Lần đồng bộ cuối: Hôm nay lúc 14:32</span>
-                                <span class="sync-frequency">Tự động đồng bộ mỗi 30 phút</span>
+                    <!-- Weekly Summary -->
+                    <div class="col-lg-4">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h4>
+                                    <i class="fas fa-calendar-week"></i>
+                                    Tóm tắt tuần
+                                </h4>
                             </div>
-                            <button class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-cog"></i>
-                                Cài đặt đồng bộ
-                            </button>
+                            <div class="chart-content">
+                                <div class="weekly-stats">
+                                    <div class="stat-item">
+                                        <div class="stat-icon steps">
+                                            <i class="fas fa-walking"></i>
+                                        </div>
+                                        <div class="stat-data">
+                                            <h5>65,234</h5>
+                                            <p>Tổng bước chân</p>
+                                            <div class="stat-change positive">
+                                                <i class="fas fa-arrow-up"></i>
+                                                +8% so với tuần trước
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="stat-item">
+                                        <div class="stat-icon calories">
+                                            <i class="fas fa-fire"></i>
+                                        </div>
+                                        <div class="stat-data">
+                                            <h5>12,845</h5>
+                                            <p>Tổng calories</p>
+                                            <div class="stat-change positive">
+                                                <i class="fas fa-arrow-up"></i>
+                                                +12% so với tuần trước
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="stat-item">
+                                        <div class="stat-icon heart-rate">
+                                            <i class="fas fa-heart"></i>
+                                        </div>
+                                        <div class="stat-data">
+                                            <h5>72 BPM</h5>
+                                            <p>Nhịp tim TB</p>
+                                            <div class="stat-change neutral">
+                                                <i class="fas fa-minus"></i>
+                                                Không đổi
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="stat-item">
+                                        <div class="stat-icon sleep">
+                                            <i class="fas fa-bed"></i>
+                                        </div>
+                                        <div class="stat-data">
+                                            <h5>7h 32m</h5>
+                                            <p>Giấc ngủ TB</p>
+                                            <div class="stat-change positive">
+                                                <i class="fas fa-arrow-up"></i>
+                                                +20 phút
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Health Insights Section -->
+            <div class="insights-section">
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <div class="insights-card">
+                            <div class="card-header">
+                                <h4>
+                                    <i class="fas fa-lightbulb"></i>
+                                    Nhận xét sức khỏe
+                                </h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="insight-item positive">
+                                    <div class="insight-icon">
+                                        <i class="fas fa-thumbs-up"></i>
+                                    </div>
+                                    <div class="insight-content">
+                                        <h5>Hoạt động tốt</h5>
+                                        <p>Học sinh đã đạt mục tiêu bước chân 5/7 ngày trong tuần qua. Hãy tiếp tục duy trì!
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="insight-item warning">
+                                    <div class="insight-icon">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </div>
+                                    <div class="insight-content">
+                                        <h5>Cần cải thiện giấc ngủ</h5>
+                                        <p>Thời gian ngủ có xu hướng giảm trong 3 ngày qua. Khuyến nghị đi ngủ sớm hơn 30
+                                            phút.</p>
+                                    </div>
+                                </div>
+
+                                <div class="insight-item info">
+                                    <div class="insight-icon">
+                                        <i class="fas fa-info-circle"></i>
+                                    </div>
+                                    <div class="insight-content">
+                                        <h5>Nhịp tim ổn định</h5>
+                                        <p>Nhịp tim nghỉ ngơi trong khoảng bình thường. Có thể tăng cường bài tập cardio.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="goals-card">
+                            <div class="card-header">
+                                <h4>
+                                    <i class="fas fa-bullseye"></i>
+                                    Mục tiêu sức khỏe
+                                </h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="goal-item">
+                                    <div class="goal-header">
+                                        <span class="goal-title">Bước chân hàng ngày</span>
+                                        <span class="goal-progress">82%</span>
+                                    </div>
+                                    <div class="goal-bar">
+                                        <div class="goal-fill" style="width: 82%"></div>
+                                    </div>
+                                    <div class="goal-details">
+                                        <span>8,234 / 10,000 bước</span>
+                                        <span class="goal-status achieved">Đã đạt 5/7 ngày</span>
+                                    </div>
+                                </div>
+
+                                <div class="goal-item">
+                                    <div class="goal-header">
+                                        <span class="goal-title">Calories đốt cháy</span>
+                                        <span class="goal-progress">77%</span>
+                                    </div>
+                                    <div class="goal-bar">
+                                        <div class="goal-fill calories" style="width: 77%"></div>
+                                    </div>
+                                    <div class="goal-details">
+                                        <span>1,845 / 2,400 calories</span>
+                                        <span class="goal-status in-progress">Đang tiến bộ</span>
+                                    </div>
+                                </div>
+
+                                <div class="goal-item">
+                                    <div class="goal-header">
+                                        <span class="goal-title">Thời gian ngủ</span>
+                                        <span class="goal-progress">97%</span>
+                                    </div>
+                                    <div class="goal-bar">
+                                        <div class="goal-fill sleep" style="width: 97%"></div>
+                                    </div>
+                                    <div class="goal-details">
+                                        <span>7h 45m / 8h</span>
+                                        <span class="goal-status achieved">Gần đạt mục tiêu</span>
+                                    </div>
+                                </div>
+
+                                <div class="goal-item">
+                                    <div class="goal-header">
+                                        <span class="goal-title">Hoạt động tuần</span>
+                                        <span class="goal-progress">71%</span>
+                                    </div>
+                                    <div class="goal-bar">
+                                        <div class="goal-fill activity" style="width: 71%"></div>
+                                    </div>
+                                    <div class="goal-details">
+                                        <span>5 / 7 ngày hoạt động</span>
+                                        <span class="goal-status in-progress">Cần cải thiện</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Device & Samsung Health Integration Status -->
+            <div class="integration-section">
+                <div class="integration-card">
+                    <div class="card-header">
+                        <h4>
+                            <i class="fab fa-android"></i>
+                            Trạng thái thiết bị & đồng bộ dữ liệu
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="integration-status">
+                            @if (deviceStatus != null && deviceStatus.TotalDevices > 0 && deviceStatus.Devices != null)
+                            {
+                                @foreach (var device in deviceStatus.Devices)
+                                {
+                                    <div class="status-item">
+                                        <div class="status-icon @(device.IsOnline ? "connected" : "disconnected")">
+                                            <i class="fas fa-@(device.IsOnline ? "check-circle" : "times-circle")"></i>
+                                        </div>
+                                        <div class="status-info">
+                                            <h5>
+                                                @GetDeviceDisplayName(device.Model)
+                                                @if (device.IsOnline)
+                                                {
+                                                    <span class="badge bg-success ms-2">Online</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger ms-2">Offline</span>
+                                                }
+                                            </h5>
+                                            <p><strong>Device ID:</strong> @device.DeviceId</p>
+                                            @if (!string.IsNullOrEmpty(device.OsVersion))
+                                            {
+                                                <p><strong>Android Version:</strong> @device.OsVersion</p>
+                                            }
+                                            @if (!string.IsNullOrEmpty(device.SdkVersion))
+                                            {
+                                                <p><strong>API Level:</strong> @device.SdkVersion</p>
+                                            }
+                                        </div>
+                                        <div class="status-time">
+                                            @if (!string.IsNullOrEmpty(device.LastSyncAt))
+                                            {
+                                                @if (DateTime.TryParse(device.LastSyncAt, null, DateTimeStyles.RoundtripKind, out DateTime lastSync))
+                                                {
+                                                    // Convert UTC to Vietnam timezone
+                                                    var timeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                                                    var localTime = TimeZoneInfo.ConvertTime(lastSync, timeZone);
+                                                    var timeAgo = DateTime.Now - localTime;
+                                                    
+                                                    <span><strong>Đồng bộ lần cuối:</strong></span><br />
+                                                    <span>@localTime.ToString("HH:mm dd/MM/yyyy")</span><br />
+                                                    <small class="text-muted">
+                                                        @if (timeAgo.TotalMinutes < 1)
+                                                        {
+                                                            <span>Vừa xong</span>
+                                                        }
+                                                        else if (timeAgo.TotalHours < 1)
+                                                        {
+                                                            <span>@((int)timeAgo.TotalMinutes) phút trước</span>
+                                                        }
+                                                        else if (timeAgo.TotalDays < 1)
+                                                        {
+                                                            <span>@((int)timeAgo.TotalHours) giờ trước</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>@((int)timeAgo.TotalDays) ngày trước</span>
+                                                        }
+                                                    </small>
+                                                }
+                                                else
+                                                {
+                                                    <span><strong>Đồng bộ lần cuối:</strong> @device.LastSyncAt</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span>Chưa có thông tin đồng bộ</span>
+                                            }
+                                            
+                                            @if (!string.IsNullOrEmpty(device.RegisteredAt))
+                                            {
+                                                <br />
+                                                @if (DateTime.TryParse(device.RegisteredAt, null, DateTimeStyles.RoundtripKind, out DateTime registered))
+                                                {
+                                                    var timeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                                                    var localTime = TimeZoneInfo.ConvertTime(registered, timeZone);
+                                                    <small class="text-muted"><strong>Đăng ký:</strong> @localTime.ToString("dd/MM/yyyy")</small>
+                                                }
+                                                else
+                                                {
+                                                    <small class="text-muted"><strong>Đăng ký:</strong> @device.RegisteredAt</small>
+                                                }
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="status-item">
+                                    <div class="status-icon disconnected">
+                                        <i class="fas fa-times-circle"></i>
+                                    </div>
+                                    <div class="status-info">
+                                        <h5>Chưa có thiết bị kết nối</h5>
+                                        <p>Học sinh chưa đăng ký thiết bị nào hoặc chưa cài đặt ứng dụng</p>
+                                    </div>
+                                    <div class="status-time">
+                                        <span>Chưa có dữ liệu</span>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Sensor Data Sync Status -->
+                            @if (sensorReadings.Any())
+                            {
+                                <div class="sync-details">
+                                    <h6>Trạng thái đồng bộ dữ liệu:</h6>
+                                    @{
+                                        var syncHealthMetrics = GetHealthMetrics();
+                                        var sensorTypes = sensorReadings.Select(r => r.Metadata.SensorType).Where(s =>
+                                        !string.IsNullOrEmpty(s)).Distinct().ToList();
+                                    }
+                                    
+                                    <div class="sync-item">
+                                        <i class="fas fa-walking"></i>
+                                        <span>Bước chân</span>
+                                        <div class="sync-status @(syncHealthMetrics.Steps > 0 ? "success" : "warning")">
+                                            <i class="fas fa-@(syncHealthMetrics.Steps > 0 ? "check" : "exclamation-triangle")"></i>
+                                            @(syncHealthMetrics.Steps > 0 ? "Đã đồng bộ" : "Chưa có dữ liệu")
+                                        </div>
+                                    </div>
+                                    <div class="sync-item">
+                                        <i class="fas fa-fire"></i>
+                                        <span>Calories</span>
+                                        <div class="sync-status @(syncHealthMetrics.Calories > 0 ? "success" : "warning")">
+                                            <i class="fas fa-@(syncHealthMetrics.Calories > 0 ? "check" : "exclamation-triangle")"></i>
+                                            @(syncHealthMetrics.Calories > 0 ? "Đã đồng bộ" : "Chưa có dữ liệu")
+                                        </div>
+                                    </div>
+                                    <div class="sync-item">
+                                        <i class="fas fa-heart"></i>
+                                        <span>Nhịp tim</span>
+                                        <div class="sync-status @(syncHealthMetrics.HeartRate > 0 ? "success" : "warning")">
+                                            <i class="fas fa-@(syncHealthMetrics.HeartRate > 0 ? "check" : "exclamation-triangle")"></i>
+                                            @(syncHealthMetrics.HeartRate > 0 ? "Đã đồng bộ" : "Chưa có dữ liệu")
+                                        </div>
+                                    </div>
+                                    <div class="sync-item">
+                                        <i class="fas fa-bed"></i>
+                                        <span>Giấc ngủ</span>
+                                        <div class="sync-status @(syncHealthMetrics.Sleep > 0 ? "success" : "warning")">
+                                            <i class="fas fa-@(syncHealthMetrics.Sleep > 0 ? "check" : "exclamation-triangle")"></i>
+                                            @(syncHealthMetrics.Sleep > 0 ? "Đã đồng bộ" : "Chưa có dữ liệu")
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-3">
+                                        <small class="text-muted">
+                                            Sensor types có sẵn: @string.Join(", ", sensorTypes)
+                                        </small>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="sync-details">
+                                    <div class="sync-item">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        <span>Không có dữ liệu sensor</span>
+                                        <div class="sync-status warning">
+                                            <i class="fas fa-times"></i>
+                                            Chưa đồng bộ
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            <div class="last-sync-info">
+                                <div class="sync-summary">
+                                    @{
+                                        var deviceSyncStatus = GetDeviceStatus();
+                                    }
+                                    <span class="sync-time">Lần đồng bộ cuối: @deviceSyncStatus.LastSync</span>
+                                    <span class="sync-frequency">
+                                        @if (deviceSyncStatus.IsOnline)
+                                        {
+                                            <span class="text-success">Tự động đồng bộ đang hoạt động</span>
+                                        }
+                                        else if (deviceSyncStatus.HasDevices)
+                                        {
+                                            <span class="text-warning">Thiết bị offline - cần kết nối lại</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-danger">Chưa có thiết bị đăng ký</span>
+                                        }
+                                    </span>
+                                </div>
+                                <button class="btn btn-outline-primary btn-sm" @onclick="RefreshData" disabled="@isLoading">
+                                    <i class="fas fa-@(isLoading ? "spinner fa-spin" : "sync-alt")"></i>
+                                    @(isLoading ? "Đang đồng bộ..." : "Làm mới dữ liệu")
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    }
+    else if (isLoading)
+    {
+        <div class="container-fluid">
+            <div class="d-flex justify-content-center align-items-center" style="height: 400px;">
+                <div class="text-center">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h5>Đang tải dữ liệu sức khỏe...</h5>
+                    <p class="text-muted">Vui lòng đợi trong giây lát</p>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="container-fluid">
+            <div class="alert alert-warning text-center" role="alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h5>Không có dữ liệu</h5>
+                <p>Không tìm thấy thông tin sức khỏe cho học sinh này.</p>
+                <button class="btn btn-primary" @onclick="RefreshData">
+                    <i class="fas fa-refresh"></i>
+                    Thử lại
+                </button>
+            </div>
+        </div>
+    }
 </div>
 
 @code {
+    [Parameter] public string StudentUserId { get; set; } = string.Empty;
+    [Inject] private AtlasApiClient _atlasApiClient { get; set; } = default!;
+    [Inject] private NavigationManager _navigationManager { get; set; } = default!;
 
+    private User? student;
+    private DeviceStatusSummary? deviceStatus;
+    private List<SensorReadingInfoDto> sensorReadings = new();
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStudentData();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrEmpty(StudentUserId))
+        {
+            await LoadStudentData();
+        }
+    }
+
+    private async Task LoadStudentData()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+
+            // Check if StudentUserId is provided
+            if (string.IsNullOrEmpty(StudentUserId))
+            {
+                errorMessage = "Student ID không được cung cấp";
+                return;
+            }
+
+            Console.WriteLine($"Loading data for student: {StudentUserId}");
+
+            // Load student information
+            student = await _atlasApiClient.GetUserAsync(StudentUserId);
+            if (student == null)
+            {
+                errorMessage = $"Không tìm thấy thông tin học sinh với ID: {StudentUserId}";
+                return;
+            }
+
+            Console.WriteLine($"Loaded student: {student.FullName}");
+
+            // Load device status
+            var deviceStatusObj = await _atlasApiClient.GetDevicesStatusByUserAsync(StudentUserId);
+            if (deviceStatusObj != null)
+            {
+                try
+                {
+                    string json;
+                    
+                    // Handle different types of response objects
+                    if (deviceStatusObj is JsonElement jsonElement)
+                    {
+                        json = jsonElement.GetRawText();
+                    }
+                    else
+                    {
+                        json = JsonSerializer.Serialize(deviceStatusObj);
+                    }
+                    
+                    Console.WriteLine($"Raw device status JSON: {json}");
+                    
+                    // Parse JSON with custom options
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    };
+                    
+                    deviceStatus = JsonSerializer.Deserialize<DeviceStatusSummary>(json, options);
+                    
+                    if (deviceStatus != null)
+                    {
+                        Console.WriteLine($"Loaded device status: {deviceStatus.TotalDevices} total, {deviceStatus.OnlineDevices} online, {deviceStatus.OfflineDevices} offline");
+                        
+                        if (deviceStatus.Devices != null && deviceStatus.Devices.Any())
+                        {
+                            foreach (var device in deviceStatus.Devices)
+                            {
+                                Console.WriteLine($"Device: {device.DeviceId} ({device.Model}) - Status: {device.Status} - LastSync: {device.LastSyncAt}");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("No devices found in device status");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Failed to deserialize device status");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error parsing device status: {ex.Message}");
+                    deviceStatus = null;
+                }
+            }
+            else
+            {
+                Console.WriteLine("No device status returned from API");
+            }
+
+            // Load sensor readings with date range
+            var fromDate = DateTimeOffset.UtcNow.AddDays(-30); // Get last 30 days
+            var toDate = DateTimeOffset.UtcNow.AddDays(1);
+
+            var readingsData = await _atlasApiClient.GetSensorReadingsByDateRangeAsync(StudentUserId, fromDate, toDate);
+            if (readingsData != null && readingsData.Any())
+            {
+                sensorReadings = readingsData;
+                Console.WriteLine($"Loaded {readingsData.Count} sensor readings from date range");
+            }
+            else
+            {
+                // Try to get latest readings if date range returns empty
+                var latestReadings = await _atlasApiClient.GetLatestSensorReadingsByUserAsync(StudentUserId, 100);
+                if (latestReadings != null && latestReadings.Any())
+                {
+                    sensorReadings = latestReadings;
+                    Console.WriteLine($"Loaded {latestReadings.Count} latest sensor readings");
+                }
+                else
+                {
+                    Console.WriteLine("No sensor readings found for user");
+                    sensorReadings = new List<SensorReadingInfoDto>();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Lỗi khi tải dữ liệu: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void GoBack()
+    {
+        _navigationManager.NavigateTo("/dailyhealth");
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadStudentData();
+    }
+
+    private (bool IsOnline, bool HasDevices, string LastSync) GetDeviceStatus()
+    {
+        if (deviceStatus == null)
+        {
+            return (false, false, "Chưa có dữ liệu");
+        }
+
+        var hasDevices = deviceStatus.TotalDevices > 0;
+        if (!hasDevices)
+        {
+            return (false, false, "Chưa có dữ liệu");
+        }
+
+        var isOnline = deviceStatus.OnlineDevices > 0;
+        
+        // Parse LastSyncAt from ISO 8601 string to DateTime and format
+        var lastSyncString = "Chưa đồng bộ";
+        var firstDevice = deviceStatus.Devices?.FirstOrDefault();
+        if (firstDevice?.LastSyncAt != null && !string.IsNullOrEmpty(firstDevice.LastSyncAt))
+        {
+            if (DateTime.TryParse(firstDevice.LastSyncAt, out DateTime lastSyncDate))
+            {
+                // Convert to local time zone (Vietnam)
+                var timeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                var localTime = TimeZoneInfo.ConvertTime(lastSyncDate, timeZone);
+                lastSyncString = localTime.ToString("HH:mm dd/MM/yyyy");
+            }
+            else
+            {
+                lastSyncString = "Lỗi định dạng thời gian";
+            }
+        }
+
+        return (isOnline, hasDevices, lastSyncString);
+    }
+
+    private HealthMetrics GetHealthMetrics()
+    {
+        if (!sensorReadings.Any())
+        {
+            return new HealthMetrics();
+        }
+
+        sensorReadings.Sort((a, b) => a.Timestamp.CompareTo(b.Timestamp));
+
+        // Get readings from last 7 days instead of just today for more data
+
+
+        // Process all readings and extract metrics
+        var healthMetrics = new HealthMetrics();
+        var heartRateReadings = new List<SensorReadingInfoDto>();
+        var stepsReadings = new List<SensorReadingInfoDto>();
+        var sleepReadings = new List<SensorReadingInfoDto>();
+        var calorieReadings = new List<SensorReadingInfoDto>();
+
+        foreach (var reading in sensorReadings)
+        {
+            var sensorType = reading.Metadata?.SensorType?.ToLower();
+
+            // Process based on sensor type
+            switch (sensorType)
+            {
+                case "heart_rate":
+                case "heart_rate_monitor":
+                case "pulse":
+                    heartRateReadings.Add(reading);
+                    ProcessHeartRateReading(reading, healthMetrics);
+                    break;
+
+                case "activity":
+                case "step_counter":
+                case "step_count":
+                case "steps":
+                    stepsReadings.Add(reading);
+                    ProcessStepsReading(reading, healthMetrics);
+                    break;
+
+                case "sleep":
+                case "sleep_tracker":
+                case "sleep_duration":
+                    sleepReadings.Add(reading);
+                    ProcessSleepReading(reading, healthMetrics);
+                    break;
+
+                case "calories":
+                case "calorie_tracker":
+                case "calories_burned":
+                case "energy":
+                    calorieReadings.Add(reading);
+                    ProcessCaloriesReading(reading, healthMetrics);
+                    break;
+
+                default:
+                    // Try to process as generic data
+                    ProcessGenericReading(reading, healthMetrics, heartRateReadings, stepsReadings, sleepReadings, calorieReadings);
+                    break;
+            }
+        }
+
+        // Set the readings collections
+        healthMetrics.HeartRateReadings = heartRateReadings;
+        healthMetrics.StepsReadings = stepsReadings;
+        healthMetrics.SleepReadings = sleepReadings;
+        healthMetrics.CalorieReadings = calorieReadings;
+
+        return healthMetrics;
+    }
+
+    private void ProcessHeartRateReading(SensorReadingInfoDto reading, HealthMetrics healthMetrics)
+    {
+        foreach (var data in reading.Readings)
+        {
+            if (data.Key?.ToLower().Contains("heart") == true ||
+            data.Key?.ToLower().Contains("bpm") == true ||
+            data.Key?.ToLower().Contains("pulse") == true)
+            {
+                var value = GetNumericValue(data.Value);
+                if (value > 0 && value < 300) // Reasonable heart rate range
+                {
+                    healthMetrics.HeartRate = value;
+                    Console.WriteLine($"Found heart rate: {value} from key: {data.Key}");
+                }
+            }
+            break;
+        }
+    }
+
+    private void ProcessStepsReading(SensorReadingInfoDto reading, HealthMetrics healthMetrics)
+    {
+        foreach (var data in reading.Readings)
+        {
+            if (data.Key?.ToLower().Contains("step") == true || data.Key?.ToLower().Contains("count") == true)
+            {
+                var value = GetNumericValue(data.Value);
+                if (value > 0)
+                {
+                    healthMetrics.Steps = (int)value;
+                    Console.WriteLine($"Found steps: {value} from key: {data.Key}");
+                }
+            }
+            break;
+        }
+
+    }
+
+    private void ProcessSleepReading(SensorReadingInfoDto reading, HealthMetrics healthMetrics)
+    {
+        foreach (var data in reading.Readings)
+        {
+            if (data.Key?.ToLower().Contains("sleep") == true ||
+            data.Key?.ToLower().Contains("sleep_duration_minutes") == true)
+            {
+                var value = GetNumericValue(data.Value);
+                if (value > 0)
+                {
+                    // Convert minutes to hours if needed
+                    var hours = Math.Round(value / 60.0, 1);
+                    healthMetrics.Sleep = hours;
+                    Console.WriteLine($"Found sleep: {hours} hours (original: {value}) from key: {data.Key}");
+                }
+            }
+            break;
+        }
+
+    }
+
+    private void ProcessCaloriesReading(SensorReadingInfoDto reading, HealthMetrics healthMetrics)
+    {
+        foreach (var data in reading.Readings)
+        {
+            if (data.Key?.ToLower().Contains("calorie") == true || data.Key?.ToLower().Contains("energy") == true)
+            {
+                var value = GetNumericValue(data.Value);
+                if (value > 0)
+                {
+                    healthMetrics.Calories = (int)value;
+                    Console.WriteLine($"Found calories: {value} from key: {data.Key}");
+                }
+            }
+            break;
+        }
+
+    }
+
+    private void ProcessGenericReading(SensorReadingInfoDto reading, HealthMetrics healthMetrics,
+    List<SensorReadingInfoDto> heartRateReadings, List<SensorReadingInfoDto> stepsReadings,
+    List<SensorReadingInfoDto> sleepReadings, List<SensorReadingInfoDto> calorieReadings)
+    {
+        foreach (var data in reading.Readings)
+        {
+            var key = data.Key?.ToLower() ?? "";
+            var value = GetNumericValue(data.Value);
+
+            if (value <= 0) continue;
+
+            if (key.Contains("step"))
+            {
+                healthMetrics.Steps = (int)value;
+                if (!stepsReadings.Contains(reading)) stepsReadings.Add(reading);
+            }
+            else if (key.Contains("calorie"))
+            {
+                healthMetrics.Calories = (int)value;
+                if (!calorieReadings.Contains(reading)) calorieReadings.Add(reading);
+            }
+            else if (key.Contains("heart") || key.Contains("bpm"))
+            {
+                if (value < 300)
+                {
+                    healthMetrics.HeartRate = value;
+                    if (!heartRateReadings.Contains(reading)) heartRateReadings.Add(reading);
+                }
+            }
+            else if (key.Contains("sleep"))
+            {
+                var hours = Math.Round(value / 60.0, 1);
+                healthMetrics.Sleep = hours;
+                if (!sleepReadings.Contains(reading)) sleepReadings.Add(reading);
+            }
+        }
+    }
+
+    private double GetLatestValue(List<SensorReadingInfoDto> readings)
+    {
+        if (!readings.Any()) return 0;
+
+        // Sort by timestamp to get the latest reading
+        var latest = readings.OrderByDescending(r => r.Timestamp).FirstOrDefault();
+        if (latest?.Readings.Any() == true)
+        {
+            // Process each reading to find the best value
+            foreach (var data in latest.Readings)
+            {
+                var key = data.Key?.ToLower() ?? "";
+                var value = GetNumericValue(data.Value);
+
+                if (value > 0)
+                {
+                    // Check for specific key patterns that indicate main values
+                    if (key.Contains("step") || key.Contains("count") ||
+                    key.Contains("calorie") || key.Contains("energy") ||
+                    key.Contains("heart") || key.Contains("bpm") || key.Contains("pulse") ||
+                    key.Contains("sleep") || key.Contains("duration") ||
+                    key.Equals("value") || key.Equals("val") || key.Equals("data") ||
+                    key.Contains("spo2_percentage"))
+                    {
+                        return value;
+                    }
+                }
+            }
+
+            // If no specific key patterns found, try to get any valid numeric value
+            foreach (var data in latest.Readings)
+            {
+                var value = GetNumericValue(data.Value);
+                if (value > 0)
+                {
+                    return value;
+                }
+            }
+        }
+        return 0;
+    }
+
+    private double GetNumericValue(object? value)
+    {
+        if (value == null) return 0;
+
+        try
+        {
+            if (value is JsonElement jsonElement)
+            {
+                return jsonElement.ValueKind switch
+                {
+                    JsonValueKind.Number => jsonElement.GetDouble(),
+                    JsonValueKind.String => double.TryParse(jsonElement.GetString(), out var result) ? result : 0,
+                    _ => 0
+                };
+            }
+            else if (value is string stringValue)
+            {
+                return double.TryParse(stringValue, out var result) ? result : 0;
+            }
+            else
+            {
+                return Convert.ToDouble(value);
+            }
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    private double GetTrend(List<SensorReadingInfoDto> readings)
+    {
+        if (readings.Count < 2) return 0;
+
+        var first = GetLatestValue(readings.Take(1).ToList());
+        var last = GetLatestValue(readings.TakeLast(1).ToList());
+
+        return last - first;
+    }
+
+    // Heart Rate Status Methods
+    private string GetHeartRateStatus(double heartRate)
+    {
+        if (heartRate == 0) return "no-data";
+        if (heartRate < 60) return "warning";
+        if (heartRate > 100) return "danger";
+        return "normal";
+    }
+
+    private string GetHeartRateStatusText(double heartRate)
+    {
+        if (heartRate == 0) return "Chưa có dữ liệu";
+        if (heartRate < 60) return "Thấp";
+        if (heartRate > 100) return "Cao";
+        return "Bình thường";
+    }
+
+    // Steps Status Methods
+    private string GetStepsStatus(int steps)
+    {
+        if (steps == 0) return "no-data";
+        if (steps < 5000) return "warning";
+        if (steps >= 10000) return "excellent";
+        if (steps >= 7000) return "good";
+        return "average";
+    }
+
+    private string GetStepsStatusText(int steps)
+    {
+        if (steps == 0) return "Chưa có dữ liệu";
+        if (steps < 5000) return "Cần cải thiện";
+        if (steps >= 10000) return "Xuất sắc";
+        if (steps >= 7000) return "Tốt";
+        return "Trung bình";
+    }
+
+    // Sleep Status Methods
+    private string GetSleepStatus(double sleep)
+    {
+        if (sleep == 0) return "no-data";
+        if (sleep < 6) return "warning";
+        if (sleep > 9) return "warning";
+        if (sleep >= 7 && sleep <= 8) return "excellent";
+        return "good";
+    }
+
+    private string GetSleepStatusText(double sleep)
+    {
+        if (sleep == 0) return "Chưa có dữ liệu";
+        if (sleep < 6) return "Thiếu ngủ";
+        if (sleep > 9) return "Ngủ quá nhiều";
+        if (sleep >= 7 && sleep <= 8) return "Lý tưởng";
+        return "Tốt";
+    }
+
+    private string GetSleepQuality(double sleep)
+    {
+        if (sleep == 0) return "Chưa có dữ liệu";
+        if (sleep < 6) return "Kém";
+        if (sleep > 9) return "Quá nhiều";
+        if (sleep >= 7 && sleep <= 8) return "Tốt";
+        return "Khá";
+    }
+
+    private int GetSleepQualityScore(double sleep)
+    {
+        if (sleep == 0) return 0;
+        if (sleep < 5) return 40;
+        if (sleep < 6) return 60;
+        if (sleep >= 7 && sleep <= 8) return 90;
+        if (sleep >= 6 && sleep < 7) return 75;
+        if (sleep > 8 && sleep <= 9) return 80;
+        return 50;
+    }
+
+    // Calories Status Methods
+    private string GetCaloriesStatus(int calories)
+    {
+        if (calories == 0) return "no-data";
+        if (calories < 1200) return "warning";
+        if (calories >= 2000) return "excellent";
+        if (calories >= 1500) return "good";
+        return "average";
+    }
+
+    private string GetCaloriesStatusText(int calories)
+    {
+        if (calories == 0) return "Chưa có dữ liệu";
+        if (calories < 1200) return "Quá thấp";
+        if (calories >= 2000) return "Tốt";
+        if (calories >= 1500) return "Khá tốt";
+        return "Trung bình";
+    }
+
+    private string GetDeviceDisplayName(string model)
+    {
+        if (string.IsNullOrEmpty(model)) return "Unknown Device";
+        
+        // Common Samsung device mappings
+        var deviceMappings = new Dictionary<string, string>
+        {
+            {"SM-G970F", "Samsung Galaxy S10e"},
+            {"SM-G973F", "Samsung Galaxy S10"},
+            {"SM-G975F", "Samsung Galaxy S10+"},
+            {"SM-G977B", "Samsung Galaxy S10 5G"},
+            {"SM-N970F", "Samsung Galaxy Note10"},
+            {"SM-N975F", "Samsung Galaxy Note10+"},
+            {"SM-G980F", "Samsung Galaxy S20"},
+            {"SM-G981B", "Samsung Galaxy S20 5G"},
+            {"SM-G985F", "Samsung Galaxy S20+"},
+            {"SM-G986B", "Samsung Galaxy S20+ 5G"},
+            {"SM-G988B", "Samsung Galaxy S20 Ultra 5G"},
+            {"SM-G991B", "Samsung Galaxy S21 5G"},
+            {"SM-G996B", "Samsung Galaxy S21+ 5G"},
+            {"SM-G998B", "Samsung Galaxy S21 Ultra 5G"},
+            {"SM-A515F", "Samsung Galaxy A51"},
+            {"SM-A715F", "Samsung Galaxy A71"},
+            {"SM-A525F", "Samsung Galaxy A52"},
+            {"SM-A725F", "Samsung Galaxy A72"}
+        };
+        
+        if (deviceMappings.TryGetValue(model, out string? displayName))
+        {
+            return displayName;
+        }
+        
+        // If not found in mappings, try to make it more readable
+        if (model.StartsWith("SM-"))
+        {
+            return $"Samsung {model}";
+        }
+        
+        return model;
+    }
+
+    private class HealthMetrics
+    {
+        public double HeartRate { get; set; }
+        public int Steps { get; set; }
+        public double Sleep { get; set; }
+        public int Calories { get; set; }
+        public List<SensorReadingInfoDto> HeartRateReadings { get; set; } = new();
+        public List<SensorReadingInfoDto> StepsReadings { get; set; } = new();
+        public List<SensorReadingInfoDto> SleepReadings { get; set; } = new();
+        public List<SensorReadingInfoDto> CalorieReadings { get; set; } = new();
+    }
+
+    private class DeviceStatusSummary
+    {
+        public string UserId { get; set; } = string.Empty;
+        public int TotalDevices { get; set; }
+        public int OnlineDevices { get; set; }
+        public int OfflineDevices { get; set; }
+        public List<DeviceInfo> Devices { get; set; } = new();
+    }
+
+    private class DeviceInfo
+    {
+        public string DeviceId { get; set; } = string.Empty;
+        public string Model { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public string SdkVersion { get; set; } = string.Empty;
+        public string OsVersion { get; set; } = string.Empty;
+        public string LastSyncAt { get; set; } = string.Empty; // ISO 8601 string
+        public string RegisteredAt { get; set; } = string.Empty; // ISO 8601 string
+        public bool IsOnline { get; set; }
+    }
 }
-
-                           
-                                    
-                                       
-                                    

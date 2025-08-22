@@ -6,7 +6,7 @@
 @using Web_health_app.Models.Models.NonSqlDTO
 @using System.Text.Json
 @attribute [Authorize(Roles = "ACCESS.MainViewDalyHealth")]
-
+@inject NavigationManager navigation
 @inject AtlasApiClient AtlasApi
 
 <link href="/css/DalyHealth/daily-health.css" rel="stylesheet" />
@@ -457,7 +457,7 @@
     private string searchTerm = "";
     private string selectedDepartment = "";
     private string selectedRole = "";
-    
+
     private List<string> availableDepartments = new List<string>();
     private List<string> availableRoles = new List<string>();
 
@@ -519,23 +519,29 @@
         {
             foreach (var student in students)
             {
-                var readings = await AtlasApi.GetLatestSensorReadingsByUserAsync(student.Id);
-                //var reMoveItem = readings.Where(x => x.Timestamp > DateTime.UtcNow.AddHours(-24));
+                //List<string> sensorTypes = ["exercise", "heart_rate", "spo2", "sleep",  "activity"];
 
-             
-            
+               
+                    var readings = await AtlasApi.GetLatestSensorReadingsByUserAsync(student.Id);
+                    //var reMoveItem = readings.Where(x => x.Timestamp > DateTime.UtcNow.AddHours(-24));
+                    //  "exercise":   "heart_rate" "spo2" "sleep"  "activity"
 
 
-                if (readings != null && readings.Any())
-                {
-                    healthDataCache[student.Id] = ProcessHealthData(readings);
-                    Console.WriteLine($"Processed {readings.Count} sensor readings for user {student.Id}");
-                }
-                else
-                {
-                    healthDataCache[student.Id] = new HealthData();
-                    Console.WriteLine($"No sensor readings found for user {student.Id}");
-                }
+
+                    if (readings != null && readings.Any())
+                    {
+                        healthDataCache[student.Id] = ProcessHealthData(readings);
+                        Console.WriteLine($"Processed {readings.Count} sensor readings for user {student.Id}");
+                    }
+                    else
+                    {
+                        healthDataCache[student.Id] = new HealthData();
+                        Console.WriteLine($"No sensor readings found for user {student.Id}");
+                    }
+                
+                
+
+                
             }
         }
         catch (Exception ex)
@@ -919,10 +925,10 @@
         };
     }
 
-    private void ViewDetails(string userId)
+    private void ViewDetails(string studentUserId)
     {
-        // Navigate to detailed view
-        Console.WriteLine($"Viewing details for user: {userId}");
+        navigation.NavigateTo($"/dalyhealth/detailhealthstudent/{studentUserId}");
+        Console.WriteLine($"Viewing details for user: {studentUserId}");
     }
 
     #region Filtering Methods
