@@ -832,22 +832,26 @@
                         <div class="insights-card">
                             <div class="card-header">
                                 <h4>
-                                    <i class="fas fa-lightbulb"></i>
-                                    Nhận xét sức khỏe
+                                    <i class="fas fa-chart-line"></i>
+                                    Thống kê tuần qua
                                 </h4>
                             </div>
                             <div class="chart-content">
                                 <div class="weekly-stats">
+                                    @{
+                                        var weeklyStats = GetWeeklyStatistics();
+                                    }
+                                    
                                     <div class="stat-item">
                                         <div class="stat-icon steps">
                                             <i class="fas fa-walking"></i>
                                         </div>
                                         <div class="stat-data">
-                                            <h5>65,234</h5>
+                                            <h5>@(weeklyStats.TotalSteps.ToString("N0"))</h5>
                                             <p>Tổng bước chân</p>
-                                            <div class="stat-change positive">
-                                                <i class="fas fa-arrow-up"></i>
-                                                +8% so với tuần trước
+                                            <div class="stat-change @GetChangeClass(weeklyStats.StepsChange)">
+                                                <i class="fas fa-@GetChangeIcon(weeklyStats.StepsChange)"></i>
+                                                @GetChangeText(weeklyStats.StepsChange, "bước") so với tuần trước
                                             </div>
                                         </div>
                                     </div>
@@ -857,11 +861,11 @@
                                             <i class="fas fa-fire"></i>
                                         </div>
                                         <div class="stat-data">
-                                            <h5>12,845</h5>
+                                            <h5>@(weeklyStats.TotalCalories.ToString("N0"))</h5>
                                             <p>Tổng calories</p>
-                                            <div class="stat-change positive">
-                                                <i class="fas fa-arrow-up"></i>
-                                                +12% so với tuần trước
+                                            <div class="stat-change @GetChangeClass(weeklyStats.CaloriesChange)">
+                                                <i class="fas fa-@GetChangeIcon(weeklyStats.CaloriesChange)"></i>
+                                                @GetChangeText(weeklyStats.CaloriesChange, "cal") so với tuần trước
                                             </div>
                                         </div>
                                     </div>
@@ -871,11 +875,11 @@
                                             <i class="fas fa-heart"></i>
                                         </div>
                                         <div class="stat-data">
-                                            <h5>72 BPM</h5>
+                                            <h5>@(weeklyStats.AvgHeartRate > 0 ? weeklyStats.AvgHeartRate.ToString("0") + " BPM" : "--")</h5>
                                             <p>Nhịp tim TB</p>
-                                            <div class="stat-change neutral">
-                                                <i class="fas fa-minus"></i>
-                                                Không đổi
+                                            <div class="stat-change @GetChangeClass(weeklyStats.HeartRateChange)">
+                                                <i class="fas fa-@GetChangeIcon(weeklyStats.HeartRateChange)"></i>
+                                                @GetChangeText(weeklyStats.HeartRateChange, "BPM", isHeartRate: true)
                                             </div>
                                         </div>
                                     </div>
@@ -885,11 +889,11 @@
                                             <i class="fas fa-bed"></i>
                                         </div>
                                         <div class="stat-data">
-                                            <h5>7h 32m</h5>
+                                            <h5>@(weeklyStats.AvgSleep > 0 ? FormatSleepTime(weeklyStats.AvgSleep) : "--")</h5>
                                             <p>Giấc ngủ TB</p>
-                                            <div class="stat-change positive">
-                                                <i class="fas fa-arrow-up"></i>
-                                                +20 phút
+                                            <div class="stat-change @GetChangeClass(weeklyStats.SleepChange)">
+                                                <i class="fas fa-@GetChangeIcon(weeklyStats.SleepChange)"></i>
+                                                @GetSleepChangeText(weeklyStats.SleepChange)
                                             </div>
                                         </div>
                                     </div>
@@ -912,38 +916,35 @@
                                 </h4>
                             </div>
                             <div class="card-body">
-                                <div class="insight-item positive">
-                                    <div class="insight-icon">
-                                        <i class="fas fa-thumbs-up"></i>
+                                @{
+                                    var healthInsights = GetHealthInsights();
+                                }
+                                
+                                @foreach (var insight in healthInsights)
+                                {
+                                    <div class="insight-item @insight.Type">
+                                        <div class="insight-icon">
+                                            <i class="fas fa-@insight.Icon"></i>
+                                        </div>
+                                        <div class="insight-content">
+                                            <h5>@insight.Title</h5>
+                                            <p>@insight.Message</p>
+                                        </div>
                                     </div>
-                                    <div class="insight-content">
-                                        <h5>Hoạt động tốt</h5>
-                                        <p>Học sinh đã đạt mục tiêu bước chân 5/7 ngày trong tuần qua. Hãy tiếp tục duy trì!
-                                        </p>
+                                }
+                                
+                                @if (!healthInsights.Any())
+                                {
+                                    <div class="insight-item info">
+                                        <div class="insight-icon">
+                                            <i class="fas fa-info-circle"></i>
+                                        </div>
+                                        <div class="insight-content">
+                                            <h5>Chưa có đủ dữ liệu</h5>
+                                            <p>Cần thêm dữ liệu sức khỏe để đưa ra nhận xét chi tiết.</p>
+                                        </div>
                                     </div>
-                                </div>
-
-                                <div class="insight-item warning">
-                                    <div class="insight-icon">
-                                        <i class="fas fa-exclamation-triangle"></i>
-                                    </div>
-                                    <div class="insight-content">
-                                        <h5>Cần cải thiện giấc ngủ</h5>
-                                        <p>Thời gian ngủ có xu hướng giảm trong 3 ngày qua. Khuyến nghị đi ngủ sớm hơn 30
-                                            phút.</p>
-                                    </div>
-                                </div>
-
-                                <div class="insight-item info">
-                                    <div class="insight-icon">
-                                        <i class="fas fa-info-circle"></i>
-                                    </div>
-                                    <div class="insight-content">
-                                        <h5>Nhịp tim ổn định</h5>
-                                        <p>Nhịp tim nghỉ ngơi trong khoảng bình thường. Có thể tăng cường bài tập cardio.
-                                        </p>
-                                    </div>
-                                </div>
+                                }
                             </div>
                         </div>
                     </div>
@@ -957,59 +958,63 @@
                                 </h4>
                             </div>
                             <div class="card-body">
+                                @{
+                                    var healthGoals = GetHealthGoals();
+                                }
+                                
                                 <div class="goal-item">
                                     <div class="goal-header">
                                         <span class="goal-title">Bước chân hàng ngày</span>
-                                        <span class="goal-progress">82%</span>
+                                        <span class="goal-progress">@(healthGoals.StepsProgress)%</span>
                                     </div>
                                     <div class="goal-bar">
-                                        <div class="goal-fill" style="width: 82%"></div>
+                                        <div class="goal-fill" style="width: @(healthGoals.StepsProgress)%"></div>
                                     </div>
                                     <div class="goal-details">
-                                        <span>8,234 / 10,000 bước</span>
-                                        <span class="goal-status achieved">Đã đạt 5/7 ngày</span>
+                                        <span>@(healthGoals.CurrentSteps.ToString("N0")) / @(healthGoals.StepsGoal.ToString("N0")) bước</span>
+                                        <span class="goal-status @GetGoalStatusClass(healthGoals.StepsAchievedDays, 5)">@GetStepsGoalStatus(healthGoals.StepsAchievedDays)</span>
                                     </div>
                                 </div>
 
                                 <div class="goal-item">
                                     <div class="goal-header">
                                         <span class="goal-title">Calories đốt cháy</span>
-                                        <span class="goal-progress">77%</span>
+                                        <span class="goal-progress">@(healthGoals.CaloriesProgress)%</span>
                                     </div>
                                     <div class="goal-bar">
-                                        <div class="goal-fill calories" style="width: 77%"></div>
+                                        <div class="goal-fill calories" style="width: @(healthGoals.CaloriesProgress)%"></div>
                                     </div>
                                     <div class="goal-details">
-                                        <span>1,845 / 2,400 calories</span>
-                                        <span class="goal-status in-progress">Đang tiến bộ</span>
+                                        <span>@(healthGoals.CurrentCalories.ToString("N0")) / @(healthGoals.CaloriesGoal.ToString("N0")) calories</span>
+                                        <span class="goal-status @GetGoalStatusClass(healthGoals.CaloriesProgress, 70)">@GetCaloriesGoalStatus(healthGoals.CaloriesProgress)</span>
                                     </div>
                                 </div>
 
                                 <div class="goal-item">
                                     <div class="goal-header">
                                         <span class="goal-title">Thời gian ngủ</span>
-                                        <span class="goal-progress">97%</span>
+                                        <span class="goal-progress">@(healthGoals.SleepProgress)%</span>
                                     </div>
                                     <div class="goal-bar">
-                                        <div class="goal-fill sleep" style="width: 97%"></div>
+                                        <div class="goal-fill sleep" style="width: @(healthGoals.SleepProgress)%"></div>
                                     </div>
                                     <div class="goal-details">
-                                        <span>7h 45m / 8h</span>
-                                        <span class="goal-status achieved">Gần đạt mục tiêu</span>
+                                        <span>@(healthGoals.CurrentSleep > 0 ? FormatSleepTime(healthGoals.CurrentSleep) : "--") / @(FormatSleepTime(healthGoals.SleepGoal))</span>
+                                        <span class="goal-status @GetGoalStatusClass(healthGoals.SleepProgress, 85)">@GetSleepGoalStatus(healthGoals.SleepProgress)</span>
                                     </div>
                                 </div>
 
                                 <div class="goal-item">
                                     <div class="goal-header">
                                         <span class="goal-title">Hoạt động tuần</span>
-                                        <span class="goal-progress">71%</span>
+                                        <span class="goal-progress">@(healthGoals.WeeklyActivityProgress)%</span>
                                     </div>
                                     <div class="goal-bar">
-                                        <div class="goal-fill activity" style="width: 71%"></div>
+                                        <div class="goal-fill activity" style="width: @(healthGoals.WeeklyActivityProgress)%"></div>
                                     </div>
                                     <div class="goal-details">
-                                        <span>5 / 7 ngày hoạt động</span>
-                                        <span class="goal-status in-progress">Cần cải thiện</span>
+                                        <span>@(healthGoals.ActiveDays) / 7 ngày hoạt động</span>
+                                        <span class="goal-status @GetGoalStatusClass(healthGoals.ActiveDays, 5)">@GetActivityGoalStatus(healthGoals.ActiveDays)</span>
                                     </div>
                                 </div>
                             </div>
@@ -2187,5 +2192,338 @@
             
             return validMetrics >= 2; // At least 2 valid metrics
         }
+    }
+
+    // Weekly Statistics and Insights Classes
+    private class WeeklyStatistics
+    {
+        public int TotalSteps { get; set; }
+        public int TotalCalories { get; set; }
+        public double AvgHeartRate { get; set; }
+        public double AvgSleep { get; set; }
+        public double StepsChange { get; set; }
+        public double CaloriesChange { get; set; }
+        public double HeartRateChange { get; set; }
+        public double SleepChange { get; set; }
+    }
+
+    private class HealthInsight
+    {
+        public string Type { get; set; } = string.Empty; // positive, warning, info
+        public string Icon { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+    }
+
+    private class HealthGoals
+    {
+        public int CurrentSteps { get; set; }
+        public int StepsGoal { get; set; } = 8000;
+        public int StepsProgress => StepsGoal > 0 ? Math.Min((CurrentSteps * 100) / StepsGoal, 100) : 0;
+        public int StepsAchievedDays { get; set; }
+
+        public int CurrentCalories { get; set; }
+        public int CaloriesGoal { get; set; } = 2000;
+        public int CaloriesProgress => CaloriesGoal > 0 ? Math.Min((CurrentCalories * 100) / CaloriesGoal, 100) : 0;
+
+        public double CurrentSleep { get; set; }
+        public double SleepGoal { get; set; } = 8.0;
+        public int SleepProgress => SleepGoal > 0 ? Math.Min((int)((CurrentSleep * 100) / SleepGoal), 100) : 0;
+
+        public int ActiveDays { get; set; }
+        public int WeeklyActivityProgress => (ActiveDays * 100) / 7;
+    }
+
+    // Methods for Weekly Statistics
+    private WeeklyStatistics GetWeeklyStatistics()
+    {
+        var currentWeekStart = DateTimeOffset.UtcNow.AddDays(-7);
+        var previousWeekStart = DateTimeOffset.UtcNow.AddDays(-14);
+        var previousWeekEnd = DateTimeOffset.UtcNow.AddDays(-7);
+
+        // Current week data
+        var currentWeekReadings = sensorReadings.Where(r => r.Timestamp >= currentWeekStart).ToList();
+        var currentWeekStats = GetWeekStatsSummary(currentWeekReadings);
+
+        // Previous week data  
+        var previousWeekReadings = sensorReadings.Where(r => r.Timestamp >= previousWeekStart && r.Timestamp < previousWeekEnd).ToList();
+        var previousWeekStats = GetWeekStatsSummary(previousWeekReadings);
+
+        return new WeeklyStatistics
+        {
+            TotalSteps = currentWeekStats.TotalSteps,
+            TotalCalories = currentWeekStats.TotalCalories,
+            AvgHeartRate = currentWeekStats.AvgHeartRate,
+            AvgSleep = currentWeekStats.AvgSleep,
+            StepsChange = CalculatePercentageChange(previousWeekStats.TotalSteps, currentWeekStats.TotalSteps),
+            CaloriesChange = CalculatePercentageChange(previousWeekStats.TotalCalories, currentWeekStats.TotalCalories),
+            HeartRateChange = previousWeekStats.AvgHeartRate > 0 ? currentWeekStats.AvgHeartRate - previousWeekStats.AvgHeartRate : 0,
+            SleepChange = previousWeekStats.AvgSleep > 0 ? currentWeekStats.AvgSleep - previousWeekStats.AvgSleep : 0
+        };
+    }
+
+    private (int TotalSteps, int TotalCalories, double AvgHeartRate, double AvgSleep) GetWeekStatsSummary(List<SensorReadingInfoDto> readings)
+    {
+        if (!readings.Any()) return (0, 0, 0, 0);
+
+        var dailyStats = new List<DailyStat>();
+        var dates = readings.Select(r => r.Timestamp.Date).Distinct().OrderBy(d => d);
+
+        foreach (var date in dates)
+        {
+            var dayReadings = readings.Where(r => r.Timestamp.Date == date).ToList();
+            var dayMetrics = ProcessDayReadings(dayReadings);
+            
+            dailyStats.Add(new DailyStat
+            {
+                Date = date,
+                Steps = dayMetrics.Steps,
+                HeartRate = dayMetrics.HeartRate,
+                Calories = dayMetrics.Calories,
+                Sleep = dayMetrics.Sleep
+            });
+        }
+
+        return (
+            dailyStats.Sum(d => d.Steps),
+            dailyStats.Sum(d => d.Calories),
+            dailyStats.Where(d => d.HeartRate > 0).Any() ? dailyStats.Where(d => d.HeartRate > 0).Average(d => d.HeartRate) : 0,
+            dailyStats.Where(d => d.Sleep > 0).Any() ? dailyStats.Where(d => d.Sleep > 0).Average(d => d.Sleep) : 0
+        );
+    }
+
+    private double CalculatePercentageChange(double oldValue, double newValue)
+    {
+        if (oldValue == 0) return newValue > 0 ? 100 : 0;
+        return ((newValue - oldValue) / oldValue) * 100;
+    }
+
+    // Methods for Health Insights
+    private List<HealthInsight> GetHealthInsights()
+    {
+        var insights = new List<HealthInsight>();
+        var weeklyStats = GetWeeklyStatistics();
+        var currentMetrics = GetHealthMetrics();
+
+        // Steps insights
+        if (weeklyStats.TotalSteps > 0)
+        {
+            var avgDailySteps = weeklyStats.TotalSteps / 7;
+            if (avgDailySteps >= 8000)
+            {
+                insights.Add(new HealthInsight
+                {
+                    Type = "positive",
+                    Icon = "thumbs-up",
+                    Title = "Hoạt động tuyệt vời",
+                    Message = $"Trung bình {avgDailySteps:N0} bước/ngày. Bạn đang duy trì mức hoạt động tốt cho sức khỏe!"
+                });
+            }
+            else if (avgDailySteps >= 5000)
+            {
+                insights.Add(new HealthInsight
+                {
+                    Type = "warning",
+                    Icon = "exclamation-triangle",
+                    Title = "Cần tăng hoạt động",
+                    Message = $"Trung bình {avgDailySteps:N0} bước/ngày. Hãy cố gắng đạt mục tiêu 8000 bước để cải thiện sức khỏe."
+                });
+            }
+            else
+            {
+                insights.Add(new HealthInsight
+                {
+                    Type = "warning",
+                    Icon = "exclamation-triangle",
+                    Title = "Hoạt động thấp",
+                    Message = "Mức độ hoạt động còn thấp. Hãy bắt đầu với những bước đi ngắn và tăng dần."
+                });
+            }
+        }
+
+        // Sleep insights
+        if (weeklyStats.AvgSleep > 0)
+        {
+            if (weeklyStats.AvgSleep >= 7 && weeklyStats.AvgSleep <= 9)
+            {
+                insights.Add(new HealthInsight
+                {
+                    Type = "positive",
+                    Icon = "bed",
+                    Title = "Giấc ngủ chất lượng",
+                    Message = $"Trung bình {FormatSleepTime(weeklyStats.AvgSleep)} mỗi đêm. Thời gian ngủ lý tưởng cho sức khỏe!"
+                });
+            }
+            else if (weeklyStats.AvgSleep < 6)
+            {
+                insights.Add(new HealthInsight
+                {
+                    Type = "warning",
+                    Icon = "exclamation-triangle",
+                    Title = "Thiếu ngủ",
+                    Message = "Thời gian ngủ chưa đủ. Hãy cố gắng ngủ sớm hơn để đảm bảo 7-8 giờ ngủ mỗi đêm."
+                });
+            }
+            else if (weeklyStats.AvgSleep > 9)
+            {
+                insights.Add(new HealthInsight
+                {
+                    Type = "info",
+                    Icon = "info-circle",
+                    Title = "Ngủ nhiều",
+                    Message = "Bạn ngủ khá nhiều. Hãy chú ý chất lượng giấc ngủ và hoạt động trong ngày."
+                });
+            }
+        }
+
+        // Heart rate insights
+        if (weeklyStats.AvgHeartRate > 0)
+        {
+            if (weeklyStats.AvgHeartRate >= 60 && weeklyStats.AvgHeartRate <= 100)
+            {
+                insights.Add(new HealthInsight
+                {
+                    Type = "positive",
+                    Icon = "heart",
+                    Title = "Nhịp tim ổn định",
+                    Message = $"Nhịp tim trung bình {weeklyStats.AvgHeartRate:0} BPM trong khoảng bình thường."
+                });
+            }
+            else if (weeklyStats.AvgHeartRate < 60)
+            {
+                insights.Add(new HealthInsight
+                {
+                    Type = "info",
+                    Icon = "heart",
+                    Title = "Nhịp tim chậm",
+                    Message = "Nhịp tim thấp hơn bình thường. Nếu không phải vận động viên, hãy tham khảo ý kiến bác sĩ."
+                });
+            }
+            else
+            {
+                insights.Add(new HealthInsight
+                {
+                    Type = "warning",
+                    Icon = "heart",
+                    Title = "Nhịp tim cao",
+                    Message = "Nhịp tim cao hơn bình thường. Hãy nghỉ ngơi đầy đủ và tham khảo ý kiến bác sĩ nếu cần."
+                });
+            }
+        }
+
+        return insights.Take(3).ToList(); // Limit to 3 insights
+    }
+
+    // Methods for Health Goals
+    private HealthGoals GetHealthGoals()
+    {
+        var currentMetrics = GetHealthMetrics();
+        var weeklyStats = GetDailyStatistics(sensorReadings.Where(r => r.Timestamp >= DateTimeOffset.UtcNow.AddDays(-7)).ToList(), 7);
+        
+        return new HealthGoals
+        {
+            CurrentSteps = currentMetrics.Steps,
+            CurrentCalories = currentMetrics.Calories,
+            CurrentSleep = currentMetrics.Sleep,
+            StepsAchievedDays = weeklyStats.Count(d => d.Steps >= 6000),
+            ActiveDays = weeklyStats.Count(d => d.HasValidData())
+        };
+    }
+
+    // Helper methods for display
+    private string GetChangeClass(double change)
+    {
+        if (change > 5) return "positive";
+        if (change < -5) return "negative";
+        return "neutral";
+    }
+
+    private string GetChangeIcon(double change)
+    {
+        if (change > 5) return "arrow-up";
+        if (change < -5) return "arrow-down";
+        return "minus";
+    }
+
+    private string GetChangeText(double change, string unit, bool isHeartRate = false)
+    {
+        if (Math.Abs(change) < 0.1) return "Không đổi";
+        
+        if (isHeartRate)
+        {
+            return change > 0 ? $"+{change:0.1} {unit}" : $"{change:0.1} {unit}";
+        }
+        
+        if (Math.Abs(change) < 1)
+        {
+            return change > 0 ? $"+{change:0.1}% {unit}" : $"{change:0.1}% {unit}";
+        }
+        
+        return change > 0 ? $"+{change:0}% {unit}" : $"{change:0}% {unit}";
+    }
+
+    private string GetSleepChangeText(double change)
+    {
+        if (Math.Abs(change) < 0.1) return "Không đổi";
+        
+        var minutes = Math.Abs(change) * 60;
+        var sign = change > 0 ? "+" : "-";
+        
+        if (minutes >= 60)
+        {
+            var hours = minutes / 60;
+            return $"{sign}{hours:0.1} giờ";
+        }
+        else
+        {
+            return $"{sign}{minutes:0} phút";
+        }
+    }
+
+    private string FormatSleepTime(double hours)
+    {
+        if (hours <= 0) return "--";
+        
+        var h = (int)hours;
+        var m = (int)((hours - h) * 60);
+        return $"{h}h {m:00}m";
+    }
+
+    private string GetGoalStatusClass(int value, int threshold)
+    {
+        return value >= threshold ? "achieved" : "in-progress";
+    }
+
+    private string GetGoalStatusClass(double percentage, double threshold)
+    {
+        return percentage >= threshold ? "achieved" : "in-progress";
+    }
+
+    private string GetStepsGoalStatus(int achievedDays)
+    {
+        if (achievedDays >= 6) return "Xuất sắc";
+        if (achievedDays >= 4) return $"Đã đạt {achievedDays}/7 ngày";
+        return "Cần cải thiện";
+    }
+
+    private string GetCaloriesGoalStatus(int percentage)
+    {
+        if (percentage >= 90) return "Đạt mục tiêu";
+        if (percentage >= 70) return "Đang tiến bộ";
+        return "Cần cải thiện";
+    }
+
+    private string GetSleepGoalStatus(int percentage)
+    {
+        if (percentage >= 95) return "Lý tưởng";
+        if (percentage >= 80) return "Gần đạt mục tiêu";
+        return "Cần cải thiện";
+    }
+
+    private string GetActivityGoalStatus(int activeDays)
+    {
+        if (activeDays >= 6) return "Tuyệt vời";
+        if (activeDays >= 4) return $"{activeDays}/7 ngày";
+        return "Cần cải thiện";
     }
 }
