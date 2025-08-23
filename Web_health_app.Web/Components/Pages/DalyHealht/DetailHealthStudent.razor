@@ -343,10 +343,17 @@
                         </div>
                     }
                 </div>
+              
+              
+                
                 <div class="header-actions">
                     <button class="btn btn-outline-primary" @onclick="RefreshData" disabled="@isLoading">
                         <i class="fas fa-sync-alt @(isLoading ? "fa-spin" : "")"></i>
                         @(isLoading ? "Đang tải..." : "Đồng bộ lại")
+                    </button>
+                    <button class="btn btn-outline-info btn-sm" @onclick:stopPropagation="true">
+                        <i class="fas fa-comments"></i>
+                        Ghi chú
                     </button>
                     <button class="btn btn-primary" disabled="@(student == null)">
                         <i class="fas fa-download"></i>
