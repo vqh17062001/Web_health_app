@@ -378,60 +378,7 @@
         </div>
     }
 
-    <!-- Debug Info (only show when there's data) -->
-    @if (!isLoading && student != null)
-    {
-        <div class="container-fluid mt-3">
-            <div class="alert alert-info" role="alert">
-                <strong>Debug Info:</strong><br />
-                - Student: @student.FullName (@student.Id)<br />
-                - Sensor Readings: @sensorReadings.Count records<br />
-                - Device Status: @(deviceStatus != null ? $"{deviceStatus.TotalDevices} devices" : "No device data")<br />
-                @{
-                    var debugHealthMetrics = GetHealthMetrics();
-                    var sensorTypes = sensorReadings.Select(r => r.Metadata.SensorType).Where(s =>
-                    !string.IsNullOrEmpty(s)).Distinct().ToList();
-                }
-                - Health Data: HR=@debugHealthMetrics.HeartRate, Steps=@debugHealthMetrics.Steps,
-                Sleep=@debugHealthMetrics.Sleep, Calories=@debugHealthMetrics.Calories<br />
-                - Sensor Types Available: @string.Join(", ", sensorTypes)<br />
-                - Data Readings Count: HR=@debugHealthMetrics.HeartRateReadings.Count,
-                Steps=@debugHealthMetrics.StepsReadings.Count, Sleep=@debugHealthMetrics.SleepReadings.Count,
-                Calories=@debugHealthMetrics.CalorieReadings.Count<br />
-                @if (deviceStatus != null)
-                {
-                    <text><strong>Device Details:</strong><br /></text>
-                    <text>- Total Devices: @deviceStatus.TotalDevices<br /></text>
-                    <text>- Online Devices: @deviceStatus.OnlineDevices<br /></text>
-                    <text>- Offline Devices: @deviceStatus.OfflineDevices<br /></text>
-                    @if (deviceStatus.Devices != null && deviceStatus.Devices.Any())
-                    {
-                        @foreach (var device in deviceStatus.Devices)
-                        {
-                            <span>- Device: @device.Model (@device.DeviceId)</span><br />
-                            <span>&nbsp;&nbsp;Status: @device.Status | IsOnline: @device.IsOnline</span><br />
-                            <span>&nbsp;&nbsp;OS: @device.OsVersion | SDK: @device.SdkVersion</span><br />
-                            <span>&nbsp;&nbsp;LastSync: @device.LastSyncAt</span><br />
-                            <span>&nbsp;&nbsp;Registered: @device.RegisteredAt</span><br />
-                        }
-                    }
-                    else
-                    {
-                        <span>- No devices found in collection</span><br />
-                    }
-                }
-                else
-                {
-                    <span>- Device Status is null</span><br />
-                }
-                <br />
-                <button class="btn btn-sm btn-outline-primary mt-2" @onclick="RefreshData">
-                    <i class="fas fa-refresh"></i>
-                    Debug Refresh
-                </button>
-            </div>
-        </div>
-    }
+   
 
     <!-- Health Overview Cards -->
     @if (!isLoading && student != null)
@@ -652,33 +599,39 @@
                                         <div class="stat-values">
                                             <div class="current-value">
                                                 <span class="label">Hiện tại</span>
-                                                <span class="value">@periodStats.CurrentSteps.ToString("#,0")</span>
+                                                <span class="value">@(periodStats.CurrentSteps > 0 ? periodStats.CurrentSteps.ToString("#,0") : "--")</span>
                                             </div>
                                             <div class="average-value">
                                                 <span class="label">Trung bình @GetPeriodLabel(selectedPeriod)</span>
-                                                <span class="value">@periodStats.AvgSteps.ToString("#,0")</span>
+                                                <span class="value">@(periodStats.AvgSteps > 0 ? periodStats.AvgSteps.ToString("#,0") : "--")</span>
                                             </div>
                                             <div class="trend-indicator">
-                                                @{
+                                                @if (periodStats.CurrentSteps > 0 && periodStats.AvgSteps > 0)
+                                                {
                                                     var stepsTrend = periodStats.CurrentSteps - periodStats.AvgSteps;
+                                                    <i class="fas fa-@(stepsTrend > 0 ? "arrow-up text-success" : stepsTrend < 0 ? "arrow-down text-danger" : "minus text-muted")"></i>
+                                                    <span class="@(stepsTrend > 0 ? "text-success" : stepsTrend < 0 ? "text-danger" : "text-muted")">
+                                                        @(stepsTrend != 0 ? Math.Abs(stepsTrend).ToString("#,0") : "Không đổi")
+                                                    </span>
                                                 }
-                                                <i class="fas fa-@(stepsTrend > 0 ? "arrow-up text-success" : stepsTrend < 0 ? "arrow-down text-danger" : "minus text-muted")"></i>
-                                                <span class="@(stepsTrend > 0 ? "text-success" : stepsTrend < 0 ? "text-danger" : "text-muted")">
-                                                    @(stepsTrend != 0 ? Math.Abs(stepsTrend).ToString("#,0") : "Không đổi")
-                                                </span>
+                                                else
+                                                {
+                                                    <i class="fas fa-times text-muted"></i>
+                                                    <span class="text-muted">Chưa có dữ liệu</span>
+                                                }
                                             </div>
                                         </div>
                                         <div class="progress-bar-comparison">
                                             <div class="progress-item">
                                                 <span>Hiện tại</span>
                                                 <div class="progress">
-                                                    <div class="progress-bar bg-primary" style="width: @Math.Min(100, (periodStats.CurrentSteps * 100.0 / 10000))%"></div>
+                                                    <div class="progress-bar bg-primary" style="width: @(periodStats.CurrentSteps > 0 ? Math.Min(100, (periodStats.CurrentSteps * 100.0 / 10000)) : 0)%"></div>
                                                 </div>
                                             </div>
                                             <div class="progress-item">
                                                 <span>Trung bình</span>
                                                 <div class="progress">
-                                                    <div class="progress-bar bg-secondary" style="width: @Math.Min(100, (periodStats.AvgSteps * 100.0 / 10000))%"></div>
+                                                    <div class="progress-bar bg-secondary" style="width: @(periodStats.AvgSteps > 0 ? Math.Min(100, (periodStats.AvgSteps * 100.0 / 10000)) : 0)%"></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -837,18 +790,30 @@
                                                 <span>Giờ ngủ</span>
                                                 <span>Trạng thái</span>
                                             </div>
-                                            @foreach (var day in GetDailyBreakdown(selectedPeriod))
+                                            @{
+                                                var validDays = GetDailyBreakdown(selectedPeriod).Where(d => d.HasValidData()).ToList();
+                                            }
+                                            @if (validDays.Any())
+                                            {
+                                                @foreach (var day in validDays)
+                                                {
+                                                    <div class="table-row">
+                                                        <span class="date">@day.Date.ToString("dd/MM")</span>
+                                                        <span class="steps">@(day.Steps > 0 ? day.Steps.ToString("#,0") : "--")</span>
+                                                        <span class="calories">@(day.Calories > 0 ? day.Calories.ToString("#,0") : "--")</span>
+                                                        <span class="heart-rate">@(day.HeartRate > 0 ? day.HeartRate.ToString("F0") : "--")</span>
+                                                        <span class="sleep">@(day.Sleep > 0 ? day.Sleep.ToString("F1") + "h" : "--")</span>
+                                                        <span class="status">
+                                                            <i class="fas fa-circle @(day.IsGoodDay ? "text-success" : "text-warning")"></i>
+                                                            @(day.IsGoodDay ? "Tốt" : "Cần cải thiện")
+                                                        </span>
+                                                    </div>
+                                                }
+                                            }
+                                            else
                                             {
                                                 <div class="table-row">
-                                                    <span class="date">@day.Date.ToString("dd/MM")</span>
-                                                    <span class="steps">@day.Steps.ToString("#,0")</span>
-                                                    <span class="calories">@day.Calories.ToString("#,0")</span>
-                                                    <span class="heart-rate">@day.HeartRate.ToString("F0")</span>
-                                                    <span class="sleep">@day.Sleep.ToString("F1")h</span>
-                                                    <span class="status">
-                                                        <i class="fas fa-circle @(day.IsGoodDay ? "text-success" : "text-warning")"></i>
-                                                        @(day.IsGoodDay ? "Tốt" : "Cần cải thiện")
-                                                    </span>
+                                                    <span colspan="6" class="text-center text-muted">Không có dữ liệu hợp lệ trong khoảng thời gian này</span>
                                                 </div>
                                             }
                                         </div>
@@ -1294,6 +1259,76 @@
             </div>
         </div>
     }
+
+    <!-- Debug Info (only show when there's data) -->
+    @if (!isLoading && student != null)
+    {
+        <div class="container-fluid mt-3">
+            <div class="alert alert-info" role="alert">
+                <strong>Debug Info:</strong><br />
+                - Student: @student.FullName (@student.Id)<br />
+                - Sensor Readings: @sensorReadings.Count records<br />
+                - Device Status: @(deviceStatus != null ? $"{deviceStatus.TotalDevices} devices" : "No device data")<br />
+                @{
+                    var debugHealthMetrics = GetHealthMetrics();
+                    var sensorTypes = sensorReadings.Select(r => r.Metadata.SensorType).Where(s =>
+                    !string.IsNullOrEmpty(s)).Distinct().ToList();
+                }
+                - Health Data: HR=@debugHealthMetrics.HeartRate, Steps=@debugHealthMetrics.Steps,
+                Sleep=@debugHealthMetrics.Sleep, Calories=@debugHealthMetrics.Calories<br />
+                - Sensor Types Available: @string.Join(", ", sensorTypes)<br />
+                - Data Readings Count: HR=@debugHealthMetrics.HeartRateReadings.Count,
+                Steps=@debugHealthMetrics.StepsReadings.Count, Sleep=@debugHealthMetrics.SleepReadings.Count,
+                Calories=@debugHealthMetrics.CalorieReadings.Count<br />
+                @if (deviceStatus != null)
+                {
+                    <text><strong>Device Details:</strong><br /></text>
+                    <text>- Total Devices: @deviceStatus.TotalDevices<br /></text>
+                    <text>- Online Devices: @deviceStatus.OnlineDevices<br /></text>
+                    <text>- Offline Devices: @deviceStatus.OfflineDevices<br /></text>
+                    @if (deviceStatus.Devices != null && deviceStatus.Devices.Any())
+                    {
+                        @foreach (var device in deviceStatus.Devices)
+                        {
+                            <span>- Device: @device.Model (@device.DeviceId)</span>
+            
+                            <br />
+                            <span>&nbsp;&nbsp;Status: @device.Status | IsOnline: @device.IsOnline</span>
+
+                            <br />
+                            <span>&nbsp;&nbsp;OS: @device.OsVersion | SDK: @device.SdkVersion</span>
+
+                            <br />
+                            <span>&nbsp;&nbsp;LastSync: @device.LastSyncAt</span>
+
+                            <br />
+                            <span>&nbsp;&nbsp;Registered: @device.RegisteredAt</span>
+
+                            <br />
+                        }
+                    }
+                    else
+                    {
+                        <span>- No devices found in collection</span>
+            
+                        <br />
+                    }
+                }
+                else
+                {
+                    <span>- Device Status is null</span>
+            
+                    <br />
+                }
+                <br />
+                <button class="btn btn-sm btn-outline-primary mt-2" @onclick="RefreshData">
+                    <i class="fas fa-refresh"></i>
+                    Debug Refresh
+                </button>
+            </div>
+        </div>
+    }
+
 </div>
 
 @code {
@@ -1986,19 +2021,28 @@
             CurrentCalories = currentHealthMetrics.Calories,
             CurrentSleep = currentHealthMetrics.Sleep,
 
-            AvgSteps = dailyStats.Any() ? (int)dailyStats.Average(d => d.Steps) : 0,
-            AvgHeartRate = dailyStats.Any() ? dailyStats.Average(d => d.HeartRate) : 0,
-            AvgCalories = dailyStats.Any() ? (int)dailyStats.Average(d => d.Calories) : 0,
-            AvgSleep = dailyStats.Where(d => d.Sleep != 0).Any() ? dailyStats.Average(d => d.Sleep) : 0,
+            // Calculate averages excluding zero values
+            AvgSteps = dailyStats.Where(d => d.Steps > 0).Any() ? 
+                (int)dailyStats.Where(d => d.Steps > 0).Average(d => d.Steps) : 0,
+            AvgHeartRate = dailyStats.Where(d => d.HeartRate > 0).Any() ? 
+                dailyStats.Where(d => d.HeartRate > 0).Average(d => d.HeartRate) : 0,
+            AvgCalories = dailyStats.Where(d => d.Calories > 0).Any() ? 
+                (int)dailyStats.Where(d => d.Calories > 0).Average(d => d.Calories) : 0,
+            AvgSleep = dailyStats.Where(d => d.Sleep > 0).Any() ? 
+                dailyStats.Where(d => d.Sleep > 0).Average(d => d.Sleep) : 0,
 
-            MinHeartRate = dailyStats.Any() ? dailyStats.Min(d => d.HeartRate) : 0,
-            MaxHeartRate = dailyStats.Any() ? dailyStats.Max(d => d.HeartRate) : 0,
-            AvgRestingHeartRate = dailyStats.Where(d => d.HeartRate > 0).Any() ? dailyStats.DefaultIfEmpty().Average(d => d?.HeartRate ?? 0) : 0,
+            // Min/Max for heart rate excluding zeros
+            MinHeartRate = dailyStats.Where(d => d.HeartRate > 0).Any() ? 
+                dailyStats.Where(d => d.HeartRate > 0).Min(d => d.HeartRate) : 0,
+            MaxHeartRate = dailyStats.Where(d => d.HeartRate > 0).Any() ? 
+                dailyStats.Where(d => d.HeartRate > 0).Max(d => d.HeartRate) : 0,
+            AvgRestingHeartRate = dailyStats.Where(d => d.HeartRate > 0).Any() ? 
+                dailyStats.Where(d => d.HeartRate > 0).Average(d => d.HeartRate) : 0,
 
             TotalSteps = dailyStats.Sum(d => d.Steps),
             TotalCalories = dailyStats.Sum(d => d.Calories),
 
-            DaysWithData = dailyStats.Count(d => d.HasData),
+            DaysWithData = dailyStats.Count(d => d.HasValidData()),
             DaysWithStepsGoal = dailyStats.Count(d => d.Steps >= 6000)
         };
     }
@@ -2027,7 +2071,10 @@
                 dailyStat.HeartRate = dayMetrics.HeartRate;
                 dailyStat.Calories = dayMetrics.Calories;
                 dailyStat.Sleep = dayMetrics.Sleep;
-                dailyStat.IsGoodDay = dayMetrics.Steps >= 6000 && dayMetrics.Sleep >= 6;
+                
+                // Only consider it a good day if we have valid data and meet criteria
+                dailyStat.IsGoodDay = dailyStat.HasValidData() && 
+                                      (dayMetrics.Steps >= 6000 || dayMetrics.Sleep >= 6);
             }
 
             dailyStats.Add(dailyStat);
@@ -2084,7 +2131,7 @@
         var periodReadings = sensorReadings.Where(r => r.Timestamp >= fromDate).ToList();
         
         return GetDailyStatistics(periodReadings, days)
-            .Where(d => d.HasData)
+            .Where(d => d.HasValidData()) // Only include days with actual data (non-zero values)
             .OrderByDescending(d => d.Date)
             .Take(14) // Limit to last 14 days for display
             .ToList();
@@ -2122,5 +2169,23 @@
         public double Sleep { get; set; }
         public bool HasData { get; set; }
         public bool IsGoodDay { get; set; }
+
+        // Method to check if this day has any valid data (non-zero values)
+        public bool HasValidData()
+        {
+            return Steps > 0 || HeartRate > 0 || Calories > 0 || Sleep > 0;
+        }
+
+        // Method to check if the day has sufficient data for meaningful analysis
+        public bool HasSufficientData()
+        {
+            int validMetrics = 0;
+            if (Steps > 0) validMetrics++;
+            if (HeartRate > 0) validMetrics++;
+            if (Calories > 0) validMetrics++;
+            if (Sleep > 0) validMetrics++;
+            
+            return validMetrics >= 2; // At least 2 valid metrics
+        }
     }
 }
