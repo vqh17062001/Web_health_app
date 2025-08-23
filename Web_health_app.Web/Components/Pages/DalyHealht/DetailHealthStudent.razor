@@ -1989,11 +1989,11 @@
             AvgSteps = dailyStats.Any() ? (int)dailyStats.Average(d => d.Steps) : 0,
             AvgHeartRate = dailyStats.Any() ? dailyStats.Average(d => d.HeartRate) : 0,
             AvgCalories = dailyStats.Any() ? (int)dailyStats.Average(d => d.Calories) : 0,
-            AvgSleep = dailyStats.Any() ? dailyStats.Where(d => d.Sleep != 0).Average(d => d.Sleep) : 0,
+            AvgSleep = dailyStats.Where(d => d.Sleep != 0).Any() ? dailyStats.Average(d => d.Sleep) : 0,
 
             MinHeartRate = dailyStats.Any() ? dailyStats.Min(d => d.HeartRate) : 0,
             MaxHeartRate = dailyStats.Any() ? dailyStats.Max(d => d.HeartRate) : 0,
-            AvgRestingHeartRate = dailyStats.Any() ? dailyStats.Where(d => d.HeartRate > 0).DefaultIfEmpty().Average(d => d?.HeartRate ?? 0) : 0,
+            AvgRestingHeartRate = dailyStats.Where(d => d.HeartRate > 0).Any() ? dailyStats.DefaultIfEmpty().Average(d => d?.HeartRate ?? 0) : 0,
 
             TotalSteps = dailyStats.Sum(d => d.Steps),
             TotalCalories = dailyStats.Sum(d => d.Calories),
