@@ -8,6 +8,7 @@
 @inject UserApiClient UserApiClient
 @inject DepartmentApiClient DepartmentApiClient
 @inject IJSRuntime JSRuntime
+@inject NavigationManager navigation 
 @attribute [Authorize(Roles = "ACCESS.MainViewStudent")]
 
 <link href="/css/StudentManage/MainViewStudent.css" rel="stylesheet" />
@@ -385,7 +386,12 @@
                                                 <i class="fas fa-ellipsis-v"></i>
                                             </button>
                                             <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton_@student.StudentId">
-                                                <li><a class="dropdown-item" href="/studentmanage/detail/@student.StudentId"><i class="fas fa-eye me-2"></i>Xem chi tiết</a></li>
+                                                @if (student.Status == 1 || student.Status == 10 || student.Status == 11)
+                                                {
+                                                    <li><a class="dropdown-item" href="#" @onclick="() => NavigateToStudentHealth(student.StudentId)"><i class="fas fa-eye me-2"></i>Xem chi tiết</a></li>
+
+                                                }
+                                               
                                                 <AuthorizeView Roles="UPDATE.Students,UPDATE_SELF_MANAGED.Students">
                                                 <li><a class="dropdown-item" href="/studentmanage/edit/@student.StudentId"><i class="fas fa-edit me-2"></i>Chỉnh sửa</a></li>
                                                 </AuthorizeView>
@@ -617,7 +623,7 @@
             await Task.WhenAll(
                 LoadStudents(user.FindFirst("userId").Value),
                 LoadStatistics(user.FindFirst("userId").Value),
-               
+
                 LoadDepartments()
             );
 
@@ -639,7 +645,7 @@
 
                     var user = (await AuthStateTask).User;
                     searchDto.ManageBy = Guid.Parse(user.FindFirst("userId").Value); 
-                
+
                 }
 
                 var response = await StudentApiClient.SearchStudentsAsync(searchDto);
@@ -934,7 +940,7 @@
     private async Task ApplyQuickFilter(string filterType)
     {
         ResetFiltersInternal();
-        
+
         switch (filterType)
         {
             case "active":
@@ -999,7 +1005,7 @@
         else
         {
             var today = DateTime.Today;
-            
+
             switch (selectedAgeRange)
             {
                 case "18-":
@@ -1034,7 +1040,7 @@
                     break;
             }
         }
-        
+
         searchDto.Page = 1;
         await LoadStudents();
     }
@@ -1101,6 +1107,17 @@
             "31+" => "Trên 30 tuổi",
             _ => selectedAgeRange
         };
+    }
+
+    private void NavigateToStudentHealth(string studentId)
+    {
+        const string Prefix = "ObjectId_";
+        var userIds = studentId.Substring(Prefix.Length);
+
+
+        navigation.NavigateTo($"/dalyhealth/detailhealthstudent/{userIds}");
+
+
     }
 
     private void ResetFiltersInternal()
