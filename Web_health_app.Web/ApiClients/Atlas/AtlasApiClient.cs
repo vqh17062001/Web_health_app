@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Web_health_app.ApiService.Entities.NonSQLTable;
@@ -360,5 +361,20 @@ namespace Web_health_app.Web.ApiClients.Atlas
         }
 
         #endregion
+
+        //public async Task<ActionResult<List<Web_health_app.ApiService.Entities.Student>>> SyncStudent()
+        //{
+
+        //    await SetAuthorizeHeader();
+
+        //    var response = await _httpClient.PostAsync("api/atlas/sync/student", null);
+
+        //    if (response.IsSuccessStatusCode)
+        //    {
+        //        var json = await response.Content.ReadAsStringAsync();
+        //        return JsonSerializer.Deserialize<List<Web_health_app.ApiService.Entities.Student>>(json, _jsonOptions);
+        //    }
+        //    return null;
+        //}
     }
 }

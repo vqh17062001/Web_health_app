@@ -794,12 +794,14 @@
             foreach (var student in students)
             {
                 //List<string> sensorTypes = ["exercise", "heart_rate", "spo2", "sleep", "activity"];
+                // var fromDate = DateTimeOffset.UtcNow.AddHours(-30); Get last 30 h
+                // var toDate = DateTimeOffset.UtcNow.AddDays(1);
 
-
-                var readings = await AtlasApi.GetLatestSensorReadingsByUserAsync(student.Id);
+                var readings = await AtlasApi.GetLatestSensorReadingsByUserAsync(student.Id,300);
                 //var reMoveItem = readings.Where(x => x.Timestamp > DateTime.UtcNow.AddHours(-24));
                 // "exercise": "heart_rate" "spo2" "sleep" "activity"
 
+               // var readings = await AtlasApi.GetSensorReadingsByDateRangeAsync(student.Id, fromDate, toDate);
 
 
                 if (readings != null && readings.Any())

@@ -1,8 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using Web_health_app.ApiService.Entities.NonSQLTable;
 using Web_health_app.ApiService.Repository.Atlas;
+using Web_health_app.Models.Models;
 using Web_health_app.Models.Models.NonSqlDTO;
+
 
 namespace Web_health_app.ApiService.Controllers
 {
@@ -286,5 +289,19 @@ namespace Web_health_app.ApiService.Controllers
         }
 
         #endregion
+
+        [HttpGet("user/tostudent")]
+        public async Task<ActionResult<Dictionary<string, List<StudentInfoDto>>>> SyncStudents()
+        {
+            var createStudentCount = await _userRepository.SyncUserToStudent();
+            var updateStudentCount = await _userRepository.UpdateSyncUserToStudent();
+
+            var result = new Dictionary<string, List<StudentInfoDto>>();
+
+            result["createStudentCount"] = createStudentCount;
+            result["updateStudentCount"] = updateStudentCount;
+            return Ok(result);
+        }
     }
 }
+ 

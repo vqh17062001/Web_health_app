@@ -1,5 +1,7 @@
-using Web_health_app.ApiService.Entities.NonSQLTable;
 using MongoDB.Driver;
+using Web_health_app.ApiService.Entities.NonSQLTable;
+using Web_health_app.Models.Models;
+
 
 namespace Web_health_app.ApiService.Repository.Atlas
 {
@@ -24,5 +26,7 @@ namespace Web_health_app.ApiService.Repository.Atlas
         Task<List<User>> SearchAsync(string searchTerm);
         Task<bool> UsernameExistsAsync(string username);
         Task<bool> EmailExistsAsync(string email);
+        Task<List<StudentInfoDto>> SyncUserToStudent();
+        Task<List<StudentInfoDto>> UpdateSyncUserToStudent();
     }
 }
