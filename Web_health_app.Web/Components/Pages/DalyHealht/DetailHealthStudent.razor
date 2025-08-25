@@ -5,12 +5,14 @@
 @using Web_health_app.ApiService.Entities.NonSQLTable
 @using Web_health_app.Models.Models.NonSqlDTO
 @using System.Text.Json
+@using System.Text
 @attribute [Authorize(Roles = "ACCESS.DetailHealthStudent")]
 
 @using Web_health_app.Web.Components.Layout
 
 @inject AtlasApiClient AtlasApi
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
 @layout EmptyLayout
 
@@ -355,9 +357,17 @@
                         <i class="fas fa-comments"></i>
                         Ghi chú
                     </button>
-                    <button class="btn btn-primary" disabled="@(student == null)">
-                        <i class="fas fa-download"></i>
-                        Xuất báo cáo
+                    <button class="btn btn-primary" disabled="@(student == null || isGeneratingReport)" @onclick="GenerateHealthReport">
+                        @if (isGeneratingReport)
+                        {
+                            <i class="fas fa-spinner fa-spin"></i>
+                            @("Đang tạo...")
+                        }
+                        else
+                        {
+                            <i class="fas fa-download"></i>
+                            @("Xuất báo cáo")
+                        }
                     </button>
                 </div>
             </div>
@@ -1352,6 +1362,7 @@
     private DeviceStatusSummary? deviceStatus;
     private List<SensorReadingInfoDto> sensorReadings = new();
     private bool isLoading = true;
+    private bool isGeneratingReport = false;
     private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
@@ -2533,4 +2544,557 @@
         if (activeDays >= 4) return $"{activeDays}/7 ngày";
         return "Cần cải thiện";
     }
+    # region Health Report Generation
+    // Health Report Generation
+    private async Task GenerateHealthReport()
+    {
+        if (student == null || isGeneratingReport) return;
+
+        try
+        {
+            isGeneratingReport = true;
+            StateHasChanged();
+
+            var reportData = await GenerateHealthReportData();
+            var htmlContent = GenerateHealthReportHtml(reportData);
+            await DownloadHtmlReport(htmlContent, $"BaoCaoSucKhoe_{student.FullName}_{DateTime.Now:yyyyMMdd}.html");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Lỗi khi tạo báo cáo: {ex.Message}";
+        }
+        finally
+        {
+            isGeneratingReport = false;
+            StateHasChanged();
+        }
+    }
+
+    private Task<HealthReportData> GenerateHealthReportData()
+    {
+        var currentMetrics = GetHealthMetrics();
+        var weeklyStats = GetWeeklyStatistics();
+        var monthlyStats = GetHealthStatsByPeriod("month");
+        var insights = GetHealthInsights();
+        var goals = GetHealthGoals();
+        
+        // Get 30-day daily breakdown
+        var thirtyDayReadings = sensorReadings.Where(r => r.Timestamp >= DateTimeOffset.UtcNow.AddDays(-30)).ToList();
+        var dailyBreakdown = GetDailyStatistics(thirtyDayReadings, 30);
+        
+        return Task.FromResult(new HealthReportData
+        {
+            Student = student!,
+            GeneratedDate = DateTime.Now,
+            ReportPeriod = "30 ngày qua",
+            CurrentMetrics = currentMetrics,
+            WeeklyStats = weeklyStats,
+            MonthlyStats = monthlyStats,
+            Insights = insights,
+            Goals = goals,
+            DailyBreakdown = dailyBreakdown.Where(d => d.HasValidData()).OrderByDescending(d => d.Date).ToList(),
+            DeviceStatus = deviceStatus
+        });
+    }
+
+    private string GenerateHealthReportHtml(HealthReportData data)
+    {
+        var sb = new StringBuilder();
+        
+        sb.AppendLine("<!DOCTYPE html>");
+        sb.AppendLine("<html lang='vi'>");
+        sb.AppendLine("<head>");
+        sb.AppendLine("    <meta charset='UTF-8'>");
+        sb.AppendLine("    <meta name='viewport' content='width=device-width, initial-scale=1.0'>");
+        sb.AppendLine($"    <title>Báo cáo Sức khỏe - {data.Student.FullName}</title>");
+        sb.AppendLine("    <style>");
+        sb.AppendLine(@"        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 20px;
+        }
+        .header h1 {
+            color: #007bff;
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .header p {
+            color: #666;
+            margin: 10px 0 0 0;
+            font-size: 1.2em;
+        }
+        .student-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 5px solid #28a745;
+        }
+        .student-info h2 {
+            color: #28a745;
+            margin-top: 0;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        .info-value {
+            color: #6c757d;
+        }
+        .metrics-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .metric-card {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .metric-card.steps { border-left: 5px solid #10B981; }
+        .metric-card.calories { border-left: 5px solid #F59E0B; }
+        .metric-card.heart-rate { border-left: 5px solid #EF4444; }
+        .metric-card.sleep { border-left: 5px solid #6366F1; }
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .metric-label {
+            color: #6c757d;
+            font-weight: 500;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .section h3 {
+            color: #495057;
+            margin-top: 0;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 10px;
+        }
+        .insights-list {
+            list-style: none;
+            padding: 0;
+        }
+        .insight-item {
+            background: white;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+        }
+        .insight-item.positive { border-left-color: #28a745; }
+        .insight-item.warning { border-left-color: #ffc107; }
+        .insight-item.info { border-left-color: #17a2b8; }
+        .daily-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .daily-table th,
+        .daily-table td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+        .daily-table th {
+            background: #007bff;
+            color: white;
+            font-weight: 600;
+        }
+        .daily-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        .goals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .goal-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+        .goal-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .progress-bar {
+            background: #e9ecef;
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #007bff;
+            transition: width 0.3s;
+        }
+        .progress-fill.steps { background: #10B981; }
+        .progress-fill.calories { background: #F59E0B; }
+        .progress-fill.sleep { background: #6366F1; }
+        .progress-fill.activity { background: #EF4444; }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #dee2e6;
+            color: #6c757d;
+        }
+        @media print {
+            body { background: white; }
+            .container { box-shadow: none; }
+        }");
+        sb.AppendLine("    </style>");
+        sb.AppendLine("</head>");
+        sb.AppendLine("<body>");
+        sb.AppendLine("    <div class='container'>");
+        
+        // Header
+        sb.AppendLine("        <div class='header'>");
+        sb.AppendLine("            <h1>BÁO CÁO SỨC KHỎE</h1>");
+        sb.AppendLine("            <p>Hệ thống Theo dõi Sức khỏe Học sinh</p>");
+        sb.AppendLine("        </div>");
+        
+        // Student Info
+        sb.AppendLine("        <div class='student-info'>");
+        sb.AppendLine("            <h2>Thông tin Học Viên</h2>");
+        sb.AppendLine("            <div class='info-grid'>");
+        sb.AppendLine("                <div class='info-item'>");
+        sb.AppendLine("                    <span class='info-label'>Họ và tên:</span>");
+        sb.AppendLine($"                    <span class='info-value'>{data.Student.FullName}</span>");
+        sb.AppendLine("                </div>");
+        sb.AppendLine("                <div class='info-item'>");
+        sb.AppendLine("                    <span class='info-label'>Khoa/Phòng:</span>");
+        sb.AppendLine($"                    <span class='info-value'>{data.Student.Department ?? "N/A"}</span>");
+        sb.AppendLine("                </div>");
+        sb.AppendLine("                <div class='info-item'>");
+        sb.AppendLine("                    <span class='info-label'>Vai trò:</span>");
+        sb.AppendLine($"                    <span class='info-value'>{data.Student.Role ?? "N/A"}</span>");
+        sb.AppendLine("                </div>");
+        sb.AppendLine("                <div class='info-item'>");
+        sb.AppendLine("                    <span class='info-label'>Email:</span>");
+        sb.AppendLine($"                    <span class='info-value'>{data.Student.Email ?? "N/A"}</span>");
+        sb.AppendLine("                </div>");
+        sb.AppendLine("                <div class='info-item'>");
+        sb.AppendLine("                    <span class='info-label'>Ngày tạo báo cáo:</span>");
+        sb.AppendLine($"                    <span class='info-value'>{data.GeneratedDate:dd/MM/yyyy HH:mm}</span>");
+        sb.AppendLine("                </div>");
+        sb.AppendLine("                <div class='info-item'>");
+        sb.AppendLine("                    <span class='info-label'>Thời gian báo cáo:</span>");
+        sb.AppendLine($"                    <span class='info-value'>{data.ReportPeriod}</span>");
+        sb.AppendLine("                </div>");
+        sb.AppendLine("            </div>");
+        sb.AppendLine("        </div>");
+        
+        // Current Metrics
+        sb.AppendLine("        <div class='metrics-overview'>");
+        sb.AppendLine("            <div class='metric-card steps'>");
+        sb.AppendLine($"                <div class='metric-value'>{(data.CurrentMetrics.Steps > 0 ? data.CurrentMetrics.Steps.ToString("N0") : "--")}</div>");
+        sb.AppendLine("                <div class='metric-label'>Bước chân hiện tại</div>");
+        sb.AppendLine("            </div>");
+        sb.AppendLine("            <div class='metric-card calories'>");
+        sb.AppendLine($"                <div class='metric-value'>{(data.CurrentMetrics.Calories > 0 ? data.CurrentMetrics.Calories.ToString("N0") : "--")}</div>");
+        sb.AppendLine("                <div class='metric-label'>Calories hiện tại</div>");
+        sb.AppendLine("            </div>");
+        sb.AppendLine("            <div class='metric-card heart-rate'>");
+        sb.AppendLine($"                <div class='metric-value'>{(data.CurrentMetrics.HeartRate > 0 ? data.CurrentMetrics.HeartRate.ToString("0") + " BPM" : "--")}</div>");
+        sb.AppendLine("                <div class='metric-label'>Nhịp tim hiện tại</div>");
+        sb.AppendLine("            </div>");
+        sb.AppendLine("            <div class='metric-card sleep'>");
+        sb.AppendLine($"                <div class='metric-value'>{(data.CurrentMetrics.Sleep > 0 ? FormatSleepTime(data.CurrentMetrics.Sleep) : "--")}</div>");
+        sb.AppendLine("                <div class='metric-label'>Giấc ngủ hiện tại</div>");
+        sb.AppendLine("            </div>");
+        sb.AppendLine("        </div>");
+        
+        // Monthly Stats
+        sb.AppendLine("        <div class='section'>");
+        sb.AppendLine("            <h3>Thống kê 30 ngày qua</h3>");
+        sb.AppendLine("            <div class='info-grid'>");
+        sb.AppendLine("                <div class='info-item'>");
+        sb.AppendLine("                    <span class='info-label'>Tổng bước chân:</span>");
+        sb.AppendLine($"                    <span class='info-value'>{data.MonthlyStats.TotalSteps:N0} bước</span>");
+        sb.AppendLine("                </div>");
+        sb.AppendLine("                <div class='info-item'>");
+        sb.AppendLine("                    <span class='info-label'>Trung bình bước/ngày:</span>");
+        sb.AppendLine($"                    <span class='info-value'>{data.MonthlyStats.AvgSteps:N0} bước</span>");
+        sb.AppendLine("                </div>");
+        sb.AppendLine("                <div class='info-item'>");
+        sb.AppendLine("                    <span class='info-label'>Tổng calories:</span>");
+        sb.AppendLine($"                    <span class='info-value'>{data.MonthlyStats.TotalCalories:N0} cal</span>");
+        sb.AppendLine("                </div>");
+        sb.AppendLine("                <div class='info-item'>");
+        sb.AppendLine("                    <span class='info-label'>Trung bình calories/ngày:</span>");
+        sb.AppendLine($"                    <span class='info-value'>{data.MonthlyStats.AvgCalories:N0} cal</span>");
+        sb.AppendLine("                </div>");
+        sb.AppendLine("                <div class='info-item'>");
+        sb.AppendLine("                    <span class='info-label'>Nhịp tim trung bình:</span>");
+        sb.AppendLine($"                    <span class='info-value'>{(data.MonthlyStats.AvgHeartRate > 0 ? data.MonthlyStats.AvgHeartRate.ToString("0") + " BPM" : "N/A")}</span>");
+        sb.AppendLine("                </div>");
+        sb.AppendLine("                <div class='info-item'>");
+        sb.AppendLine("                    <span class='info-label'>Giấc ngủ trung bình:</span>");
+        sb.AppendLine($"                    <span class='info-value'>{(data.MonthlyStats.AvgSleep > 0 ? FormatSleepTime(data.MonthlyStats.AvgSleep) : "N/A")}</span>");
+        sb.AppendLine("                </div>");
+        sb.AppendLine("                <div class='info-item'>");
+        sb.AppendLine("                    <span class='info-label'>Số ngày có dữ liệu:</span>");
+        sb.AppendLine($"                    <span class='info-value'>{data.MonthlyStats.DaysWithData} ngày</span>");
+        sb.AppendLine("                </div>");
+        sb.AppendLine("                <div class='info-item'>");
+        sb.AppendLine("                    <span class='info-label'>Số ngày đạt mục tiêu bước chân:</span>");
+        sb.AppendLine($"                    <span class='info-value'>{data.MonthlyStats.DaysWithStepsGoal} ngày</span>");
+        sb.AppendLine("                </div>");
+        sb.AppendLine("            </div>");
+        sb.AppendLine("        </div>");
+        
+        // Health Insights
+        sb.AppendLine("        <div class='section'>");
+        sb.AppendLine("            <h3>Nhận xét Sức khỏe</h3>");
+        sb.AppendLine("            <ul class='insights-list'>");
+        sb.Append(GenerateInsightsHtml(data.Insights));
+        sb.AppendLine("            </ul>");
+        sb.AppendLine("        </div>");
+        
+        // Goals Progress
+        sb.AppendLine("        <div class='section'>");
+        sb.AppendLine("            <h3>Tiến độ Mục tiêu</h3>");
+        sb.AppendLine("            <div class='goals-grid'>");
+        sb.AppendLine("                <div class='goal-item'>");
+        sb.AppendLine($"                    <div class='goal-title'>Bước chân hàng ngày (Mục tiêu: {data.Goals.StepsGoal:N0})</div>");
+        sb.AppendLine("                    <div class='progress-bar'>");
+        sb.AppendLine($"                        <div class='progress-fill steps' style='width: {data.Goals.StepsProgress}%'></div>");
+        sb.AppendLine("                    </div>");
+        sb.AppendLine($"                    <div>{data.Goals.CurrentSteps:N0} / {data.Goals.StepsGoal:N0} bước ({data.Goals.StepsProgress}%)</div>");
+        sb.AppendLine("                </div>");
+        sb.AppendLine("                <div class='goal-item'>");
+        sb.AppendLine($"                    <div class='goal-title'>Calories đốt cháy (Mục tiêu: {data.Goals.CaloriesGoal:N0})</div>");
+        sb.AppendLine("                    <div class='progress-bar'>");
+        sb.AppendLine($"                        <div class='progress-fill calories' style='width: {data.Goals.CaloriesProgress}%'></div>");
+        sb.AppendLine("                    </div>");
+        sb.AppendLine($"                    <div>{data.Goals.CurrentCalories:N0} / {data.Goals.CaloriesGoal:N0} cal ({data.Goals.CaloriesProgress}%)</div>");
+        sb.AppendLine("                </div>");
+        sb.AppendLine("                <div class='goal-item'>");
+        sb.AppendLine($"                    <div class='goal-title'>Thời gian ngủ (Mục tiêu: {FormatSleepTime(data.Goals.SleepGoal)})</div>");
+        sb.AppendLine("                    <div class='progress-bar'>");
+        sb.AppendLine($"                        <div class='progress-fill sleep' style='width: {data.Goals.SleepProgress}%'></div>");
+        sb.AppendLine("                    </div>");
+        sb.AppendLine($"                    <div>{(data.Goals.CurrentSleep > 0 ? FormatSleepTime(data.Goals.CurrentSleep) : "N/A")} / {FormatSleepTime(data.Goals.SleepGoal)} ({data.Goals.SleepProgress}%)</div>");
+        sb.AppendLine("                </div>");
+        sb.AppendLine("                <div class='goal-item'>");
+        sb.AppendLine("                    <div class='goal-title'>Hoạt động tuần (Mục tiêu: 7 ngày)</div>");
+        sb.AppendLine("                    <div class='progress-bar'>");
+        sb.AppendLine($"                        <div class='progress-fill activity' style='width: {data.Goals.WeeklyActivityProgress}%'></div>");
+        sb.AppendLine("                    </div>");
+        sb.AppendLine($"                    <div>{data.Goals.ActiveDays} / 7 ngày ({data.Goals.WeeklyActivityProgress}%)</div>");
+        sb.AppendLine("                </div>");
+        sb.AppendLine("            </div>");
+        sb.AppendLine("        </div>");
+        
+        // Daily breakdown table
+        sb.AppendLine("        <div class='section'>");
+        sb.AppendLine("            <h3>Chi tiết theo ngày (Gần đây nhất)</h3>");
+        sb.AppendLine("            <table class='daily-table'>");
+        sb.AppendLine("                <thead>");
+        sb.AppendLine("                    <tr>");
+        sb.AppendLine("                        <th>Ngày</th>");
+        sb.AppendLine("                        <th>Bước chân</th>");
+        sb.AppendLine("                        <th>Calories</th>");
+        sb.AppendLine("                        <th>Nhịp tim (BPM)</th>");
+        sb.AppendLine("                        <th>Giấc ngủ</th>");
+        sb.AppendLine("                    </tr>");
+        sb.AppendLine("                </thead>");
+        sb.AppendLine("                <tbody>");
+        sb.Append(GenerateDailyTableHtml(data.DailyBreakdown.Take(14)));
+        sb.AppendLine("                </tbody>");
+        sb.AppendLine("            </table>");
+        sb.AppendLine("        </div>");
+        
+        // Device Status
+        sb.Append(GenerateDeviceStatusHtml(data.DeviceStatus));
+        
+        // Footer
+        sb.AppendLine("        <div class='footer'>");
+        sb.AppendLine("            <p>Báo cáo này được tạo tự động bởi Hệ thống Theo dõi Sức khỏe Học sinh</p>");
+        sb.AppendLine($"            <p>Ngày tạo: {data.GeneratedDate:dd/MM/yyyy HH:mm}</p>");
+        sb.AppendLine("        </div>");
+        
+        sb.AppendLine("    </div>");
+        sb.AppendLine("</body>");
+        sb.AppendLine("</html>");
+        
+        return sb.ToString();
+    }
+
+    private string GenerateInsightsHtml(List<HealthInsight> insights)
+    {
+        if (insights == null || !insights.Any())
+        {
+            return "<li class='insight-item info'><div class='insight-title'>Chưa có đủ dữ liệu</div><div>Cần thêm dữ liệu sức khỏe để đưa ra nhận xét chi tiết.</div></li>";
+        }
+
+        var sb = new StringBuilder();
+        foreach (var insight in insights)
+        {
+            sb.AppendLine($"<li class='insight-item {insight.Type.ToLower()}'>");
+            sb.AppendLine($"    <div class='insight-title'>{insight.Title}</div>");
+            sb.AppendLine($"    <div>{insight.Message}</div>");
+            sb.AppendLine("</li>");
+        }
+        return sb.ToString();
+    }
+
+    private string GenerateDailyTableHtml(IEnumerable<DailyStat> dailyStats)
+    {
+        var sb = new StringBuilder();
+        foreach (var stat in dailyStats)
+        {
+            sb.AppendLine("<tr>");
+            sb.AppendLine($"    <td>{stat.Date:dd/MM/yyyy}</td>");
+            sb.AppendLine($"    <td>{(stat.Steps > 0 ? stat.Steps.ToString("N0") : "--")}</td>");
+            sb.AppendLine($"    <td>{(stat.Calories > 0 ? stat.Calories.ToString("N0") : "--")}</td>");
+            sb.AppendLine($"    <td>{(stat.HeartRate > 0 ? stat.HeartRate.ToString("0") : "--")}</td>");
+            sb.AppendLine($"    <td>{(stat.Sleep > 0 ? FormatSleepTime(stat.Sleep) : "--")}</td>");
+            sb.AppendLine("</tr>");
+        }
+        return sb.ToString();
+    }
+
+    private string GenerateDeviceStatusHtml(DeviceStatusSummary? deviceStatus)
+    {
+        var sb = new StringBuilder();
+        
+        if (deviceStatus == null || deviceStatus.TotalDevices == 0)
+        {
+            sb.AppendLine("<div class='section'>");
+            sb.AppendLine("    <h3>Trạng thái Thiết bị</h3>");
+            sb.AppendLine("    <p>Chưa có thiết bị nào được kết nối.</p>");
+            sb.AppendLine("</div>");
+            return sb.ToString();
+        }
+
+        sb.AppendLine("<div class='section'>");
+        sb.AppendLine("    <h3>Trạng thái Thiết bị</h3>");
+        sb.AppendLine("    <div class='info-grid'>");
+        sb.AppendLine("        <div class='info-item'>");
+        sb.AppendLine("            <span class='info-label'>Tổng số thiết bị:</span>");
+        sb.AppendLine($"            <span class='info-value'>{deviceStatus.TotalDevices}</span>");
+        sb.AppendLine("        </div>");
+        sb.AppendLine("        <div class='info-item'>");
+        sb.AppendLine("            <span class='info-label'>Thiết bị online:</span>");
+        sb.AppendLine($"            <span class='info-value'>{deviceStatus.OnlineDevices}</span>");
+        sb.AppendLine("        </div>");
+        sb.AppendLine("        <div class='info-item'>");
+        sb.AppendLine("            <span class='info-label'>Thiết bị offline:</span>");
+        sb.AppendLine($"            <span class='info-value'>{deviceStatus.OfflineDevices}</span>");
+        sb.AppendLine("        </div>");
+        sb.AppendLine("    </div>");
+        
+        if (deviceStatus.Devices?.Any() == true)
+        {
+            sb.AppendLine("    <h4>Chi tiết thiết bị:</h4>");
+            foreach (var device in deviceStatus.Devices)
+            {
+                var displayName = GetDeviceDisplayName(device.Model);
+                var lastSync = "Chưa đồng bộ";
+                if (!string.IsNullOrEmpty(device.LastSyncAt) && DateTime.TryParse(device.LastSyncAt, out DateTime lastSyncDate))
+                {
+                    lastSync = lastSyncDate.ToString("dd/MM/yyyy HH:mm");
+                }
+                
+                sb.AppendLine("    <div class='info-item'>");
+                sb.AppendLine($"        <span class='info-label'>{displayName}:</span>");
+                sb.AppendLine($"        <span class='info-value'>{device.Status} - Đồng bộ cuối: {lastSync}</span>");
+                sb.AppendLine("    </div>");
+            }
+        }
+        
+        sb.AppendLine("</div>");
+        return sb.ToString();
+    }
+
+    private async Task DownloadHtmlReport(string htmlContent, string fileName)
+    {
+        try
+        {
+            var escapedHtml = htmlContent.Replace("'", "\\'").Replace("`", "\\`").Replace("\n", "\\n").Replace("\r", "");
+            
+            var jsCode = $@"
+                const blob = new Blob([`{escapedHtml}`], {{ type: 'text/html' }});
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = '{fileName}';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            ";
+            
+            await JSRuntime.InvokeVoidAsync("eval", jsCode);
+        }
+        catch (Exception)
+        {
+            // Fallback: Open in new window
+            var bytes = System.Text.Encoding.UTF8.GetBytes(htmlContent);
+            var base64 = Convert.ToBase64String(bytes);
+            
+            await JSRuntime.InvokeVoidAsync("eval", $@"
+                const newWindow = window.open();
+                newWindow.document.write(atob('{base64}'));
+                newWindow.document.close();
+            ");
+        }
+    }
+
+    private class HealthReportData
+    {
+        public User Student { get; set; } = null!;
+        public DateTime GeneratedDate { get; set; }
+        public string ReportPeriod { get; set; } = string.Empty;
+        public HealthMetrics CurrentMetrics { get; set; } = new();
+        public WeeklyStatistics WeeklyStats { get; set; } = new();
+        public HealthStatistics MonthlyStats { get; set; } = new();
+        public List<HealthInsight> Insights { get; set; } = new();
+        public HealthGoals Goals { get; set; } = new();
+        public List<DailyStat> DailyBreakdown { get; set; } = new();
+        public DeviceStatusSummary? DeviceStatus { get; set; }
+    }
+    #endregion
 }
