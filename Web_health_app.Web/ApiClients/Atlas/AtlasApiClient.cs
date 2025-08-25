@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Web_health_app.ApiService.Entities.NonSQLTable;
+using Web_health_app.Models.Models;
 using Web_health_app.Models.Models.NonSqlDTO;
 
 namespace Web_health_app.Web.ApiClients.Atlas
@@ -361,20 +362,23 @@ namespace Web_health_app.Web.ApiClients.Atlas
         }
 
         #endregion
+        /// <summary>
+        ///   ActionResult<Dictionary<string, List<StudentInfoDto>>>
+        /// </summary>
+        /// <returns></returns>
+        public async Task<ActionResult<Dictionary<string, List<StudentInfoDto>>>> SyncStudent()
+        {
 
-        //public async Task<ActionResult<List<Web_health_app.ApiService.Entities.Student>>> SyncStudent()
-        //{
+            await SetAuthorizeHeader();
 
-        //    await SetAuthorizeHeader();
+            var response = await _httpClient.GetAsync("api/atlas/user/tostudent");
 
-        //    var response = await _httpClient.PostAsync("api/atlas/sync/student", null);
-
-        //    if (response.IsSuccessStatusCode)
-        //    {
-        //        var json = await response.Content.ReadAsStringAsync();
-        //        return JsonSerializer.Deserialize<List<Web_health_app.ApiService.Entities.Student>>(json, _jsonOptions);
-        //    }
-        //    return null;
-        //}
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<Dictionary<string, List<StudentInfoDto>>>(json, _jsonOptions);
+            }
+            return null;
+        }
     }
 }

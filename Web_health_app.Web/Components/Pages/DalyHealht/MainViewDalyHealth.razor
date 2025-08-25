@@ -5,6 +5,7 @@
 @using Web_health_app.ApiService.Entities.NonSQLTable
 @using Web_health_app.Models.Models.NonSqlDTO
 @using System.Text.Json
+@inject IJSRuntime JSRuntime
 @attribute [Authorize(Roles = "ACCESS.MainViewDalyHealth")]
 @inject NavigationManager navigation
 @inject AtlasApiClient AtlasApi
@@ -313,7 +314,7 @@
                 </div>
             </div>
             <div class="header-actions">
-                <button class="btn btn-primary">
+                <button class="btn btn-primary" @onclick="() => SyncStudentData()">
                     <i class="fas fa-sync-alt"></i>
                     Đồng Bộ Dữ Liệu
                 </button>
@@ -801,7 +802,7 @@
                 //var reMoveItem = readings.Where(x => x.Timestamp > DateTime.UtcNow.AddHours(-24));
                 // "exercise": "heart_rate" "spo2" "sleep" "activity"
 
-               // var readings = await AtlasApi.GetSensorReadingsByDateRangeAsync(student.Id, fromDate, toDate);
+                // var readings = await AtlasApi.GetSensorReadingsByDateRangeAsync(student.Id, fromDate, toDate);
 
 
                 if (readings != null && readings.Any())
@@ -1328,6 +1329,43 @@
     }
 
     #endregion
+
+    private async Task SyncStudentData()
+
+    {
+        try
+        {
+            var result = await AtlasApi.SyncStudent();
+
+            var creatStudentCount = result.Value["createStudentCount"].Count();
+            var updateStudentCount = result.Value["updateStudentCount"].Count();
+
+            if (creatStudentCount != 0 || updateStudentCount != 0)
+
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Đã tạo {creatStudentCount} học viên!;  Cập nhập {updateStudentCount} học viên!");
+
+
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert","Dữ Liệu Đã Được Đồng Bộ!");
+
+
+            }
+        }
+        catch (Exception ex)
+        
+        {
+            
+            Console.WriteLine($"Error sync students: {ex.Message}");
+            // You might want to show a user-friendly error message here
+        
+        }
+
+    }
+
+
 
     // Helper classes
     public class DeviceStatusInfo
